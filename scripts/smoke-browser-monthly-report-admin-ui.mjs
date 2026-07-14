@@ -153,30 +153,92 @@ async function createFixture(token) {
     throw new Error("Fixture setup failed at article image creation.");
   }
 
-  const finalDeliverableResponse = await request(`/ai-delivery-projects/${primaryProjectResponse.body.data.aiDeliveryProject.id}/deliverables`, {
+  const primaryProjectId = primaryProjectResponse.body.data.aiDeliveryProject.id;
+  const draftDeliverableResponse = await request(`/ai-delivery-projects/${primaryProjectId}/deliverables`, {
     method: "POST",
     token,
     body: {
       title: `[SMOKE][MONTHLY_REPORT_UI] ${makeSmokeId("deliverable-final")}`,
       deliveryType: "CONTENT_PACKAGE",
-      status: "DELIVERED",
+      status: "DRAFT",
       articleImageId: imageResponse.body.data.articleImage.id,
       exportUrl: "https://docs.example.com/monthly-report-smoke"
     }
   });
   record(
-    "create primary delivered deliverable",
-    finalDeliverableResponse.status === 201 && finalDeliverableResponse.body?.ok === true,
-    `${finalDeliverableResponse.status}`
+    "create primary DRAFT deliverable",
+    draftDeliverableResponse.status === 201 &&
+      draftDeliverableResponse.body?.ok === true &&
+      draftDeliverableResponse.body?.data?.deliverable?.status === "DRAFT" &&
+      typeof draftDeliverableResponse.body?.data?.deliverable?.id === "string",
+    `${draftDeliverableResponse.status}/${draftDeliverableResponse.body?.data?.deliverable?.status ?? "missing"}`
   );
-  if (finalDeliverableResponse.status !== 201 || finalDeliverableResponse.body?.ok !== true) {
-    throw new Error("Fixture setup failed at delivered deliverable creation.");
+  if (
+    draftDeliverableResponse.status !== 201 ||
+    draftDeliverableResponse.body?.ok !== true ||
+    draftDeliverableResponse.body?.data?.deliverable?.status !== "DRAFT" ||
+    typeof draftDeliverableResponse.body?.data?.deliverable?.id !== "string"
+  ) {
+    throw new Error("Fixture setup failed at primary DRAFT deliverable creation.");
+  }
+
+  const draftDeliverableId = draftDeliverableResponse.body.data.deliverable.id;
+
+  const readyDeliverableResponse = await request(
+    `/ai-delivery-projects/${primaryProjectId}/deliverables/${draftDeliverableId}/mark-ready`,
+    {
+      method: "POST",
+      token,
+      body: {}
+    }
+  );
+  record(
+    "mark primary deliverable READY",
+    readyDeliverableResponse.status === 200 &&
+      readyDeliverableResponse.body?.ok === true &&
+      readyDeliverableResponse.body?.data?.deliverable?.status === "READY",
+    `${readyDeliverableResponse.status}/${readyDeliverableResponse.body?.data?.deliverable?.status ?? "missing"}`
+  );
+  if (
+    readyDeliverableResponse.status !== 200 ||
+    readyDeliverableResponse.body?.ok !== true ||
+    readyDeliverableResponse.body?.data?.deliverable?.status !== "READY"
+  ) {
+    const readyCode = readyDeliverableResponse.body?.error?.code ?? "none";
+    const readyMessage = readyDeliverableResponse.body?.error?.message ?? readyDeliverableResponse.text;
+    throw new Error(`Fixture setup failed at mark-ready (${readyCode}): ${readyMessage}`);
+  }
+
+  const acceptedDeliverableResponse = await request(
+    `/ai-delivery-projects/${primaryProjectId}/deliverables/${draftDeliverableId}/accept`,
+    {
+      method: "POST",
+      token,
+      body: {}
+    }
+  );
+  record(
+    "accept primary deliverable",
+    acceptedDeliverableResponse.status === 200 &&
+      acceptedDeliverableResponse.body?.ok === true &&
+      acceptedDeliverableResponse.body?.data?.deliverable?.status === "ACCEPTED",
+    `${acceptedDeliverableResponse.status}/${acceptedDeliverableResponse.body?.data?.deliverable?.status ?? "missing"}`
+  );
+  if (
+    acceptedDeliverableResponse.status !== 200 ||
+    acceptedDeliverableResponse.body?.ok !== true ||
+    acceptedDeliverableResponse.body?.data?.deliverable?.status !== "ACCEPTED"
+  ) {
+    const acceptCode = acceptedDeliverableResponse.body?.error?.code ?? "none";
+    const acceptMessage = acceptedDeliverableResponse.body?.error?.message ?? acceptedDeliverableResponse.text;
+    throw new Error(`Fixture setup failed at accept (${acceptCode}): ${acceptMessage}`);
   }
 
   return {
     clientName: client.name,
     primaryProject: primaryProjectResponse.body.data.aiDeliveryProject,
-    secondaryProject: secondaryProjectResponse.body.data.aiDeliveryProject
+    secondaryProject: secondaryProjectResponse.body.data.aiDeliveryProject,
+    finalDeliverable: acceptedDeliverableResponse.body.data.deliverable
   };
 }
 

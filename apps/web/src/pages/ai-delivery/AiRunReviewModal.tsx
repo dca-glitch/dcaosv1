@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Alert, Button, Modal, Spinner, StatusBadge, Tabs } from "../../components/ui";
+import { Alert, Button, LoadingState, Modal, StatusBadge, Tabs } from "../../components/ui";
 import { AiDeliveryWorkflowHistoryPanel } from "./AiDeliveryWorkflowHistoryPanel";
 import "./ai-delivery-modals.css";
 import type {
@@ -129,12 +129,7 @@ export function AiRunReviewModal({
           value={activeTab}
         />
 
-        {loading ? (
-          <div className="state-panel loading-state-panel" role="status">
-            <Spinner size="md" />
-            <span>Loading workflow runs</span>
-          </div>
-        ) : !project ? (
+        {loading ? <LoadingState label="Loading workflow runs" /> : !project ? (
           <p>Project not found.</p>
         ) : (
           <>

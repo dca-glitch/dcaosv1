@@ -3935,28 +3935,6 @@ textarea:focus,
   gap: 10px;
 }
 
-.ai-knowledge-inline-loading {
-  align-items: center;
-  color: var(--muted);
-  display: inline-flex;
-  font-size: 0.82rem;
-  gap: 8px;
-  line-height: 1.4;
-  margin: 0;
-  min-height: 0;
-  padding: 4px 0;
-}
-
-.ai-knowledge-inline-alert {
-  background: rgba(255, 143, 143, 0.08);
-  border: 1px solid rgba(255, 143, 143, 0.22);
-  border-radius: 8px;
-  color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
-  padding: 8px 10px;
-}
-
 .ai-knowledge-table-wrap .data-table.compact th,
 .ai-knowledge-table-wrap .data-table.compact td {
   font-size: 0.82rem;
@@ -4341,38 +4319,6 @@ textarea:focus,
   gap: 10px;
 }
 
-.monthly-report-inline-loading {
-  align-items: center;
-  color: var(--muted);
-  display: inline-flex;
-  font-size: 0.82rem;
-  gap: 8px;
-  line-height: 1.4;
-  margin: 0;
-  min-height: 0;
-  padding: 4px 0;
-}
-
-.monthly-report-inline-alert {
-  background: rgba(255, 143, 143, 0.08);
-  border: 1px solid rgba(255, 143, 143, 0.22);
-  border-radius: 8px;
-  color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
-  padding: 8px 10px;
-}
-
-.monthly-report-inline-success {
-  background: rgba(125, 222, 162, 0.08);
-  border: 1px solid rgba(125, 222, 162, 0.22);
-  border-radius: 8px;
-  color: var(--muted);
-  font-size: 0.82rem;
-  line-height: 1.45;
-  padding: 8px 10px;
-}
-
 .monthly-report-inline-notice {
   background: rgba(255, 255, 255, 0.02);
   border: 1px solid rgba(190, 211, 255, 0.08);
@@ -4587,11 +4533,6 @@ tr:hover td {
   line-height: 1.45;
   margin-bottom: 8px;
   padding: 8px 10px;
-}
-
-.ai-delivery-inline-empty {
-  font-size: 0.82rem;
-  margin: 0 0 8px;
 }
 
 .ai-delivery-modal-panel.stack.gap-md {
@@ -4837,18 +4778,6 @@ div[role="dialog"][aria-modal="true"]:not(.side-sheet):not(.shell-search-overlay
 /* Client-facing portal polish — compact read-only surfaces (cf-*) */
 .cf-page {
   gap: 10px;
-}
-
-.cf-inline-loading {
-  align-items: center;
-  color: var(--muted);
-  display: inline-flex;
-  font-size: 0.84rem;
-  gap: 8px;
-  line-height: 1.4;
-  margin: 0;
-  min-height: 0;
-  padding: 6px 0;
 }
 
 .cf-page .portal-subnav-link.is-active {
@@ -5416,10 +5345,7 @@ body::after {
   padding: 9px 11px;
 }
 
-.monthly-report-inline-alert,
-.monthly-report-inline-notice,
-.monthly-report-inline-success,
-.monthly-report-inline-loading {
+.monthly-report-inline-notice {
   font-size: 0.8rem;
   padding: 7px 9px;
 }

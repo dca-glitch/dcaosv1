@@ -1,4 +1,4 @@
-/* Shared operational patterns — layout only; uses existing Dark Nebula tokens */
+/* Shared operational patterns â€” layout only; uses existing Dark Nebula tokens */
 
 .op-action-queue {
   display: flex;
@@ -45,7 +45,7 @@
   margin: 0;
   font-size: 0.78rem;
   line-height: 1.4;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
 }
 
 .op-action-queue-meta {
@@ -62,7 +62,7 @@
 
 .op-action-queue-empty {
   margin: 0;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 0.875rem;
 }
 
@@ -121,7 +121,7 @@
 .op-sort-controls-label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -154,7 +154,7 @@
 .op-activity-feed-empty {
   margin: 0;
   padding: 8px 0;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 0.875rem;
 }
 

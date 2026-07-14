@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "../../components/ui";
-import { Alert, Button, EmptyState, Input, PageHeader, SectionPanel, Spinner, StatusBadge, Textarea, Toast } from "../../components/ui";
+import { Alert, Button, EmptyState, Input, LoadingState, PageHeader, SectionPanel, StatusBadge, Textarea, Toast } from "../../components/ui";
 import {
   DEFAULT_APPROVAL_CHECKLIST,
   createEmptyApprovalChecklistState,
@@ -101,12 +101,7 @@ function imageStatusLabel(status: DeliverableImageApproval["approvalStatus"]): s
 }
 
 function PortalInlineLoading({ label }: { label: string }) {
-  return (
-    <p className="cf-inline-loading" role="status">
-      <Spinner size="sm" />
-      {label}
-    </p>
-  );
+  return <LoadingState label={label} variant="inline" />;
 }
 
 function ApprovalBackLink() {

@@ -143,19 +143,49 @@ export async function seedPurivaDeliverySummaryFixture({
 
   const googleExportUrl = "https://docs.google.com/document/d/smoke-client-portal-export";
 
-  requireOkData(
-    "puriva delivery create DELIVERED deliverable with export",
+  const draftExportDeliverable = requireOkData(
+    "puriva delivery create DRAFT deliverable with export",
     await request(`/ai-delivery-projects/${aiProject.id}/deliverables`, {
       method: "POST",
       token: adminToken,
       body: {
         title: `${labelPrefix} Google Doc ${makeSmokeId("doc")}`,
         deliveryType: "CONTENT_PACKAGE",
-        status: "DELIVERED",
+        status: "DRAFT",
         articleImageId: articleImage.id,
         exportUrl: googleExportUrl
       }
     })
+  ).deliverable;
+
+  const readyExportDeliverable = requireOkData(
+    "puriva delivery mark export deliverable READY",
+    await request(`/ai-delivery-projects/${aiProject.id}/deliverables/${draftExportDeliverable.id}/mark-ready`, {
+      method: "POST",
+      token: adminToken,
+      body: {}
+    }),
+    200
+  ).deliverable;
+  record(
+    "puriva delivery export deliverable READY",
+    readyExportDeliverable.status === "READY",
+    readyExportDeliverable.status ?? "missing"
+  );
+
+  const acceptedExportDeliverable = requireOkData(
+    "puriva delivery accept export deliverable",
+    await request(`/ai-delivery-projects/${aiProject.id}/deliverables/${draftExportDeliverable.id}/accept`, {
+      method: "POST",
+      token: adminToken,
+      body: {}
+    }),
+    200
+  ).deliverable;
+  record(
+    "puriva delivery export deliverable ACCEPTED",
+    acceptedExportDeliverable.status === "ACCEPTED",
+    acceptedExportDeliverable.status ?? "missing"
   );
 
   const target = requireOkData(

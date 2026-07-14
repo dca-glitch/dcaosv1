@@ -1,11 +1,11 @@
 /*
- * Phase 2 — Global Application Shell
+ * Phase 2 â€” Global Application Shell
  * Narrow overrides for AppLayout / components/shell.
  * Canonical values: docs/design/DESIGN_SYSTEM_SPEC.md
  * Loaded via AppLayout import (after styles.css in the module graph).
  */
 
-/* ─── Shell grid: 220px sidebar ───
+/* â”€â”€â”€ Shell grid: 220px sidebar â”€â”€â”€
  * Higher specificity than legacy styles.css `.app-shell { 292px }` (line ~822),
  * which also sits after that file's max-width:800px collapse and would otherwise win.
  */
@@ -27,7 +27,7 @@ html body .app-shell.portal-shell {
   min-height: 100vh;
 }
 
-/* ─── Skip link ─── */
+/* â”€â”€â”€ Skip link â”€â”€â”€ */
 .shell-skip-link {
   position: absolute;
   left: -9999px;
@@ -47,7 +47,7 @@ html body .app-shell.portal-shell {
   box-shadow: var(--ds-shadow-focus, 0 0 0 2px rgba(99, 102, 241, 0.4));
 }
 
-/* ─── Sidebar: solid surface, no glass ─── */
+/* â”€â”€â”€ Sidebar: solid surface, no glass â”€â”€â”€ */
 .app-shell .sidebar.shell-sidebar,
 .app-shell .shell-sidebar {
   position: sticky;
@@ -80,7 +80,7 @@ html body .app-shell.portal-shell {
   overflow-y: auto;
 }
 
-/* ─── Brand ─── */
+/* â”€â”€â”€ Brand â”€â”€â”€ */
 .shell-brand .brand-mark {
   background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   border: 1px solid rgba(255, 255, 255, 0.16);
@@ -102,14 +102,14 @@ html body .app-shell.portal-shell {
 }
 
 .shell-brand .brand-copy small {
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-/* ─── Nav: active = indigo 10% bg + #A5B4FC, NO left border ─── */
+/* â”€â”€â”€ Nav: active = indigo 10% bg + #A5B4FC, NO left border â”€â”€â”€ */
 .app-shell .shell-nav.nav-list {
   display: flex;
   flex-direction: column;
@@ -130,7 +130,7 @@ html body .app-shell.portal-shell {
 }
 
 .app-shell .shell-nav .nav-section-label {
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -221,14 +221,14 @@ html body .app-shell.portal-shell {
   white-space: nowrap;
 }
 
-/* Portal nav density — slightly roomier */
+/* Portal nav density â€” slightly roomier */
 .portal-shell .shell-nav a.shell-nav-link {
   min-height: 36px;
   padding: 8px 10px;
   font-size: 12px;
 }
 
-/* ─── Workspace switcher (UI-only when no handler) ─── */
+/* â”€â”€â”€ Workspace switcher (UI-only when no handler) â”€â”€â”€ */
 .shell-workspace-switcher {
   display: grid;
   gap: 4px;
@@ -236,7 +236,7 @@ html body .app-shell.portal-shell {
 }
 
 .shell-workspace-switcher__eyebrow {
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -307,7 +307,7 @@ button.shell-workspace-switcher__control:focus-visible {
   white-space: nowrap;
 }
 
-/* ─── User panel ─── */
+/* â”€â”€â”€ User panel â”€â”€â”€ */
 .app-shell .shell-user-panel.user-panel {
   background: var(--ds-surface-panel, #0c0f1a);
   border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
@@ -326,11 +326,11 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 .app-shell .shell-user-panel small {
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 11px;
 }
 
-/* ─── Topbar 52px ─── */
+/* â”€â”€â”€ Topbar 52px â”€â”€â”€ */
 .shell-topbar {
   position: relative;
   z-index: 40;
@@ -400,7 +400,7 @@ button.shell-workspace-switcher__control:focus-visible {
   border: 1px solid transparent;
   border-radius: var(--ds-radius-md, 8px);
   background: transparent;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
@@ -429,7 +429,7 @@ button.shell-workspace-switcher__control:focus-visible {
   text-align: center;
 }
 
-/* ─── Main + page container gutters ─── */
+/* â”€â”€â”€ Main + page container gutters â”€â”€â”€ */
 .app-shell .main-shell.shell-main,
 .app-shell .shell-main.main-shell {
   flex: 1 1 auto;
@@ -478,7 +478,7 @@ button.shell-workspace-switcher__control:focus-visible {
   --table-cell-py: 12px;
 }
 
-/* ─── Notification panel ─── */
+/* â”€â”€â”€ Notification panel â”€â”€â”€ */
 .shell-notification-panel {
   position: absolute;
   top: calc(100% + 6px);
@@ -537,7 +537,7 @@ button.shell-workspace-switcher__control:focus-visible {
 .shell-notification-panel__empty p {
   margin: 0;
   font-size: 12px;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
 }
 
 .shell-notification-panel__empty small {
@@ -552,7 +552,7 @@ button.shell-workspace-switcher__control:focus-visible {
 
 .shell-notification-panel__state p {
   margin: 0;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 12px;
 }
 
@@ -595,7 +595,7 @@ button.shell-workspace-switcher__control:focus-visible {
 
 .shell-notification-panel__item-body {
   margin: 0;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 12px;
 }
 
@@ -632,7 +632,7 @@ button.shell-workspace-switcher__control:focus-visible {
   cursor: not-allowed;
 }
 
-/* ─── Search overlay ─── */
+/* â”€â”€â”€ Search overlay â”€â”€â”€ */
 .shell-search-overlay {
   position: fixed;
   inset: 0;
@@ -683,7 +683,7 @@ button.shell-workspace-switcher__control:focus-visible {
 .shell-search-overlay__icon {
   flex-shrink: 0;
   opacity: 0.45;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
 }
 
 .shell-search-overlay__input {
@@ -697,7 +697,7 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 .shell-search-overlay__input::placeholder {
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
 }
 
 .shell-search-overlay__empty {
@@ -712,7 +712,7 @@ button.shell-workspace-switcher__control:focus-visible {
   color: var(--ds-text-faint, #3a4060);
 }
 
-/* ─── 404 / access-denied presentational states ─── */
+/* â”€â”€â”€ 404 / access-denied presentational states â”€â”€â”€ */
 .shell-state-panel {
   display: grid;
   justify-items: center;
@@ -726,7 +726,7 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 .shell-state-panel__icon {
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   opacity: 0.7;
   margin-bottom: 4px;
 }
@@ -749,7 +749,7 @@ button.shell-workspace-switcher__control:focus-visible {
   margin-top: 12px;
 }
 
-/* ─── Responsive ─── */
+/* â”€â”€â”€ Responsive â”€â”€â”€ */
 .shell-topbar__menu-btn {
   display: none;
 }

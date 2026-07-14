@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Button, EmptyState, PageHeader, SectionPanel, Spinner } from "../../components/ui";
+import { Alert, Button, EmptyState, LoadingState, PageHeader, SectionPanel } from "../../components/ui";
 import { ClientPortalStatusBadge } from "./ClientPortalStatusBadge";
 import {
   clientPortalApiRequest,
@@ -13,12 +13,7 @@ import "./client-portal.css";
 const AMBER_TINT = "#C98A42";
 
 function PortalInlineLoading({ label }: { label: string }) {
-  return (
-    <p className="cf-inline-loading" role="status">
-      <Spinner size="sm" />
-      {label}
-    </p>
-  );
+  return <LoadingState label={label} variant="inline" />;
 }
 
 export function PendingApprovalsPage() {

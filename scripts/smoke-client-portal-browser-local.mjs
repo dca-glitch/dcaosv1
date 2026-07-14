@@ -173,24 +173,86 @@ async function createFixture(adminToken, adminUserId) {
 
   const articleImage = createdArticleImage.body.data.articleImage;
 
-  const finalDeliverable = await request(`/ai-delivery-projects/${project.id}/deliverables`, {
+  const createdFinalDeliverable = await request(`/ai-delivery-projects/${project.id}/deliverables`, {
     method: "POST",
     token: adminToken,
     body: {
       title: finalDeliverableTitle,
       deliveryType: "CONTENT_PACKAGE",
-      status: "DELIVERED",
+      status: "DRAFT",
       articleImageId: articleImage.id
     }
   });
   record(
-    "browser smoke create DELIVERED deliverable",
-    finalDeliverable.status === 201 && finalDeliverable.body?.ok === true,
-    `${finalDeliverable.status}`
+    "browser smoke create DRAFT final deliverable",
+    createdFinalDeliverable.status === 201 &&
+      createdFinalDeliverable.body?.ok === true &&
+      createdFinalDeliverable.body?.data?.deliverable?.status === "DRAFT" &&
+      typeof createdFinalDeliverable.body?.data?.deliverable?.id === "string",
+    `${createdFinalDeliverable.status}/${createdFinalDeliverable.body?.data?.deliverable?.status ?? "missing"}`
   );
-  if (finalDeliverable.status !== 201 || finalDeliverable.body?.ok !== true) {
-    throw new Error("Final deliverable creation failed.");
+  if (
+    createdFinalDeliverable.status !== 201 ||
+    createdFinalDeliverable.body?.ok !== true ||
+    createdFinalDeliverable.body?.data?.deliverable?.status !== "DRAFT" ||
+    typeof createdFinalDeliverable.body?.data?.deliverable?.id !== "string"
+  ) {
+    throw new Error("Final deliverable DRAFT creation failed.");
   }
+
+  const draftFinalDeliverable = createdFinalDeliverable.body.data.deliverable;
+
+  const readyFinalDeliverableResponse = await request(
+    `/ai-delivery-projects/${project.id}/deliverables/${draftFinalDeliverable.id}/mark-ready`,
+    {
+      method: "POST",
+      token: adminToken,
+      body: {}
+    }
+  );
+  record(
+    "browser smoke mark final deliverable READY",
+    readyFinalDeliverableResponse.status === 200 &&
+      readyFinalDeliverableResponse.body?.ok === true &&
+      readyFinalDeliverableResponse.body?.data?.deliverable?.status === "READY",
+    `${readyFinalDeliverableResponse.status}/${readyFinalDeliverableResponse.body?.data?.deliverable?.status ?? "missing"}`
+  );
+  if (
+    readyFinalDeliverableResponse.status !== 200 ||
+    readyFinalDeliverableResponse.body?.ok !== true ||
+    readyFinalDeliverableResponse.body?.data?.deliverable?.status !== "READY"
+  ) {
+    const readyCode = readyFinalDeliverableResponse.body?.error?.code ?? "none";
+    const readyMessage = readyFinalDeliverableResponse.body?.error?.message ?? readyFinalDeliverableResponse.text;
+    throw new Error(`Final deliverable mark-ready failed (${readyCode}): ${readyMessage}`);
+  }
+
+  const acceptedFinalDeliverableResponse = await request(
+    `/ai-delivery-projects/${project.id}/deliverables/${draftFinalDeliverable.id}/accept`,
+    {
+      method: "POST",
+      token: adminToken,
+      body: {}
+    }
+  );
+  record(
+    "browser smoke accept final deliverable",
+    acceptedFinalDeliverableResponse.status === 200 &&
+      acceptedFinalDeliverableResponse.body?.ok === true &&
+      acceptedFinalDeliverableResponse.body?.data?.deliverable?.status === "ACCEPTED",
+    `${acceptedFinalDeliverableResponse.status}/${acceptedFinalDeliverableResponse.body?.data?.deliverable?.status ?? "missing"}`
+  );
+  if (
+    acceptedFinalDeliverableResponse.status !== 200 ||
+    acceptedFinalDeliverableResponse.body?.ok !== true ||
+    acceptedFinalDeliverableResponse.body?.data?.deliverable?.status !== "ACCEPTED"
+  ) {
+    const acceptCode = acceptedFinalDeliverableResponse.body?.error?.code ?? "none";
+    const acceptMessage = acceptedFinalDeliverableResponse.body?.error?.message ?? acceptedFinalDeliverableResponse.text;
+    throw new Error(`Final deliverable accept failed (${acceptCode}): ${acceptMessage}`);
+  }
+
+  const finalDeliverableRecord = acceptedFinalDeliverableResponse.body.data.deliverable;
 
   const draftDeliverable = await request(`/ai-delivery-projects/${project.id}/deliverables`, {
     method: "POST",
@@ -241,7 +303,7 @@ async function createFixture(adminToken, adminUserId) {
     project,
     contentDraft,
     articleImage,
-    finalDeliverable: finalDeliverable.body.data.deliverable,
+    finalDeliverable: finalDeliverableRecord,
     draftDeliverable: draftDeliverable.body.data.deliverable,
     deliveryHints,
     catalogProduct,

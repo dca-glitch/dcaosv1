@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, EmptyState, Input, PageHeader, SectionPanel, Select, Spinner, Textarea } from "../components/ui";
+import { Alert, Badge, Button, EmptyState, Input, LoadingState, PageHeader, SectionPanel, Select, Textarea } from "../components/ui";
 import { toBriefStatusPresentation } from "./client-portal/client-portal-status";
 import {
   clientPortalApiRequest,
@@ -517,12 +517,7 @@ function BriefStatusBadge({ status, role }: { status: string; role: string }) {
 }
 
 function PortalInlineLoading({ label }: { label: string }) {
-  return (
-    <p className="cf-inline-loading" role="status">
-      <Spinner size="sm" />
-      {label}
-    </p>
-  );
+  return <LoadingState label={label} variant="inline" />;
 }
 
 function BriefAwaitingClientInfoBanner() {

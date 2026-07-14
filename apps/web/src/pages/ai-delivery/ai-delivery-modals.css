@@ -23,10 +23,6 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
-.ai-delivery-inline-empty {
-  margin: 0;
-}
-
 .ai-run-review-modal__header-meta {
   display: flex;
   align-items: center;

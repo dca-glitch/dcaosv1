@@ -13,7 +13,7 @@ export function AiDeliveryInlineNotice({ children }: { children: React.ReactNode
   return <p className="ai-delivery-inline-notice muted-text text-sm">{children}</p>;
 }
 
-/** Domain empty copy preserved as children; uses shared muted inline empty styling. */
+/** Domain empty copy as children; chrome uses shared inline-empty styling. */
 export function AiDeliveryInlineEmpty({ children }: { children: React.ReactNode }) {
-  return <p className="ai-delivery-inline-empty muted-text">{children}</p>;
+  return <div className="inline-empty muted-text">{children}</div>;
 }

@@ -1,4 +1,4 @@
-/* AI Operations Console — Phase 9 local styles */
+/* AI Operations Console â€” Phase 9 local styles */
 
 .ai-ops-console {
   gap: 1rem;
@@ -55,7 +55,7 @@
 
 .ai-ops-error-log__message {
   margin: 0;
-  color: var(--ds-text-muted, #5c6380);
+  color: var(--ds-text-muted, #7F89A8);
   font-size: 0.8125rem;
   line-height: 1.4;
   overflow-wrap: anywhere;

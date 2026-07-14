@@ -1,4 +1,4 @@
-/* AI Delivery Dashboard — Phase 4 local styles */
+/* AI Delivery Dashboard â€” Phase 4 local styles */
 
 .ai-delivery-dashboard {
   display: grid;
@@ -128,7 +128,7 @@
 }
 
 .ai-delivery-action-queue__priority[data-priority="low"] {
-  background: var(--ds-text-muted, #5c6380);
+  background: var(--ds-text-muted, #7F89A8);
 }
 
 .ai-delivery-action-queue__title {
@@ -304,7 +304,7 @@
   }
 }
 
-/* Workspace polish — long names, status hierarchy, mobile action wrap */
+/* Workspace polish â€” long names, status hierarchy, mobile action wrap */
 .ai-delivery-workspace,
 .ai-delivery-workspace-stack,
 .ai-delivery-project-context .section-panel-heading,

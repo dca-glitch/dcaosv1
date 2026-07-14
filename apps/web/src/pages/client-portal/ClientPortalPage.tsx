@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Alert, Button, EmptyState, Input, MetricCard, PageHeader, SectionPanel, Select, Spinner, Textarea } from "../../components/ui";
+import { Alert, Button, EmptyState, Input, LoadingState, MetricCard, PageHeader, SectionPanel, Select, Textarea } from "../../components/ui";
 import { ClientPortalStatusBadge } from "./ClientPortalStatusBadge";
 import {
   clientPortalApiRequest,
@@ -408,12 +408,7 @@ function getArchiveNextActionLabel(pendingApprovalCount: number, selectedProject
 }
 
 function PortalInlineLoading({ label }: { label: string }) {
-  return (
-    <p className="cf-inline-loading" role="status">
-      <Spinner size="sm" />
-      {label}
-    </p>
-  );
+  return <LoadingState label={label} variant="inline" />;
 }
 
 export function ClientPortalPage() {

@@ -4,7 +4,7 @@ import type {
   AiKnowledgeItemInputRequest,
   AiKnowledgeItemSummary
 } from "@dca-os-v1/shared";
-import { Modal, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
+import { Alert, LoadingState, Modal, SectionPanel, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 
 type AiKnowledgeContextPanelProps = {
@@ -31,20 +31,11 @@ const knowledgeTypes = [
 ] as const;
 
 function KnowledgeInlineLoading({ label }: { label: string }) {
-  return (
-    <p className="ai-knowledge-inline-loading" role="status">
-      <Spinner size="sm" />
-      {label}
-    </p>
-  );
+  return <LoadingState label={label} variant="inline" />;
 }
 
 function KnowledgeInlineError({ message }: { message: string }) {
-  return (
-    <div className="ai-knowledge-inline-alert" role="alert">
-      <strong>Blocked:</strong> {message}
-    </div>
-  );
+  return <Alert message={message} title="Blocked" variant="danger" />;
 }
 
 export function AiKnowledgeContextPanel({

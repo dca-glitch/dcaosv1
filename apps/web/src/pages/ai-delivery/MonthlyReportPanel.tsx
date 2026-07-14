@@ -1,6 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Modal } from "../../components/ui";
-import { Button, EmptyState, MetricCard, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
+import { Alert, Button, EmptyState, LoadingState, MetricCard, Modal, SectionPanel, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 import {
   MONTHLY_REPORT_WORKFLOW_STEPS,
@@ -222,33 +221,19 @@ type MonthlyReportPanelProps = {
 export type { MonthlyMetricSnapshotFormValues };
 
 function MonthlyReportInlineLoading({ label }: { label: string }) {
-  return (
-    <p className="monthly-report-inline-loading" role="status">
-      <Spinner size="sm" />
-      {label}
-    </p>
-  );
+  return <LoadingState label={label} variant="inline" />;
 }
 
 function MonthlyReportInlineAlert({ message, title }: { message: string; title?: string }) {
-  return (
-    <div className="monthly-report-inline-alert" role="alert">
-      {title ? <strong>{title}: </strong> : null}
-      {message}
-    </div>
-  );
+  return <Alert message={message} title={title} variant="danger" />;
 }
 
 function MonthlyReportInlineSuccess({ message }: { message: string }) {
-  return (
-    <div className="monthly-report-inline-success" role="status">
-      {message}
-    </div>
-  );
+  return <Alert message={message} variant="success" />;
 }
 
 function MonthlyReportInlineNotice({ children }: { children: React.ReactNode }) {
-  return <div className="monthly-report-inline-notice">{children}</div>;
+  return <div className="monthly-report-inline-notice muted-text">{children}</div>;
 }
 
 export function MonthlyReportPanel({

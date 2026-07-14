@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { AiOperationsRunListItem, AiOperationsRunsResponse } from "@dca-os-v1/shared";
-import { ActivityItem, Alert, Badge, Button, PageHeader, RingMetricTile, SectionPanel, Spinner, StatusBadge } from "../../components/ui";
+import { ActivityItem, Alert, Badge, Button, LoadingState, PageHeader, RingMetricTile, SectionPanel, StatusBadge } from "../../components/ui";
 import {
   DEFERRED_GATED_ITEMS,
   PURIVA_DAILY_PATH,
@@ -218,12 +218,7 @@ export function AdminDailyOperationsCockpit() {
         </SectionPanel>
       ) : null}
 
-      {loading ? (
-        <div className="state-panel loading-state-panel" role="status">
-          <Spinner size="md" />
-          <span>Loading daily operations...</span>
-        </div>
-      ) : null}
+      {loading ? <LoadingState label="Loading daily operations..." /> : null}
 
       {!loading && !error ? (
         <div className="agency-ops-stack agency-ops-stack--lg">

@@ -153,16 +153,16 @@
 }
 
 .agency-ops-health__hint {
-  font-size: 10px;
-  color: var(--ds-text-faint, var(--muted));
+  font-size: 11px;
+  color: var(--ds-text-muted, var(--muted));
 }
 
 .agency-ops-guide-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ds-text-faint, var(--muted));
+  color: var(--ds-text-muted, var(--muted));
 }
 
 .agency-ops-project-row {
