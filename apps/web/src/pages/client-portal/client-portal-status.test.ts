@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   containsForbiddenClientStatusLeak,
+  toBriefStatusPresentation,
   isClientPortalStatusVisible,
   toClientBriefStatusLabel,
   toClientPortalStatusLabel
@@ -67,6 +68,23 @@ describe("toClientBriefStatusLabel", () => {
   it("uses calm client language", () => {
     expect(toClientBriefStatusLabel("AWAITING_CLIENT").label).toBe("Awaiting your input");
     expect(toClientBriefStatusLabel("SUBMITTED").label).toBe("Submitted");
+  });
+});
+
+describe("toBriefStatusPresentation", () => {
+  it("shares admin and client brief semantics", () => {
+    expect(toBriefStatusPresentation("AWAITING_CLIENT", "admin")).toEqual({
+      label: "Sent to Client",
+      tone: "info",
+    });
+    expect(toBriefStatusPresentation("AWAITING_CLIENT", "client")).toEqual({
+      label: "Awaiting your input",
+      tone: "info",
+    });
+    expect(toBriefStatusPresentation("DRAFT", "admin")).toEqual({
+      label: "Draft",
+      tone: "warning",
+    });
   });
 });
 

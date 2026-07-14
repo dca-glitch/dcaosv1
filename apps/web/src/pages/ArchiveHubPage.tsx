@@ -6,7 +6,7 @@ import {
   navigateToClientPortalHash,
   type ApiResponse
 } from "./client-portal/client-portal-api";
-import { toClientBriefStatusLabel, toClientPortalStatusLabel } from "./client-portal/client-portal-status";
+import { toBriefStatusPresentation, toClientPortalStatusLabel } from "./client-portal/client-portal-status";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 
@@ -176,28 +176,6 @@ function monthLabel(month: number, year: number): string {
   return `${MONTH_LABELS[month - 1]} ${year}`;
 }
 
-function getBriefStatusBadge(
-  status: string,
-  role: string
-): { label: string; color: "amber" | "blue" | "green" } {
-  if (role === "client") {
-    const client = toClientBriefStatusLabel(status);
-    if (client.tone === "success") return { label: client.label, color: "green" };
-    if (client.tone === "info") return { label: client.label, color: "blue" };
-    return { label: client.label, color: "amber" };
-  }
-  if (status === "DRAFT") return { label: "Draft", color: "amber" };
-  if (status === "SUBMITTED") return { label: "Submitted", color: "green" };
-  if (status === "AWAITING_CLIENT") return { label: "Sent to Client", color: "blue" };
-  return { label: "In progress", color: "amber" };
-}
-
-function briefBadgeVariant(color: "amber" | "blue" | "green"): "success" | "info" | "warning" {
-  if (color === "green") return "success";
-  if (color === "blue") return "info";
-  return "warning";
-}
-
 function formatArticleSummary(brief: BriefRecord): string {
   const parts: string[] = [];
   if (brief.hubCount > 0) parts.push(`Hub ×${brief.hubCount}`);
@@ -292,7 +270,7 @@ function toClientArchiveStatusLabel(status: string | null | undefined): string |
 }
 
 function BriefArchiveRow({ brief }: { brief: BriefRecord }) {
-  const badge = getBriefStatusBadge(brief.status, "client");
+  const badge = toBriefStatusPresentation(brief.status, "client");
 
   return (
     <article className="cf-archive-item">
@@ -300,7 +278,7 @@ function BriefArchiveRow({ brief }: { brief: BriefRecord }) {
         Brief #{formatBriefNumber(brief.briefNumber)} — {formatArchiveDate(brief.createdAt)}
       </span>
       <div className="cf-archive-item-meta">
-        <Badge variant={briefBadgeVariant(badge.color)}>{badge.label}</Badge>
+        <Badge variant={badge.tone}>{badge.label}</Badge>
         <span>{formatArticleSummary(brief)}</span>
       </div>
     </article>

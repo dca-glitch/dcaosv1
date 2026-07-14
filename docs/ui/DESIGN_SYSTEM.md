@@ -1,10 +1,21 @@
 # DCA OS Lite — Design System Specification (BLOK 7-UI)
 
-**Status:** Draft for review — no production implementation yet  
+> **Warning:** This is superseded historical/proposal material. It is not the implemented production design system and must not be used as implementation authority. If this document conflicts with current implementation evidence, the current implementation takes precedence.
+
+**Status:** Superseded historical proposal — no production implementation authority
 **Audience:** Piotr (validation), frontend implementers  
 **Related:** [`DARK_NEBULA_PRODUCT_UI_DIRECTION.md`](./DARK_NEBULA_PRODUCT_UI_DIRECTION.md), [`admin-data-dense-ui.md`](./admin-data-dense-ui.md)
 
 This document defines the **target** visual language for BLOK 7-UI. It refines the approved Dark Nebula direction toward a **compact, operator-first navy + muted teal** palette. HTML/CSS mockups live in [`mockups/`](./mockups/) for side-by-side review before React implementation.
+
+Current authority chain:
+
+1. [`docs/design/DESIGN_SYSTEM_SPEC.md`](../design/DESIGN_SYSTEM_SPEC.md)
+2. [`apps/web/src/design-system/tokens.css`](../../apps/web/src/design-system/tokens.css)
+3. [`apps/web/src/design-system/components/`](../../apps/web/src/design-system/components/)
+4. public compatibility adapters under [`apps/web/src/components/ui/`](../../apps/web/src/components/ui/)
+
+Where this proposal conflicts with current implementation evidence, the implementation evidence wins.
 
 ---
 

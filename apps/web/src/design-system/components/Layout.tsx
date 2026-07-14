@@ -1,5 +1,10 @@
 import React, { ReactNode } from 'react';
 
+/**
+ * Dormant design-system shell primitives.
+ * The running application shell lives under apps/web/src/components/shell/.
+ */
+
 /* ─────────────────────── APP SHELL ─────────────────────── */
 interface AppShellProps {
   sidebar:  ReactNode;
