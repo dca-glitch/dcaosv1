@@ -1,20 +1,22 @@
 # G49 Production Dry-Run / Read-Only Proof
 
-**Status:** Public read-only probe evidence collected (2026-07-09, mega-block pre-production readiness session). This covers §6.2 of this runbook only (public HTTPS probes). It does **not** cover §6.3 (SSH read-only discovery, not performed) or the full §10 PASS criteria's requirement for a recorded owner-approval sentence naming this specific G49 execution block. Does **not** authorize production deploy, VPS mutation, or G50.
+**Status (active):** **G49 formal dry-run PASS** on 2026-07-14 â€” classification `CONDITIONAL_GO`. Owner approval received for this read-only GO/NO-GO review. SSH discovery + public probes + candidate identity completed. Does **not** authorize G50, production mutation, or deploy. See [`../audits/PRODUCTION_DEPLOY_GO_NO_GO_REVIEW_2026-07-14.md`](../audits/PRODUCTION_DEPLOY_GO_NO_GO_REVIEW_2026-07-14.md).
 
-**Gate:** G49 — Production dry-run / read-only proof  
-**Date prepared:** 2026-07-09  
-**Date public probes executed:** 2026-07-09 (mega-block session)
-**Branch baseline:** `main` at `f6e545b` (repo had uncommitted doc changes at mega-block start — see §16)
+**Historical note:** Public Â§6.2 probes were first collected 2026-07-09 without full formal closure; that record remains below and is not rewritten.
+
+**Gate:** G49 â€” Production dry-run / read-only proof
+**Date prepared:** 2026-07-09
+**Date formal execution:** 2026-07-14
+**Branch baseline (formal):** `main` at `01b7e04` Â· candidate runtime `c5e03eb` Â· production runtime `57f9c52`
 **Source of truth:** [`docs/STATUS.md`](../STATUS.md)
 
 Related:
 
-- [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md) — production safety blockers and gate sequence
-- [`STAGING_READINESS.md`](./STAGING_READINESS.md) — staging proven; does not authorize production
-- [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](./G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) — environment proof approval pattern
-- [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) — Puriva Launch blockers (separate gate)
-- [`../operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md) — operator entry point
+- [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md) â€” production safety blockers and gate sequence
+- [`STAGING_READINESS.md`](./STAGING_READINESS.md) â€” staging proven; does not authorize production
+- [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](./G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) â€” environment proof approval pattern
+- [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) â€” Puriva Launch blockers (separate gate)
+- [`../operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md) â€” operator entry point
 
 ---
 
@@ -22,14 +24,16 @@ Related:
 
 | Item | State |
 |------|--------|
-| G49 public read-only probes (§6.2) executed | **YES** — 2026-07-09 |
-| G49 full gate PASS (all §10 criteria incl. owner approval sentence) | **NO** — probe evidence collected; formal approval sentence for this exact block not separately recorded |
-| Authorizes G50 production deploy | **NO** |
+| G49 public read-only probes (Â§6.2) executed | **YES** â€” 2026-07-09 (historical) + **reconfirmed 2026-07-14** |
+| G49 SSH read-only discovery (Â§6.3) | **YES** â€” 2026-07-14 formal gate |
+| G49 full gate PASS (incl. owner approval for this block) | **YES** â€” 2026-07-14 Â· result `CONDITIONAL_GO` |
+| Authorizes G50 production deploy | **NO** â€” separate owner sentence naming `c5e03eb` required |
 | Authorizes production mutation | **NO** |
-| Production readiness | **NO** |
+| Production readiness | **CONDITIONAL** â€” G50 may be requested; deploy still frozen until G50 approval + preconditions |
 | G54 HSTS/proxy baseline | **PASS** |
-| G50 production deploy | **Not executed** — frozen/deferred |
-| Puriva Launch | **Blocked** — separate live proof gates |
+| G50 production deploy | **Not executed** |
+| Puriva Launch | **Blocked** â€” separate live proof gates |
+| Production candidate | **`c5e03eb`** (exact staging-proven runtime; not `01b7e04`) |
 
 ### 1.1 Public probe evidence (2026-07-09)
 
@@ -42,9 +46,9 @@ Collected via `Invoke-WebRequest` from local PowerShell, read-only, no mutation:
 | `https://system.digitalcubeagency.net` | 200 | `max-age=31536000; includeSubDomains` | n/a (root) |
 | `https://system.digitalcubeagency.net/api/v1/health` | 200 | present | `ready` |
 
-All four §6.2 probes PASS. §6.3 SSH read-only discovery was **not** performed (requires separate explicit SSH read-only approval). No production or staging mutation occurred while collecting this evidence.
+All four Â§6.2 probes PASS. Â§6.3 SSH read-only discovery was **not** performed (requires separate explicit SSH read-only approval). No production or staging mutation occurred while collecting this evidence.
 
-### 1.2 Public probe evidence re-run (2026-07-09, Subagent B — G49 formal closure documentation task)
+### 1.2 Public probe evidence re-run (2026-07-09, Subagent B â€” G49 formal closure documentation task)
 
 Collected via `Invoke-WebRequest` from local Windows PowerShell, read-only, no mutation. Log: `$env:TEMP\dca-subagent-b-g49.log`.
 
@@ -55,7 +59,7 @@ Collected via `Invoke-WebRequest` from local Windows PowerShell, read-only, no m
 | `https://system.digitalcubeagency.net` | 200 | `max-age=31536000; includeSubDomains` | n/a (root) |
 | `https://system.digitalcubeagency.net/api/v1/health` | 200 | present | `ready` |
 
-All four §6.2 probes PASS again. This confirms §1.1 evidence remains current as of 2026-07-09. **This re-run does not, by itself, satisfy §10 item 1** (owner-approval sentence for a specific G49 execution block) — that sentence still has not been separately recorded. Formal G49 gate closure therefore remains **NOT complete**. G50 remains **NOT executed / NOT authorized**. Production readiness remains **NO**. No SSH was used. No production or staging mutation occurred.
+All four Â§6.2 probes PASS again. This confirms Â§1.1 evidence remains current as of 2026-07-09. **This re-run does not, by itself, satisfy Â§10 item 1** (owner-approval sentence for a specific G49 execution block) â€” that sentence still has not been separately recorded. Formal G49 gate closure therefore remains **NOT complete**. G50 remains **NOT executed / NOT authorized**. Production readiness remains **NO**. No SSH was used. No production or staging mutation occurred.
 
 ---
 
@@ -63,7 +67,7 @@ All four §6.2 probes PASS again. This confirms §1.1 evidence remains current a
 
 G49 is a **read-only production dry-run / proof gate**. It collects evidence that production and staging remain healthy, separated, and unchanged **without** deploying code, mutating containers, reloading Caddy, running migrations, or changing env/secrets.
 
-G49 answers: *“Is it safe to **consider** a future G50 production deploy decision?”* — not *“Deploy now.”*
+G49 answers: *â€œIs it safe to **consider** a future G50 production deploy decision?â€* â€” not *â€œDeploy now.â€*
 
 G49 does **not** clear all G53 production blockers. It proves runtime health and documents the pre-deploy baseline. Remaining blockers (rollback evidence, env separation proof, integration truth, tenant boundary re-verification, etc.) must still be resolved or owner-accepted before G50.
 
@@ -94,7 +98,7 @@ G49 may perform **read-only** actions only:
 - Header inspection: HTTP status, `Strict-Transport-Security`, `Server`, health JSON body
 - Log capture to `$env:TEMP` and review in Notepad
 - Docs-only closeout **after** G49 PASS and owner approval (separate commit block)
-- Optional SSH **read-only discovery** — only in a later owner-approved G49 execution block (see §9)
+- Optional SSH **read-only discovery** â€” only in a later owner-approved G49 execution block (see Â§9)
 
 ---
 
@@ -137,25 +141,25 @@ G49 must **not**:
 Only in a separate G49 execution block with explicit SSH read-only approval:
 
 - Host identity (`hostname`, `uname -a` read-only)
-- Container list (`docker ps` — no recreate)
+- Container list (`docker ps` â€” no recreate)
 - Compose file paths (existence only)
 - Active Caddyfile path (`/opt/dca/caddy/Caddyfile`)
 - G54 backup existence (`/opt/dca/backups/Caddyfile.G54-HSTS.*.bak`)
 - Production/staging port bindings (read-only `docker port` / inspect)
 - **No writes, no restarts, no reloads**
 
-### 6.4 G53 blocker checklist (document status — not all cleared by G49)
+### 6.4 G53 blocker checklist (document status â€” not all cleared by G49)
 
-Record pass/fail/unknown for each §4.1 blocker in [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md):
+Record pass/fail/unknown for each Â§4.1 blocker in [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md):
 
-1. HSTS/proxy — **PASS** (G54)
-2. Rollback/restore evidence — not proven
-3. Env/secrets separation — not production-proven
-4. Credential storage — not production-proven
-5. Tenant/client boundary — local/staging proven; re-verify on target
-6. Integration truth matrix — config-shape only locally
-7. Controlled dry-run — **this gate (G49)**
-8. Gate sequence — G49 before G50
+1. HSTS/proxy â€” **PASS** (G54)
+2. Rollback/restore evidence â€” not proven
+3. Env/secrets separation â€” not production-proven
+4. Credential storage â€” not production-proven
+5. Tenant/client boundary â€” local/staging proven; re-verify on target
+6. Integration truth matrix â€” config-shape only locally
+7. Controlled dry-run â€” **this gate (G49)**
+8. Gate sequence â€” G49 before G50
 
 ---
 
@@ -223,12 +227,12 @@ notepad $log
 
 ---
 
-## 9. Optional SSH read-only discovery commands — owner approval required
+## 9. Optional SSH read-only discovery commands â€” owner approval required
 
 **Do not run in planning blocks.** Only when owner explicitly approves G49 execution with SSH read-only scope:
 
 ```text
-# Read-only examples — no writes, no restarts
+# Read-only examples â€” no writes, no restarts
 hostname
 docker ps --format 'table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}'
 test -f /opt/dca/caddy/Caddyfile && echo CADDYFILE_EXISTS
@@ -251,7 +255,7 @@ G49 **PASS** requires all of:
 6. Both health endpoints report database **ready**
 7. No production mutation occurred during G49
 8. Evidence logs saved to `$env:TEMP`
-9. G53 §4.1 blockers documented with current status (G49 does not require all blockers closed)
+9. G53 Â§4.1 blockers documented with current status (G49 does not require all blockers closed)
 
 ---
 
@@ -263,7 +267,7 @@ Stop immediately and do **not** proceed to G50 or any deploy if:
 - HSTS missing on staging or production root
 - Health endpoint reports database not ready
 - Evidence contradicts docs (e.g. unexpected deploy, dirty tree without approval)
-- Any forbidden action was required to “fix” the proof
+- Any forbidden action was required to â€œfixâ€ the proof
 - SSH was used without owner read-only approval
 - Operator cannot confirm production was not mutated during the block
 
@@ -282,7 +286,7 @@ Stop immediately and do **not** proceed to G50 or any deploy if:
 
 1. G49 PASS with evidence archived
 2. Explicit owner approval for G50
-3. Remaining G53 §4.1 blockers resolved or owner-accepted (rollback evidence, env separation, etc.)
+3. Remaining G53 Â§4.1 blockers resolved or owner-accepted (rollback evidence, env separation, etc.)
 4. Confirmed artifact/commit for promotion
 5. Backup/rollback plan evidenced before mutation
 
@@ -294,7 +298,7 @@ Stop immediately and do **not** proceed to G50 or any deploy if:
 
 | Gate | Scope |
 |------|--------|
-| **DCA OS Production v1** (G49 → G50) | Deploy safety, infrastructure, env separation, dry-run proof |
+| **DCA OS Production v1** (G49 â†’ G50) | Deploy safety, infrastructure, env separation, dry-run proof |
 | **Puriva Client-Service Launch** | Live integration proofs + product workflow gates |
 
 Clearing G49 (or even G50) does **not** authorize Puriva Launch. Puriva remains **blocked** until live proof gates pass: R2, GA/GSC, live AI, image generation, transactional notifications, and product workflow gates. See [`deferred-scope-register.md`](../operator/deferred-scope-register.md).
@@ -364,21 +368,21 @@ Log paths:
   -
 ```
 
-Docs-only closeout (if PASS): update [`docs/STATUS.md`](../STATUS.md) § G49, operator runbook, and this file §1 Status — only after owner approves commit.
+Docs-only closeout (if PASS): update [`docs/STATUS.md`](../STATUS.md) Â§ G49, operator runbook, and this file Â§1 Status â€” only after owner approves commit.
 
 ---
 
 ## Historical context
 
-- **G48:** Production readiness planning PASS — production deploy ready NO.
-- **G53:** Production safety plan approved — planning only.
-- **G54:** HSTS/proxy fix PASS — blocker closed.
-- **G49:** Public read-only probe evidence collected 2026-07-09 (§1.1); re-confirmed 2026-07-09 by Subagent B (§1.2). Full gate closure (owner approval sentence, §6.3 SSH discovery if desired) remains pending. Production readiness remains NO. G50 remains not executed.
+- **G48:** Production readiness planning PASS â€” production deploy ready NO.
+- **G53:** Production safety plan approved â€” planning only.
+- **G54:** HSTS/proxy fix PASS â€” blocker closed.
+- **G49:** Public read-only probe evidence collected 2026-07-09 (Â§1.1); re-confirmed 2026-07-09 by Subagent B (Â§1.2). Full gate closure (owner approval sentence, Â§6.3 SSH discovery if desired) remains pending. Production readiness remains NO. G50 remains not executed.
 
 ## 16. Mega-block pre-production readiness session note (2026-07-09)
 
-As part of a documentation/audit mega-block (2026-07-09), the four §6.2 public probes were re-run and recorded in §1.1. **Repo was dirty at mega-block start** (uncommitted `G49` + production safety docs from a prior partial session); no runtime mutation occurred during probe collection. This mega-block produced/aligned production safety pack docs and readiness audits. No commit, push, deploy, VPS mutation, migration, or secret access occurred during probe collection. This session did not obtain or record the specific owner-approval sentence required by §10 item 1 for a full G49 gate PASS; treat §1.1 as evidence for a future formal G49 closure, not as G49 closure itself.
+As part of a documentation/audit mega-block (2026-07-09), the four Â§6.2 public probes were re-run and recorded in Â§1.1. **Repo was dirty at mega-block start** (uncommitted `G49` + production safety docs from a prior partial session); no runtime mutation occurred during probe collection. This mega-block produced/aligned production safety pack docs and readiness audits. No commit, push, deploy, VPS mutation, migration, or secret access occurred during probe collection. This session did not obtain or record the specific owner-approval sentence required by Â§10 item 1 for a full G49 gate PASS; treat Â§1.1 as evidence for a future formal G49 closure, not as G49 closure itself.
 
-## 17. Subagent B — G49 formal closure documentation task (2026-07-09)
+## 17. Subagent B â€” G49 formal closure documentation task (2026-07-09)
 
-Subagent B was scoped to docs-only closure documentation plus a fresh public read-only probe re-run (see §1.2). Task scope: Windows PowerShell public HTTPS probes only, no SSH, no repo code changes, no commit. Result: all four §6.2 probes PASS again (HTTP 200, HSTS present, DB ready on both health endpoints). **Formal G49 gate closure (§10 item 1 owner-approval sentence) is still NOT recorded.** G50 remains **NOT EXECUTED / NOT AUTHORIZED**. Production readiness remains **NO**. No commit was made by Subagent B; no environment mutation occurred.
+Subagent B was scoped to docs-only closure documentation plus a fresh public read-only probe re-run (see Â§1.2). Task scope: Windows PowerShell public HTTPS probes only, no SSH, no repo code changes, no commit. Result: all four Â§6.2 probes PASS again (HTTP 200, HSTS present, DB ready on both health endpoints). **Formal G49 gate closure (Â§10 item 1 owner-approval sentence) is still NOT recorded.** G50 remains **NOT EXECUTED / NOT AUTHORIZED**. Production readiness remains **NO**. No commit was made by Subagent B; no environment mutation occurred.
