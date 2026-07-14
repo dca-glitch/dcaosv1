@@ -130,6 +130,17 @@ async function main() {
     }, token);
 
     await page.goto(`${webBaseUrl}/#/ai-market-intelligence`, { waitUntil: "domcontentloaded" });
+    // Staging/first-run workspaces redirect authenticated managers to #/setup until company
+    // profile + first active client exist. Detect that gate explicitly (not a silent timeout).
+    await page.waitForTimeout(1500);
+    const landedOnSetup =
+      page.url().includes("#/setup") ||
+      (await page.locator("#first-run-setup-title").count()) > 0;
+    if (landedOnSetup) {
+      throw new Error(
+        "Authenticated browser landed on first-run setup (#/setup). Complete company profile and first client on the target environment before MI browser route proof, or use a workspace that already finished setup."
+      );
+    }
     await page.locator("#market-intelligence-title").waitFor({ state: "visible", timeout: 20000 });
     record("mi page header renders", true, "#/ai-market-intelligence");
 

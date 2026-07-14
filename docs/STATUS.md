@@ -1,7 +1,7 @@
 # DCA OS Lite — Status (Source of Truth)
 
-**Last updated:** 2026-07-14 (Local tip: Wave 4 state/table consolidation COMPLETE at `e0ddcee`; production clean-state reset narrative from 2026-07-13 unchanged)
-**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` / image `bd61d5deb331` · web `index-DX4AMrb2.js` · **local/main tip:** `e0ddcee263a31d3698894b6a1190e42ab16fae9d` (Waves 2–4 UI landed; **not** claimed as production-redeployed)
+**Last updated:** 2026-07-14 (Staging first-run company profile completed; authenticated browser proofs PASS on `c5e03eb`; production clean-state reset narrative from 2026-07-13 unchanged)
+**Production runtime:** `57f9c524118a5bf6c93270626cef7c8bd52d140b` / image `bd61d5deb331` · **local/main tip + staging runtime:** `c5e03eb52f882a5d6f9e8f92fc1794a91f3289c5` (Waves 2–4 UI + final local quality fixes on staging; **not** claimed as production-redeployed)
 **Production artifact:** `/opt/dca/production-artifacts/57f9c52` (web refreshed in place earlier; no redeploy on resume)
 **Production migration catch-up:** 50 finished / 0 unfinished (unchanged by clean reset)
 **Production clients:** 0 active (acceptance Puriva + Bali placeholder removed); owner adds first real client via `#/setup`
@@ -55,7 +55,7 @@
 | **PRE-STAGING local closure** | **PASS (local/no-live only)** — see [`PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md). Historical; superseded by production deploy for env readiness |
 | **G69 merge** | **DONE** — G57–G68 fast-forward merged to `main`; final commit `64bfd06` |
 | Production readiness | **CONTROLLED LIVE TESTING READY** — runtime `57f9c52` deployed; external providers owner-gated; Puriva full launch NOT claimed |
-| Next gate | **Local release candidate verified** — next controlled action is staging self-check / controlled staging deploy (owner-gated). Production: Turnstile re-enable + separately approved external-provider live proofs remain owner-gated. **Live GA4/GSC: WITHDRAWN — not next gate.** |
+| Next gate | **Post-deploy staging closeout commit/push** — staging `#/setup` company profile completed on 2026-07-14; authenticated admin shell + representative routes + MI Done/Pending runtime + MI operator / daily-cockpit browser smokes PASS on `c5e03eb`. Client-shell proof NOT_AVAILABLE (no staging client harness account). Turnstile / external-provider proofs remain separately owner-gated. Production remains frozen. **Live GA4/GSC: WITHDRAWN — not next gate.** |
 | PRE-STAGING Lanes 14–15 | **Docs closeout** — stale-claim sweep + operator runbook refresh; no live proof; Puriva Launch **BLOCKED** |
 | G469-G708 final integration | **KEEP** — 20 lanes reconciled; local/no-IO foundations only; live R2, live email, live WordPress, live image, staging/prod live proofs, full notification E2E launch proof, trusted `actualCostUsd` ingestion, commit, push, deploy remain blocked (in-app notification persistence/UI foundation now exists — see notification rows below). **Live GA4/GSC: WITHDRAWN.** |
 | G229-G468 final integration | **KEEP** — 12 lanes reconciled; local/no-IO foundations only; superseded as latest baseline by G469-G708 |

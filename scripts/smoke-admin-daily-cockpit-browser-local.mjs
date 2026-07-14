@@ -79,6 +79,15 @@ async function main() {
     }, adminToken);
 
     await page.goto(`${webBaseUrl}/#/admin-daily-cockpit`, { waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1500);
+    const landedOnSetup =
+      page.url().includes("#/setup") ||
+      (await page.locator("#first-run-setup-title").count()) > 0;
+    if (landedOnSetup) {
+      throw new Error(
+        "Authenticated browser landed on first-run setup (#/setup). Complete company profile and first client on the target environment before cockpit browser route proof, or use a workspace that already finished setup."
+      );
+    }
     await page.getByRole("heading", { name: "Daily Operations Cockpit" }).waitFor({ state: "visible", timeout: 15000 });
     record("cockpit shell loads", true, "heading visible");
 
