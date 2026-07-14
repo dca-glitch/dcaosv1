@@ -48,23 +48,17 @@ Stop and do not proceed (or roll back per `PRODUCTION_ROLLBACK.md`) if any of th
 ## 5. Roles
 
 | Role | Responsibility |
-|------|-----------------|
-| Owner | Approves G49/G50 execution blocks; approves commit/push; makes the STOP/GO call |
-| Operator/agent | Executes only the explicitly approved, bounded step; documents evidence; never improvises beyond scope |
-
-## 6. Current status snapshot
-
-### Active (2026-07-14 G49 formal review)
+|------|---------### Active (2026-07-14 G50 PASS)
 
 | Item | Status |
 |------|--------|
-| Local/main tip | `01b7e04` |
-| Staging-proven G50 candidate | `c5e03eb` |
-| Current production runtime | `57f9c52` / image `bd61d5deb331` |
-| G49 | **PASS** Â· classification `CONDITIONAL_GO` Â· [`PRODUCTION_DEPLOY_GO_NO_GO_REVIEW_2026-07-14.md`](../audits/PRODUCTION_DEPLOY_GO_NO_GO_REVIEW_2026-07-14.md) |
-| G50 | Not executed Â· not authorized Â· owner sentence naming `c5e03eb` required |
-| G50 preconditions | Fresh prod DB/web/compose backups; migration **SKIP**; recreate API only; Caddy untouched by default |
-| Production deploy authorized | **no** |
+| Local/main tip | `e5eb08f` |
+| Production runtime | `c5e03eb` / `app-dcaosv1-api:c5e03eb` (`5a3515acfc05`) |
+| Production artifact | `/opt/dca/production-artifacts/c5e03eb` |
+| Rollback baseline | `57f9c52` / `app-dcaosv1-api:57f9c52` |
+| G49 | **PASS** (2026-07-14) |
+| G50 | **PASS** + post-deploy proof **PARTIAL** (owner auth harness not_available) - [`G50_POST_DEPLOY_PRODUCTION_PROOF_C5E03EB_RESULT_2026-07-14.md`](../audits/G50_POST_DEPLOY_PRODUCTION_PROOF_C5E03EB_RESULT_2026-07-14.md) |
+| Production first-run | `CLEAN_FIRST_RUN_OWNER_SETUP`; 0 active clients; setup not mutated |
 | GA4/GSC | **WITHDRAWN** |
 | In-system notification E2E | **DEFERRED_NON_BLOCKING** |
 | Puriva Launch | Separate / blocked |
@@ -72,11 +66,17 @@ Stop and do not proceed (or roll back per `PRODUCTION_ROLLBACK.md`) if any of th
 ### Historical snapshot (2026-07-11 â€” retained)
 
 | Item | Status |
+|------|### Active (2026-07-14 G50 PASS)
+
+| Item | Status |
 |------|--------|
-| Production readiness | **NO** â€” production remains frozen for unrelated deployment |
-| G49 | Public read-only proof collected (see `G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md` Â§1); formal gate closure sentence still required *(superseded for active truth by 2026-07-14 formal PASS)* |
-| G50 | Not executed |
-| Production PostgreSQL/API credential rotation Phase A | **RECOVERED AFTER FAILURE** â€” PostgreSQL password and `DATABASE_URL` rotated; production API recreated via `/opt/dca/apps/dcaosv1/app/docker-compose.production-api-only.yml`; production and staging health HTTP 200; `dcaosv1-postgres` and `dca-caddy` unchanged |
-| Turnstile / R2 credential rotation | **OPEN DEFERRED SECURITY WORK** â€” owner explicitly deferred; requires separate Phase B/C/D gates |
-| Rollback evidence | Production DB dump + env + dist backups taken 2026-07-11; emergency recovery executed successfully; old unproven env candidates were **not** used as rollback source |
-| Puriva Launch | Blocked â€” separate gate, see `PURIVA_LAUNCH_GATE.md` |
+| Local/main tip | `e5eb08f` |
+| Production runtime | `c5e03eb` / `app-dcaosv1-api:c5e03eb` (`5a3515acfc05`) |
+| Production artifact | `/opt/dca/production-artifacts/c5e03eb` |
+| Rollback baseline | `57f9c52` / `app-dcaosv1-api:57f9c52` |
+| G49 | **PASS** (2026-07-14) |
+| G50 | **PASS** + post-deploy proof **PARTIAL** (owner auth harness not_available) - [`G50_POST_DEPLOY_PRODUCTION_PROOF_C5E03EB_RESULT_2026-07-14.md`](../audits/G50_POST_DEPLOY_PRODUCTION_PROOF_C5E03EB_RESULT_2026-07-14.md) |
+| Production first-run | `CLEAN_FIRST_RUN_OWNER_SETUP`; 0 active clients; setup not mutated |
+| GA4/GSC | **WITHDRAWN** |
+| In-system notification E2E | **DEFERRED_NON_BLOCKING** |
+| Puriva Launch | Separate / blocked |

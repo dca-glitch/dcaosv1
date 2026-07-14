@@ -1,10 +1,11 @@
 # Production Deployment Procedure (G50 Reference)
 
-**Status:** Planning/reference document only. Does **not** authorize a production deploy. G50 has **not** been executed.
+**Active status (2026-07-14):** G50 production deploy of `c5e03eb` **PASS**. Runtime artifact `/opt/dca/production-artifacts/c5e03eb`. Image `app-dcaosv1-api:c5e03eb` / `latest`. Migration **SKIP**. Rollback baseline `57f9c52`. Evidence: [`../audits/G50_PRODUCTION_DEPLOY_C5E03EB_RESULT_2026-07-14.md`](../audits/G50_PRODUCTION_DEPLOY_C5E03EB_RESULT_2026-07-14.md). Post-deploy proof 2026-07-14: **PARTIAL** (auth harness not_available). See `../audits/G50_POST_DEPLOY_PRODUCTION_PROOF_C5E03EB_RESULT_2026-07-14.md`.
 
-**Source of truth:** [`docs/STATUS.md`](../STATUS.md) · [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md) · [`G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md`](./G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md)
+**Historical note:** This file began as a planning/reference document. Sections below retain the original procedure reference and are not rewritten.
 
 ---
+
 
 ## 1. Preconditions (all required before G50)
 

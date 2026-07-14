@@ -1,6 +1,6 @@
 # Production Rollback Procedure (Reference)
 
-**Status:** Planning/reference document only. No production rollback has been executed because no production deploy (G50) has been executed. This document exists to close the "rollback/restore evidence not proven" blocker from [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md) §4.1 item 2 with a concrete procedure, not with live evidence.
+**Status:** Procedure reference. After G50 PASS (2026-07-14), primary production rollback baseline is artifact `/opt/dca/production-artifacts/57f9c52` and image `app-dcaosv1-api:57f9c52`. Fresh pre-G50 backups under `/opt/dca/backups/*before-c5e03eb-20260714T155227Z*`. No rollback was required during G50. Post-deploy proof confirmed rollback artifact/image still retained (2026-07-14).
 
 **Workstream 1 Point 3 (2026-07-12):** Staging/local compatibility verdict is `ROLLBACK READY WITH CONDITIONS`. Known-good staging rollback target remains artifact `1b8d00d`. Schema delta `1b8d00d..250e958`: none. Rollback **rehearsal is not executed** and remains separately gated. No SHA-tagged retained staging API image is claimed until the staging safeguard phase tags `staging-dcaosv1-staging-api:1b8d00d`. Production remains FROZEN.
 
