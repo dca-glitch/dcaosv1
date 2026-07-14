@@ -1,9 +1,10 @@
-# WAVE 3 â€” Visual-System Convergence Result
+# WAVE 3 - Visual-System Convergence Result
 
 **Gate:** `WAVE_3_VISUAL_SYSTEM_CONVERGENCE`
 **Date:** 2026-07-14
 **Baseline HEAD / origin/main:** `1194026520233799be6c379a35448c777aeb7851`
-**Commit / push / staging / production:** none (implementation left unstaged for owner review)
+**Landed tip (post-commit):** `284915aba7aae45dcb0a61fd801fd2a652c9eeeb`
+**Commit / push / staging / production:** implementation committed as `284915a` on `main` after owner review
 
 ---
 
@@ -39,7 +40,7 @@ DOC_DRIFT_ITEMS=5
 
 - `status` drives tone, token style, and `data-status`
 - Known keys use canonical `STATUS[key].label`
-- Unknown â†’ `data-status="unknown"` + title-cased fallback + neutral visual
+- Unknown -> `data-status="unknown"` + title-cased fallback + neutral visual
 - Optional `displayLabel` overrides **text only** (never tone)
 - `className` preserved
 - No local status color literals
@@ -62,16 +63,16 @@ DOC_DRIFT_ITEMS=5
 
 | Surface | Change |
 |---------|--------|
-| BriefPage / BriefPanelPage | Lifecycle `BriefStatusBadge` â†’ `StatusBadge` + presentation `displayLabel` |
-| ArchiveHub briefs + articles | Badgeâ†’StatusBadge; article tone from raw status + archive label |
-| ClientDashboard recent briefs | Badgeâ†’StatusBadge |
+| BriefPage / BriefPanelPage | Lifecycle `BriefStatusBadge` -> `StatusBadge` + presentation `displayLabel` |
+| ArchiveHub briefs + articles | Badge -> StatusBadge; article tone from raw status + archive label |
+| ClientDashboard recent briefs | Badge -> StatusBadge |
 | ArticleApprovalEditor image status | Raw approval status + client display label |
 | AI Delivery deliverable / draft / plan / image modals | Raw enum `status` + formatter `displayLabel` |
 | MonthlyReportPanel shell status | Raw report status + shell/format label |
 | TasksPage | Raw task status (+ archived) + formatted label |
-| AiOperationsPage context chip | Lifecycle StatusBadge misuse â†’ generic `Badge` (metadata) |
-| client-portal-status / adminDailyOperationsModel | Import `design-system/status` â†’ `components/ui` |
-| Import guard | New rule `ds-status-registry`; self-tests 10â€“12 |
+| AiOperationsPage context chip | Lifecycle StatusBadge misuse -> generic `Badge` (metadata) |
+| client-portal-status / adminDailyOperationsModel | Import `design-system/status` -> `components/ui` |
+| Import guard | New rule `ds-status-registry`; self-tests 10-12 |
 
 ---
 
@@ -79,7 +80,7 @@ DOC_DRIFT_ITEMS=5
 
 | Site | Why |
 |------|-----|
-| AdminDailyOperationsCockpit Waiting / Unknown / Deferred | Non-canonical / gating chips â€” generic Badge |
+| AdminDailyOperationsCockpit Waiting / Unknown / Deferred | Non-canonical / gating chips - generic Badge |
 | Projects / Invoices / Bills / Clients health | Already pass enums into StatusBadge |
 | Client portal delivery rows | Already `ClientPortalStatusBadge` |
 | Category/metadata StatusBadge (ClientHub OWN_DOMAIN, MI findingCategory) | Opposite-direction polish; not lifecycle defects |
@@ -100,8 +101,8 @@ DOC_DRIFT_ITEMS=5
 
 ## 7. Docs synced (`IMPLEMENTED_IN_WAVE_3`)
 
-- `DESIGN_SYSTEM_SPEC.md`: `T.muted` / archived tokens â†’ `#7F89A8` + archived rgba; Badge vs StatusBadge + `displayLabel`; proof-state boundary
-- `CANONICAL_COMPONENT_SYSTEM.md`: `ds-status-registry` guard; Visual Wave 3 vs empty/loading clone â€œWave 3â€ naming
+- `DESIGN_SYSTEM_SPEC.md`: `T.muted` / archived tokens -> `#7F89A8` + archived rgba; Badge vs StatusBadge + `displayLabel`; proof-state boundary
+- `CANONICAL_COMPONENT_SYSTEM.md`: `ds-status-registry` guard; Visual Wave 3 vs empty/loading clone "Wave 3" naming
 
 ---
 
@@ -129,7 +130,7 @@ DOC_DRIFT_ITEMS=5
 | `npm.cmd run validate` | PASS |
 | `smoke:client-portal:browser` | PASS |
 | `smoke:client-portal:empty-archive:browser` | PASS |
-| `smoke:monthly-report:browser` | PASS (after Withdrawn/Deferred â†’ Badge fix) |
+| `smoke:monthly-report:browser` | PASS (after Withdrawn/Deferred -> Badge fix) |
 | `smoke:ai-operations:browser` | PASS |
 | `smoke:client-safe-ai-visibility:local` | PASS (admin boundary; tester email skip) |
 | RUNTIME_VERIFICATION_BLOCKED | no (local API/web started for smokes) |
@@ -138,8 +139,6 @@ DOC_DRIFT_ITEMS=5
 
 ## 10. Safety
 
-- No commit / push / staging / production
+- Staging / production not mutated by Wave 3
 - Owner untracked files preserved (SHA-256 verified unchanged)
-- HEAD remains `1194026520233799be6c379a35448c777aeb7851`
-- Wave 3 tracked changes + new files left **unstaged** for owner review
-- New Wave 3 untracked: `ClientPortalStatusBadge.test.tsx`, `WAVE_3_VISUAL_SYSTEM_CONVERGENCE_RESULT_2026-07-14.md`
+- Implementation committed later as `284915a`

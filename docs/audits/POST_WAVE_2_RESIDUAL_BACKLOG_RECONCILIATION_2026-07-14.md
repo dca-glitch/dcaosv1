@@ -20,7 +20,7 @@ After reconciling authoritative control docs, Wave 2 results, and older FULL_AZ 
 - Residual weight is **not** repeating Wave 2. It is: (1) staging refresh of tip `95a9c98`, (2) product/IA work misnamed in older plans as "Wave 2 modal IA", (3) deferred non-blocking UI items, (4) production-only security ops (Turnstile/R2 rotation, Turnstile re-enable), and (5) owner decisions.
 - Google live GA4/GSC and paid ads are **WITHDRAWN** or far-future. In-system notification E2E is **DEFERRED_NON_BLOCKING** (email remains priority).
 - There is **no material local blocker** that prevents an owner-approved controlled staging deploy of current main for Wave 2 verification.
-- **Recommended next gate:** `CONTROLLED_STAGING_DEPLOY_GATE` (prove `95a9c98` on staging with self-check + proof-first guards). Production remains frozen for further unrelated mutation.
+- **Recommended next gate (superseded 2026-07-14):** After Waves 3–4 landed at tip `e0ddcee`, next owner action is `CONTROLLED_STAGING_DEPLOY_SELF_CHECK` (prove `e0ddcee` on staging). Production remains frozen for further unrelated mutation. Historical Wave-2-era phrasing that named tip `95a9c98` is superseded.
 
 **Naming collision (critical):** Post-production remediation "Wave 2" meant AI Delivery modal / workflow IA (UX-01). Repo Wave 2 meant one visual language. UX-01 remains open and must not be described as unfinished visual Wave 2.
 

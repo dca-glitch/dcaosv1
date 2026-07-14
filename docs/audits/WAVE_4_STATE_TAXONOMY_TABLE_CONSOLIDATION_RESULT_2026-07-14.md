@@ -1,9 +1,10 @@
-# WAVE 4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â State Taxonomy and Table Consolidation Result
+# WAVE 4 - State Taxonomy and Table Consolidation Result
 
 **Gate:** `WAVE_4_STATE_TAXONOMY_TABLE_CONSOLIDATION`
 **Date:** 2026-07-14
 **Baseline HEAD / origin/main:** `284915aba7aae45dcb0a61fd801fd2a652c9eeeb`
-**Commit / push / staging / production:** none (implementation left unstaged)
+**Landed tip (post-commit):** `e0ddcee263a31d3698894b6a1190e42ab16fae9d`
+**Commit / push / staging / production:** implementation committed as `e0ddcee` on `main` after owner review (this report content predates that commit textually)
 
 ---
 
@@ -12,13 +13,13 @@
 | Check | Result |
 |-------|--------|
 | Branch | `main` |
-| HEAD | `284915aba7aae45dcb0a61fd801fd2a652c9eeeb` |
-| origin/main | same |
+| HEAD (at wave start) | `284915aba7aae45dcb0a61fd801fd2a652c9eeeb` |
+| origin/main | same at wave start |
 | Tracked tree at start | clean |
 | Staged | 0 |
-| Latest tip | `284915a feat(ui): complete Wave 3 visual-system convergence` |
+| Latest tip at wave start | `284915a feat(ui): complete Wave 3 visual-system convergence` |
 
-Owner-untracked inventory (11 paths) SHA-256 recorded; preserved end-to-end.
+Owner-untracked inventory (11 paths) SHA-256 recorded; preserved end-to-end during wave implementation.
 
 ---
 
@@ -43,7 +44,7 @@ CONFIRMED_TABLE_A11Y_DEFECTS=6
 - High-traffic CRM/finance LoadingState / EmptyState / ErrorState triad
 - Wave 2 AI Delivery thin Loading/Alert wrappers
 - Import allowlist **0**; pages do not import private DS Table
-- Visual Wave 3 StatusBadge closed ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â not reopened
+- Visual Wave 3 StatusBadge closed - not reopened
 - Finance-lite overflow restore already mitigated Invoices/Bills/Credit Notes clip partially
 
 ---
@@ -57,15 +58,15 @@ CONFIRMED_TABLE_A11Y_DEFECTS=6
 | 3 | DS Table: labeled scrollport `role="region"` + `tabIndex={0}` |
 | 4 | DS TablePagination live region includes range + page |
 | 5 | EmptyState: message-only inline; `data-empty-kind` contract |
-| 6 | `AiDeliveryInlineEmpty` ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ EmptyState adapter (exact copy preserved) |
+| 6 | `AiDeliveryInlineEmpty` -> EmptyState adapter (exact copy preserved) |
 | 7 | Projects / Tasks / Bills filtered vs first-use empty branching |
 | 8 | ClientAccessPanel filtered vs first-use empty |
-| 9 | FirstRunSetupPage EmptyÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ErrorState for setup errors |
+| 9 | FirstRunSetupPage Empty -> ErrorState for setup errors |
 | 10 | aria-label moved onto Table / raw tables (Tasks, Bills, Credit Notes, App members, MI, Monthly Report, Knowledge) |
 | 11 | Knowledge table: `table-wrap` + sr-only Actions header |
 | 12 | Docs: CANONICAL + DESIGN_SYSTEM_SPEC state/table taxonomy |
 | 13 | Focused tests: Table, TablePaginationBar, expanded state primitives |
-| 14 | Import-guard self-tests 13ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“14 (DS Table deep fail; ui barrel state/table pass) |
+| 14 | Import-guard self-tests 13-14 (DS Table deep fail; ui barrel state/table pass) |
 
 ---
 
@@ -78,7 +79,7 @@ CONFIRMED_TABLE_A11Y_DEFECTS=6
 | Shell NotificationPanel custom empties | Residual DEFERRED_NON_BLOCKING |
 | App / portal leftover `inline-empty` paragraphs | Residual polish after AiDelivery core migration |
 | SortControls / BulkActionToolbar unused exports | Keep for operational toolkit; zero-importer product use |
-| table-layout:fixed redesign | DEFERRED ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â densest tables usable after scroll clip fix |
+| table-layout:fixed redesign | DEFERRED - densest tables usable after scroll clip fix |
 | Wave 3 lifecycle StatusBadge | Out of scope |
 
 ---
@@ -115,10 +116,9 @@ CONFIRMED_TABLE_A11Y_DEFECTS=6
 
 ## 8. Safety
 
-- No commit / push / staging / production
-- HEAD unchanged at baseline SHA
-- Owner untracked files unchanged
-- Wave 4 files left **unstaged**
+- Staging / production not mutated by Wave 4
+- Owner untracked files preserved during wave
+- Closeout residual markers kept accepted non-blocking
 
 ---
 

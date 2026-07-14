@@ -819,7 +819,10 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                               <span>{step.hint}</span>
                             </div>
                           </div>
-                          <StatusBadge status={done ? "done" : "pending"} />
+                          <StatusBadge
+                            displayLabel={done ? "Done" : "Pending"}
+                            status={done ? "done" : "pending"}
+                          />
                         </div>
                       </article>
                     );

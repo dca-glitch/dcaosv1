@@ -9,8 +9,8 @@
  * Steps:
  *  1. Admin login
  *  2. Create client + AI Delivery project with targetMonth
- *  3. Create a DELIVERED deliverable (final — must appear in summary)
- *  4. Create a DRAFT deliverable (internal — must NOT appear in summary)
+ *  3. Create a DRAFT deliverable, then mark-ready + accept (ACCEPTED final — must appear in summary)
+ *  4. Create a second DRAFT deliverable (internal — must NOT appear in summary)
  *  5. Call GET /api/v1/ai-delivery/reports/monthly-summary?projectId=...
  *  6. Assert: 200, project header, final deliverable present, DRAFT excluded, totals correct
  *  7. Assert: deferred GA/GSC/trends/recommendations statuses are explicit
@@ -175,8 +175,9 @@ async function main() {
   }
   console.log();
 
-  // Step 3c: Create DELIVERED deliverable linked to APPROVED image
-  console.log("Step 3c: Create DELIVERED deliverable");
+  // Step 3c: Create DRAFT deliverable linked to APPROVED image, then workflow to ACCEPTED.
+  // Create-status policy forbids creating final statuses directly (must start DRAFT).
+  console.log("Step 3c: Create DRAFT deliverable -> mark-ready -> accept (ACCEPTED)");
   {
     const { ok, json } = await apiCall(
       "POST",
@@ -184,19 +185,42 @@ async function main() {
       {
         title: "Smoke Delivered Article",
         deliveryType: "ARTICLE_IMAGE",
-        status: "DELIVERED",
+        status: "DRAFT",
         articleImageId,
         exportUrl: "https://docs.example.com/smoke-article"
       },
       token
     );
     deliverableDeliveredId = json.data?.deliverable?.id ?? "";
-    if (ok && deliverableDeliveredId) {
-      pass(`DELIVERED deliverable created: ${deliverableDeliveredId}`);
-    } else {
-      fail("Create DELIVERED deliverable", JSON.stringify(json.error));
-      throw new Error("Cannot continue without DELIVERED deliverable");
+    if (!ok || !deliverableDeliveredId) {
+      fail("Create DRAFT deliverable for final path", JSON.stringify(json.error));
+      throw new Error("Cannot continue without draft deliverable for final path");
     }
+    pass(`DRAFT deliverable created for final path: ${deliverableDeliveredId}`);
+
+    const ready = await apiCall(
+      "POST",
+      `/ai-delivery-projects/${projectId}/deliverables/${deliverableDeliveredId}/mark-ready`,
+      {},
+      token
+    );
+    if (!ready.ok || ready.json.data?.deliverable?.status !== "READY") {
+      fail("mark-ready for final deliverable", JSON.stringify(ready.json.error ?? ready.json));
+      throw new Error("Cannot continue without READY deliverable");
+    }
+    pass("Deliverable marked READY");
+
+    const accepted = await apiCall(
+      "POST",
+      `/ai-delivery-projects/${projectId}/deliverables/${deliverableDeliveredId}/accept`,
+      {},
+      token
+    );
+    if (!accepted.ok || accepted.json.data?.deliverable?.status !== "ACCEPTED") {
+      fail("accept final deliverable", JSON.stringify(accepted.json.error ?? accepted.json));
+      throw new Error("Cannot continue without ACCEPTED deliverable");
+    }
+    pass(`ACCEPTED deliverable ready for summary: ${deliverableDeliveredId}`);
   }
   console.log();
 
@@ -258,13 +282,13 @@ async function main() {
       fail("project.clientName", `got ${summaryData?.project?.clientName}`);
     }
 
-    // Step 6b: DELIVERED deliverable appears
+    // Step 6b: ACCEPTED deliverable appears (final path; create-status blocks direct DELIVERED create)
     const deliverables = summaryData?.deliverables ?? [];
     const foundDelivered = deliverables.find((d) => d.id === deliverableDeliveredId);
-    if (foundDelivered) {
-      pass("DELIVERED deliverable appears in summary.deliverables");
+    if (foundDelivered && foundDelivered.status === "ACCEPTED") {
+      pass("ACCEPTED deliverable appears in summary.deliverables");
     } else {
-      fail("DELIVERED deliverable missing from summary.deliverables");
+      fail("ACCEPTED deliverable missing from summary.deliverables", `status=${foundDelivered?.status}`);
     }
     if (foundDelivered?.exportUrl === "https://docs.example.com/smoke-article") {
       pass("exportUrl preserved on deliverable row");
@@ -282,8 +306,8 @@ async function main() {
 
     // Step 6d: Totals match final deliverables only
     const totals = summaryData?.totals;
-    if (totals?.deliverableCount === 1 && totals?.deliveredCount === 1 && totals?.acceptedCount === 0) {
-      pass(`totals correct: deliverableCount=1, deliveredCount=1, acceptedCount=0`);
+    if (totals?.deliverableCount === 1 && totals?.deliveredCount === 0 && totals?.acceptedCount === 1) {
+      pass(`totals correct: deliverableCount=1, deliveredCount=0, acceptedCount=1`);
     } else {
       fail("totals", JSON.stringify(totals));
     }

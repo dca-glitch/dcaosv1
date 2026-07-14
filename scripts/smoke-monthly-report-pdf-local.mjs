@@ -221,7 +221,7 @@ async function main() {
     }
     console.log();
 
-    console.log("Step 5c: Create DELIVERED deliverable");
+    console.log("Step 5c: Create DRAFT deliverable -> mark-ready -> accept (ACCEPTED)");
     {
       const { ok, json } = await apiCall(
         "POST",
@@ -229,19 +229,42 @@ async function main() {
         {
           title: "Smoke PDF Deliverable",
           deliveryType: "ARTICLE_IMAGE",
-          status: "DELIVERED",
+          status: "DRAFT",
           articleImageId,
           exportUrl: "https://docs.example.com/smoke-pdf-deliverable"
         },
         token
       );
       deliverableId = json?.data?.deliverable?.id ?? "";
-      if (ok && deliverableId) {
-        pass(`Deliverable created: ${deliverableId}`);
-      } else {
-        fail("Create deliverable", JSON.stringify(json?.error ?? json));
-        throw new Error("Cannot continue without delivered deliverable");
+      if (!ok || !deliverableId) {
+        fail("Create DRAFT deliverable", JSON.stringify(json?.error ?? json));
+        throw new Error("Cannot continue without draft deliverable");
       }
+      pass(`DRAFT deliverable created: ${deliverableId}`);
+
+      const ready = await apiCall(
+        "POST",
+        `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/mark-ready`,
+        {},
+        token
+      );
+      if (!ready.ok || ready.json?.data?.deliverable?.status !== "READY") {
+        fail("mark-ready for deliverable", JSON.stringify(ready.json?.error ?? ready.json));
+        throw new Error("Cannot continue without READY deliverable");
+      }
+      pass("Deliverable marked READY");
+
+      const accepted = await apiCall(
+        "POST",
+        `/ai-delivery-projects/${projectId}/deliverables/${deliverableId}/accept`,
+        {},
+        token
+      );
+      if (!accepted.ok || accepted.json?.data?.deliverable?.status !== "ACCEPTED") {
+        fail("accept deliverable", JSON.stringify(accepted.json?.error ?? accepted.json));
+        throw new Error("Cannot continue without ACCEPTED deliverable");
+      }
+      pass(`ACCEPTED deliverable ready: ${deliverableId}`);
     }
     console.log();
 

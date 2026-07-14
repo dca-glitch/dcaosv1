@@ -4,7 +4,7 @@
 
 **Purpose:** Practical checklist to decide whether `main` is ready to **request** staging work (G4) — not to deploy staging.
 
-**Current baseline (2026-07-13):** Staging runtime **`632d9a9`** (Puriva Operating Pack composition proven). Artifact `/opt/dca/staging-artifacts/632d9a9`. Prior rollback artifact `9921bb3` retained. Host web target `/opt/dca/apps/dcaosv1/staging/web/dist` (in-place sync; inode preserved; `SHARED_PROXY_ACTION=none`). Production FROZEN. GA/GSC / notification E2E remain deferred non-blocking. Next genuine owner gates: production deploy approval + live Google analytics IDs — not another Puriva staging composition redeploy unless code changes.
+**Current baseline (2026-07-14 local RC):** Local/main tip **`e0ddcee`** (Wave 4 COMPLETE). Staging runtime record remains historical **`632d9a9`** (Puriva Operating Pack composition proven) until a **new controlled staging deploy** is owner-approved. Artifact `/opt/dca/staging-artifacts/632d9a9`. Production remains at recorded `57f9c52` and further production mutation is owner-gated. GA4/GSC live integrations are **WITHDRAWN** (not a next gate). Notification E2E remains deferred non-blocking. Next genuine owner gates: **controlled staging self-check of tip `e0ddcee`**, then separately Turnstile / external-provider proofs — **not** live Google analytics IDs.
 
 **Ground-truth notice (Modal Wave + RC):** Modal Wave COMPLETE (`a447b9e` + docs `67d9aa4`). Historical `a8a74e6` “Caddy not restarted” remains true **for that deploy only**. Later Modal web-only deploy **did** remount/recreate shared Caddy for stale bind recovery. Future deploys must use copy-in / rsync-into-mount and avoid shared Caddy action unless owner-approved last resort.
 

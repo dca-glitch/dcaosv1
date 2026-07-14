@@ -148,6 +148,8 @@ async function main() {
     await editModal.getByRole("heading", { name: "Client access", exact: true }).waitFor({ state: "visible", timeout: 15000 });
     record("edit client modal shows client access section", true, "Client access");
 
+    // Wait for access list fetch to settle — empty first-use copy is async after modal open.
+    await editModal.getByText("No users linked to this client.").waitFor({ state: "visible", timeout: 15000 });
     const modalTextBefore = await editModal.innerText();
     record(
       "client access starts with no linked users",
