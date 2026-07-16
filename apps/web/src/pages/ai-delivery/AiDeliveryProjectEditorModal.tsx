@@ -1,5 +1,5 @@
 import React, { FormEvent } from "react";
-import { Modal } from "../../components/ui";
+import { Button, Input, Modal, Select, Textarea } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type {
   AiDeliveryProjectFormValues,
@@ -51,49 +51,46 @@ export function AiDeliveryProjectEditorModal({
     <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? "Edit AI Delivery" : "Add AI Delivery"}>
       <form className="entity-form ai-delivery-modal-panel" onSubmit={onSubmit}>
         <div className="field-grid">
-          <label>
-            Client - Required
-            <select
-              onChange={(event) =>
-                onDraftChange({
-                  ...draft,
-                  clientId: event.target.value,
-                  projectId: null,
-                })
-              }
-              required
-              value={draft.clientId}
-            >
-              <option value="">No client</option>
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            fullWidth
+            label="Client - Required"
+            onChange={(event) =>
+              onDraftChange({
+                ...draft,
+                clientId: event.target.value,
+                projectId: null,
+              })
+            }
+            options={[
+              { value: "", label: "No client" },
+              ...clients.map((client) => ({
+                value: client.id,
+                label: client.name,
+              })),
+            ]}
+            required
+            value={draft.clientId}
+          />
 
-          <label>
-            Target month - Required
-            <input
-              aria-describedby="ai-delivery-target-month-help"
-              type="month"
-              onChange={(event) => onDraftChange({ ...draft, targetMonth: event.target.value })}
-              required
-              value={draft.targetMonth}
-            />
-          </label>
+          <Input
+            fullWidth
+            aria-describedby="ai-delivery-target-month-help"
+            label="Target month - Required"
+            onChange={(event) => onDraftChange({ ...draft, targetMonth: event.target.value })}
+            required
+            type="month"
+            value={draft.targetMonth}
+          />
 
-          <label>
-            Project name - Required
-            <input
-              maxLength={255}
-              onChange={(event) => onDraftChange({ ...draft, name: event.target.value })}
-              placeholder="AI SEO & Content - June 2026"
-              required
-              value={draft.name}
-            />
-          </label>
+          <Input
+            fullWidth
+            label="Project name - Required"
+            maxLength={255}
+            onChange={(event) => onDraftChange({ ...draft, name: event.target.value })}
+            placeholder="AI SEO & Content - June 2026"
+            required
+            value={draft.name}
+          />
 
           <div>
             <span>Project status</span>
@@ -105,44 +102,43 @@ export function AiDeliveryProjectEditorModal({
             <strong>{formatEnumLabel(selectedProject?.brief?.status ?? null)}</strong>
           </div>
 
-          <label className="field-span-2">
-            Scope / summary / notes - Optional
-            <textarea
-              maxLength={4000}
-              onChange={(event) =>
-                onDraftChange({ ...draft, plannedContentScopeNotes: event.target.value })
-              }
-              placeholder="Notes for admin team only"
-              rows={4}
-              value={draft.plannedContentScopeNotes}
-            />
-            <span className="muted-text">Admin-only scope or planning notes.</span>
-          </label>
+          <Textarea
+            className="field-span-2"
+            fullWidth
+            helperText="Admin-only scope or planning notes."
+            label="Scope / summary / notes - Optional"
+            maxLength={4000}
+            onChange={(event) =>
+              onDraftChange({ ...draft, plannedContentScopeNotes: event.target.value })
+            }
+            placeholder="Notes for admin team only"
+            rows={4}
+            value={draft.plannedContentScopeNotes}
+          />
 
-          <label>
-            Linked internal project - Optional
-            <select
-              onChange={(event) =>
-                onDraftChange({ ...draft, projectId: event.target.value || null })
-              }
-              value={draft.projectId ?? ""}
-            >
-              <option value="">No internal project link</option>
-              {linkableProjects.map((proj) => (
-                <option key={proj.id} value={proj.id}>
-                  {proj.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <Select
+            fullWidth
+            label="Linked internal project - Optional"
+            onChange={(event) =>
+              onDraftChange({ ...draft, projectId: event.target.value || null })
+            }
+            options={[
+              { value: "", label: "No internal project link" },
+              ...linkableProjects.map((proj) => ({
+                value: proj.id,
+                label: proj.name,
+              })),
+            ]}
+            value={draft.projectId ?? ""}
+          />
         </div>
         <div className="modal-footer ai-delivery-modal-footer">
-          <button className="ghost-action" disabled={saving} onClick={onClose} type="button">
+          <Button disabled={saving} onClick={onClose} type="button" variant="tertiary">
             Cancel
-          </button>
-          <button className="primary-action" disabled={saving} type="submit">
+          </Button>
+          <Button disabled={saving} type="submit" variant="primary">
             {saving ? "Saving" : isEdit ? "Update AI Delivery" : "Create AI Delivery"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

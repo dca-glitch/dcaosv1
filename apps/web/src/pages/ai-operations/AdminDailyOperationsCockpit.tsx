@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import type { AiOperationsRunListItem, AiOperationsRunsResponse } from "@dca-os-v1/shared";
-import { ActivityItem, Alert, Badge, Button, LoadingState, PageHeader, RingMetricTile, SectionPanel, StatusBadge } from "../../components/ui";
+import { ActivityItem, Alert, Button, LoadingState, PageHeader, RingMetricTile, SectionPanel, StatusBadge } from "../../components/ui";
 import {
   DEFERRED_GATED_ITEMS,
   PURIVA_DAILY_PATH,
@@ -56,8 +56,8 @@ function ActionStripItem({
         : action.category;
   const relatedRun = action.relatedRun;
   const viewLabel = relatedRun
-    ? `Continue ${relatedRun.shortId} (${relatedRun.projectName})`
-    : "Continue";
+    ? `Open run ${relatedRun.shortId} (${relatedRun.projectName})`
+    : "Open run";
 
   return (
     <div
@@ -66,7 +66,11 @@ function ActionStripItem({
       aria-label={`${action.priorityLabel} priority. ${action.title}`}
     >
       <div className="action-strip-badge">
-        {badgeStatus === "waiting" ? <Badge variant="neutral">Waiting</Badge> : <StatusBadge status={badgeStatus} />}
+        {badgeStatus === "waiting" ? (
+          <StatusBadge displayLabel="Waiting" status="waiting" />
+        ) : (
+          <StatusBadge status={badgeStatus} />
+        )}
       </div>
       <div className="action-strip-content flex-1">
         <p className="action-strip-title">{action.title}</p>
@@ -394,7 +398,7 @@ export function AdminDailyOperationsCockpit() {
                             ? "Start here"
                             : index === 6
                               ? "Client-safe end state"
-                              : "Continue in order"}
+                              : "Follow in order"}
                         </span>
                       </div>
                     </div>
@@ -435,7 +439,11 @@ export function AdminDailyOperationsCockpit() {
                             : null}
                         </p>
                       </div>
-                      {primaryStatus === "unknown" ? <Badge variant="neutral">Unknown</Badge> : <StatusBadge status={primaryStatus} />}
+                      {primaryStatus === "unknown" ? (
+                        <StatusBadge status="unknown" />
+                      ) : (
+                        <StatusBadge status={primaryStatus} />
+                      )}
                     </div>
                   );
                 })}
@@ -523,7 +531,7 @@ export function AdminDailyOperationsCockpit() {
                   <div className="dense-record-main">
                     <div className="dense-title">
                       <div className="dense-kicker">
-                        <Badge variant="neutral">Deferred</Badge>
+                        <StatusBadge displayLabel="Deferred" status="deferred" />
                       </div>
                       <h3>{label}</h3>
                     </div>

@@ -47,7 +47,7 @@ describe("brief status surfaces", () => {
   it("preserves admin and client brief labels for lifecycle statuses", () => {
     expect(toBriefStatusPresentation("DRAFT", "admin").label).toBe("Draft");
     expect(toBriefStatusPresentation("DRAFT", "client").label).toBe("Draft");
-    expect(toBriefStatusPresentation("AWAITING_CLIENT", "admin").label).toBe("Sent to Client");
+    expect(toBriefStatusPresentation("AWAITING_CLIENT", "admin").label).toBe("Sent to client");
     expect(toBriefStatusPresentation("AWAITING_CLIENT", "client").label).toBe("Awaiting your input");
     expect(toBriefStatusPresentation("SUBMITTED", "admin").label).toBe("Submitted");
     expect(toBriefStatusPresentation("SUBMITTED", "client").label).toBe("Submitted");

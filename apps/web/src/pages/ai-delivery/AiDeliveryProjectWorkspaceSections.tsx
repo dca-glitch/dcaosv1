@@ -62,7 +62,7 @@ export function AiDeliveryProjectWorkspaceSections({
         title="Project workspace"
         tone="compact"
       >
-        <EmptyState message="Select a project to continue." title="No project selected" />
+        <EmptyState message="Select a project to open its workspace." title="No project selected" />
       </SectionPanel>
     );
   }

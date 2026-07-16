@@ -217,11 +217,11 @@ describe("AiDeliveryResearchModal", () => {
   it("renders empty section states", () => {
     render(<AiDeliveryResearchModal {...baseProps()} />);
     const dialog = getDialog();
-    expect(within(dialog).getByText(/No research requests yet\. Add a request to continue\./)).toBeTruthy();
+    expect(within(dialog).getByText(/No research requests yet\. Add a research request to get started\./)).toBeTruthy();
     expect(
       within(dialog).getByText(/No research summaries yet\. Add a summary after reviewing sources\./),
     ).toBeTruthy();
-    expect(within(dialog).getByText(/No research sources yet\. Add a source to continue\./)).toBeTruthy();
+    expect(within(dialog).getByText(/No research sources yet\. Add a research source to get started\./)).toBeTruthy();
   });
 
   it("renders project-not-found state", () => {

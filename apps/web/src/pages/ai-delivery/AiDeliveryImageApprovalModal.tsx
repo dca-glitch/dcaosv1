@@ -1,6 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/ui";
-import { StatusBadge } from "../../components/ui";
+import { Button, Input, Modal, Select, StatusBadge, Textarea } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -248,125 +247,110 @@ export function AiDeliveryImageApprovalModal({
               </div>
             ) : null}
             <div className="field-grid field-grid-compact">
-              <label>
-                Linked content draft - Required
-                <select
-                  required
-                  value={form.contentDraftId}
-                  onChange={(event) => onFormChange((current) => ({ ...current, contentDraftId: event.target.value }))}
-                >
-                  <option value="">Select draft</option>
-                  {articleImageDrafts.map((draftItem) => (
-                    <option key={draftItem.id} value={draftItem.id}>
-                      {draftItem.title} ({formatContentDraftStatus(draftItem.status)})
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Same-project content draft this image supports.</span>
-              </label>
-              <label>
-                Status - Required
-                <select
-                  value={form.status}
-                  onChange={(event) => onFormChange((current) => ({ ...current, status: event.target.value }))}
-                >
-                  {ARTICLE_IMAGE_STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {formatArticleImageStatus(status)}
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Use action buttons for preview, approval, and final-ready handoff.</span>
-              </label>
-              <label className="field-span-2">
-                Title - Required
-                <input
-                  maxLength={255}
-                  required
-                  value={form.title}
-                  onChange={(event) => onFormChange((current) => ({ ...current, title: event.target.value }))}
-                />
-                <span className="muted-text">Working asset name for the linked article image.</span>
-              </label>
-              <label className="field-span-2">
-                Prompt - Required
-                <textarea
-                  maxLength={4000}
-                  required
-                  rows={4}
-                  value={form.prompt}
-                  onChange={(event) => onFormChange((current) => ({ ...current, prompt: event.target.value }))}
-                />
-                <span className="muted-text">Admin-only prompt. Not exposed to clients.</span>
-              </label>
-              <label className="field-span-2">
-                Style notes - Optional
-                <textarea
-                  maxLength={4000}
-                  rows={3}
-                  value={form.styleNotes}
-                  onChange={(event) => onFormChange((current) => ({ ...current, styleNotes: event.target.value }))}
-                />
-                <span className="muted-text">Internal visual direction only.</span>
-              </label>
-              <label>
-                Preview image URL - Optional
-                <input
-                  maxLength={2048}
-                  type="url"
-                  value={form.previewImageUrl}
-                  onChange={(event) => onFormChange((current) => ({ ...current, previewImageUrl: event.target.value }))}
-                />
-                <span className="muted-text">Manual admin preview reference.</span>
-              </label>
-              <label>
-                Final image URL - Optional
-                <input
-                  maxLength={2048}
-                  type="url"
-                  value={form.finalImageUrl}
-                  onChange={(event) => onFormChange((current) => ({ ...current, finalImageUrl: event.target.value }))}
-                />
-                <span className="muted-text">Manual admin final reference.</span>
-              </label>
-              <label className="field-span-2">
-                Storage key reference - Optional
-                <input
-                  maxLength={1024}
-                  value={form.storageKey}
-                  onChange={(event) => onFormChange((current) => ({ ...current, storageKey: event.target.value }))}
-                />
-                <span className="muted-text">Internal storage reference. Use per-record upload controls below.</span>
-              </label>
-              <label className="field-span-2">
-                Notes - Optional
-                <textarea
-                  maxLength={4000}
-                  rows={3}
-                  value={form.notes}
-                  onChange={(event) => onFormChange((current) => ({ ...current, notes: event.target.value }))}
-                />
-                <span className="muted-text">Admin-only review and handoff notes.</span>
-              </label>
+              <Select
+                fullWidth
+                helperText="Same-project content draft this image supports."
+                label="Linked content draft - Required"
+                onChange={(event) => onFormChange((current) => ({ ...current, contentDraftId: event.target.value }))}
+                options={[
+                  { value: "", label: "Select draft" },
+                  ...articleImageDrafts.map((draftItem) => ({
+                    value: draftItem.id,
+                    label: `${draftItem.title} (${formatContentDraftStatus(draftItem.status)})`,
+                  })),
+                ]}
+                required
+                value={form.contentDraftId}
+              />
+              <Select
+                fullWidth
+                helperText="Use action buttons for preview, approval, and final-ready handoff."
+                label="Status - Required"
+                onChange={(event) => onFormChange((current) => ({ ...current, status: event.target.value }))}
+                options={ARTICLE_IMAGE_STATUS_OPTIONS.map((status) => ({
+                  value: status,
+                  label: formatArticleImageStatus(status),
+                }))}
+                value={form.status}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                helperText="Working asset name for the linked article image."
+                label="Title - Required"
+                maxLength={255}
+                onChange={(event) => onFormChange((current) => ({ ...current, title: event.target.value }))}
+                required
+                value={form.title}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Admin-only prompt. Not exposed to clients."
+                label="Prompt - Required"
+                maxLength={4000}
+                onChange={(event) => onFormChange((current) => ({ ...current, prompt: event.target.value }))}
+                required
+                rows={4}
+                value={form.prompt}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Internal visual direction only."
+                label="Style notes - Optional"
+                maxLength={4000}
+                onChange={(event) => onFormChange((current) => ({ ...current, styleNotes: event.target.value }))}
+                rows={3}
+                value={form.styleNotes}
+              />
+              <Input
+                fullWidth
+                helperText="Manual admin preview reference."
+                label="Preview image URL - Optional"
+                maxLength={2048}
+                onChange={(event) => onFormChange((current) => ({ ...current, previewImageUrl: event.target.value }))}
+                type="url"
+                value={form.previewImageUrl}
+              />
+              <Input
+                fullWidth
+                helperText="Manual admin final reference."
+                label="Final image URL - Optional"
+                maxLength={2048}
+                onChange={(event) => onFormChange((current) => ({ ...current, finalImageUrl: event.target.value }))}
+                type="url"
+                value={form.finalImageUrl}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                helperText="Internal storage reference. Use per-record upload controls below."
+                label="Storage key reference - Optional"
+                maxLength={1024}
+                onChange={(event) => onFormChange((current) => ({ ...current, storageKey: event.target.value }))}
+                value={form.storageKey}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Admin-only review and handoff notes."
+                label="Notes - Optional"
+                maxLength={4000}
+                onChange={(event) => onFormChange((current) => ({ ...current, notes: event.target.value }))}
+                rows={3}
+                value={form.notes}
+              />
             </div>
             <div className="modal-footer ai-delivery-modal-footer">
-              <button className="ghost-action" disabled={saving} onClick={onClose} type="button">
+              <Button disabled={saving} onClick={onClose} type="button" variant="tertiary">
                 Close
-              </button>
-              <button className="ghost-action" disabled={saving} onClick={onNewImageRequest} type="button">
+              </Button>
+              <Button disabled={saving} onClick={onNewImageRequest} type="button" variant="tertiary">
                 New image request
-              </button>
-              <button
-                className="primary-action"
-                disabled={saving || !canSave}
-                onClick={() => void onSave(project.id)}
-                type="button"
-              >
-                {saving ? "Saving" : editorId ? "Save image request" : "Create image request"}
-              </button>
+              </Button>
               {activeRecord && !activeRecord.isArchived ? (
-                <button
-                  className="secondary-action"
+                <Button
                   disabled={
                     saving ||
                     !hasArticleImagePreviewReferenceUi(activeRecord) ||
@@ -374,23 +358,23 @@ export function AiDeliveryImageApprovalModal({
                   }
                   onClick={() => void onMarkPreviewReady(project.id, activeRecord.id)}
                   type="button"
+                  variant="secondary"
                 >
                   Mark preview ready
-                </button>
+                </Button>
               ) : null}
               {activeRecord && !activeRecord.isArchived ? (
-                <button
-                  className="secondary-action"
+                <Button
                   disabled={saving || !hasArticleImagePreviewReferenceUi(activeRecord)}
                   onClick={() => void onRequestChanges(project.id, activeRecord.id)}
                   type="button"
+                  variant="secondary"
                 >
                   Request changes
-                </button>
+                </Button>
               ) : null}
               {activeRecord && !activeRecord.isArchived ? (
-                <button
-                  className="secondary-action"
+                <Button
                   disabled={
                     saving ||
                     !hasArticleImagePreviewReferenceUi(activeRecord) ||
@@ -398,13 +382,13 @@ export function AiDeliveryImageApprovalModal({
                   }
                   onClick={() => void onApprove(project.id, activeRecord.id)}
                   type="button"
+                  variant="secondary"
                 >
                   Approve image
-                </button>
+                </Button>
               ) : null}
               {activeRecord && !activeRecord.isArchived ? (
-                <button
-                  className="secondary-action"
+                <Button
                   disabled={
                     saving ||
                     !hasArticleImageFinalReferenceUi(activeRecord) ||
@@ -412,10 +396,19 @@ export function AiDeliveryImageApprovalModal({
                   }
                   onClick={() => void onMarkFinalReady(project.id, activeRecord.id)}
                   type="button"
+                  variant="secondary"
                 >
                   Mark final ready
-                </button>
+                </Button>
               ) : null}
+              <Button
+                disabled={saving || !canSave}
+                onClick={() => void onSave(project.id)}
+                type="button"
+                variant="primary"
+              >
+                {saving ? "Saving" : editorId ? "Save image request" : "Create image request"}
+              </Button>
             </div>
           </section>
 
@@ -545,20 +538,20 @@ export function AiDeliveryImageApprovalModal({
                 </dl>
                 {!image.isArchived ? (
                   <div className="field-grid brief-grid-spaced-top">
-                    <label className="field-span-2">
-                      Private final image upload - Optional
-                      <input
-                        accept="image/png,image/jpeg,image/webp"
-                        onChange={(event) =>
-                          onFinalAssetFilesChange((current) => ({
-                            ...current,
-                            [image.id]: event.target.files?.[0] ?? null,
-                          }))
-                        }
-                        type="file"
-                      />
-                      <span className="muted-text">Private final asset upload for this record.</span>
-                    </label>
+                    <Input
+                      accept="image/png,image/jpeg,image/webp"
+                      className="field-span-2"
+                      fullWidth
+                      helperText="Private final asset upload for this record."
+                      label="Private final image upload - Optional"
+                      onChange={(event) =>
+                        onFinalAssetFilesChange((current) => ({
+                          ...current,
+                          [image.id]: event.target.files?.[0] ?? null,
+                        }))
+                      }
+                      type="file"
+                    />
                   </div>
                 ) : null}
                 <div className="card-actions card-actions-spaced">

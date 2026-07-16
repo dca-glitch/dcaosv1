@@ -264,7 +264,7 @@ export function ClientHubPage({
       {client.isArchived ? (
         <StatusNotice
           tone="info"
-          message="This client is archived. Publication targets, credentials, and catalog edits are read-only. Restore the client from the Clients list to make changes."
+          message="This client is archived. Websites or channels, credentials, and catalog edits are read-only. Restore the client from the Clients list to make changes."
         />
       ) : null}
 
@@ -304,11 +304,11 @@ export function ClientHubPage({
         tone="compact"
       />
 
-      <SectionPanel tone="compact" title="Publication targets" description="WordPress targets per subdomain or site. Tenant-level WordPress config is deprecated — manage targets here only.">
+      <SectionPanel tone="compact" title="Websites or channels" description="WordPress targets per subdomain or site. Tenant-level WordPress config is deprecated — manage targets here only.">
         {targets.length === 0 ? (
           <EmptyState
             message="Add a WordPress target for this client/domain. Legacy tenant-level WordPress config (Company Profile) is read-only and cannot be used for publish."
-            title="No publication targets"
+            title="No websites or channels"
             variant="inline"
           />
         ) : (
@@ -318,9 +318,9 @@ export function ClientHubPage({
                 <strong>{target.label}</strong> — {target.siteUrl}
                 {target.isDefault ? <StatusBadge status="DEFAULT" /> : null}{" "}
                 {credentialStatusByTargetId[target.id]?.configured ? (
-                  <StatusBadge status="CONFIGURED" />
+                  <StatusBadge displayLabel="Configured" status="CONFIGURED" />
                 ) : (
-                  <StatusBadge status="NOT_CONFIGURED" />
+                  <StatusBadge displayLabel="Not configured" status="NOT_CONFIGURED" />
                 )}
               </li>
             ))}
@@ -337,7 +337,7 @@ export function ClientHubPage({
               <input value={targetUrl} onChange={(event) => setTargetUrl(event.target.value)} required />
             </label>
             <Button type="submit" variant="primary">
-              Add publication target
+              Add website or channel
             </Button>
           </form>
         ) : null}
@@ -348,7 +348,7 @@ export function ClientHubPage({
           {client.isArchived ? (
             <p className="muted-text">Archived client — credential status is read-only. Restore the client to update credentials.</p>
           ) : targets.length === 0 ? (
-            <p className="muted-text">Add a publication target before saving WordPress credentials.</p>
+            <p className="muted-text">Add a website or channel before saving WordPress credentials.</p>
           ) : null}
           {encryptionAvailable === false ? (
             <div className="state-panel" role="status">

@@ -1,11 +1,13 @@
 import type { ShellVariant } from "./types";
 
 type ShellBrandProps = {
+  isClientRole?: boolean;
   shellVariant: ShellVariant;
 };
 
-export function ShellBrand({ shellVariant }: ShellBrandProps) {
+export function ShellBrand({ isClientRole = false, shellVariant }: ShellBrandProps) {
   const isPortal = shellVariant === "portal";
+  const subtitle = isPortal || isClientRole ? "Client workspace" : "Agency workspace";
 
   return (
     <div className="sidebar-brand brand shell-brand">
@@ -13,8 +15,8 @@ export function ShellBrand({ shellVariant }: ShellBrandProps) {
         DCA
       </span>
       <span className="brand-copy">
-        <strong>{isPortal ? "Client Archive" : "DCA OS Lite"}</strong>
-        <small>{isPortal ? "Read-only deliverables" : "Operations Command"}</small>
+        <strong>DCA OS Lite</strong>
+        <small>{subtitle}</small>
       </span>
     </div>
   );

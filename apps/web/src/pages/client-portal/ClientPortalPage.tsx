@@ -11,8 +11,8 @@ import "./client-portal.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
-const AMBER_TINT = "#C98A42";
-const INDIGO_TINT = "#818CF8";
+const AMBER_TINT = "#9A6817";
+const PRIMARY_TINT = "#3730A3";
 
 type ApiSuccess<T> = {
   ok: true;
@@ -991,8 +991,7 @@ export function ClientPortalPage() {
           value={deliverablesLoading ? "…" : String(finalDeliverableCount)}
         />
         <MetricCard
-          accent="warning"
-          helper="Open Pending Reviews to continue"
+          helper="Open pending reviews to review items"
           label="Awaiting your approval"
           value={String(pendingApprovalCount)}
         />
@@ -1005,7 +1004,7 @@ export function ClientPortalPage() {
 
       {pendingApprovalCount > 0 ? (
         <SectionPanel
-          description="These items need a decision from you before work can continue."
+          description="These items need a decision from you before delivery can proceed."
           tint={AMBER_TINT}
           title="Required attention"
           tone="highlight"
@@ -1412,7 +1411,7 @@ export function ClientPortalPage() {
                       {inquiryNotice ? <p className="portal-inline-notice-text muted-text">{inquiryNotice}</p> : null}
                       <div className="modal-footer">
                         <Button variant="primary" disabled={inquirySubmitting} type="submit">
-                          {inquirySubmitting ? "Submitting" : "Send inquiry"}
+                          {inquirySubmitting ? "Sending inquiry…" : "Send inquiry"}
                         </Button>
                       </div>
                     </form>
@@ -1486,7 +1485,7 @@ export function ClientPortalPage() {
                 description="Final monthly snapshots of completed work and recommendations."
                 title="Monthly reports archive"
                 tone="compact"
-                tint={monthlyReports.length > 0 ? INDIGO_TINT : undefined}
+                tint={monthlyReports.length > 0 ? PRIMARY_TINT : undefined}
               >
                 {monthlyReportsLoading ? (
                   <PortalInlineLoading label="Loading monthly reports" />
@@ -1525,7 +1524,7 @@ export function ClientPortalPage() {
                         <Alert message={monthlyReportDetailError} title="Monthly report unavailable" variant="danger" />
                       ) : monthlyReportDetail ? (
                         <div className="stack-gap-sm">
-                          <div className="client-portal-report-banner" style={{ background: "rgba(129, 140, 248, 0.08)" }}>
+                          <div className="client-portal-report-banner" style={{ background: "var(--ds-primary-soft-bg, #EEF2FF)" }}>
                             <div className="client-portal-report-banner-copy">
                               <div className="cf-record-kicker">
                                 <ClientPortalStatusBadge status={monthlyReportDetail.monthlyReport.status} />

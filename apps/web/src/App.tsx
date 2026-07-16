@@ -1,5 +1,5 @@
 import { type FormEvent, type ReactNode, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Archive, BarChart2, ClipboardList, Clock } from "lucide-react";
+import { Archive, BarChart2, ClipboardList, Clock, FileText, LayoutDashboard } from "lucide-react";
 import { AppLayout } from "./components/AppLayout";
 import { AdminOperationsPanel } from "./components/admin/AdminOperationsPanel";
 import { Button, EmptyState, LoadingState, MetricCard, PageHeader, SectionPanel, StatusBadge, StatusNotice, Table } from "./components/ui";
@@ -40,8 +40,10 @@ import { PendingApprovalsPage } from "./pages/client-portal/PendingApprovalsPage
 import MonthlyReportsPage from "./pages/MonthlyReportsPage";
 import {
   CLIENT_ALLOWED_ROUTE_VIEWS,
+  filterAdminOnlyNavigation,
   filterNavigationByRole,
-  isClientOnlyRole
+  isClientOnlyRole,
+  resolveShellActiveView
 } from "./lib/navigation-filter";
 import { CreditNotesPage, type CreditNoteFormValues, type CreditNoteSummary } from "./pages/credit-notes/CreditNotesPage";
 import {
@@ -535,26 +537,29 @@ declare global {
 }
 
 const navigationItems: Array<{ view: ViewKey; label: string; section: string }> = [
-  { view: "dashboard", label: "Dashboard", section: "protected" },
-  { view: "modules", label: "Modules", section: "protected" },
-  { view: "tenants", label: "Tenants", section: "protected" },
-  { view: "client-portal", label: "Client Portal", section: "client" },
-  { view: "briefs-panel", label: "Briefs", section: "client" },
-  { view: "workflow-briefs", label: "Workflow Briefs", section: "core" },
-  { view: "clients", label: "Clients", section: "core" },
-  { view: "projects", label: "Projects", section: "core" },
-  { view: "ai-delivery", label: "AI Delivery", section: "core" },
-  { view: "admin-daily-cockpit", label: "Daily Cockpit", section: "core" },
-  { view: "ai-operations", label: "AI Operations", section: "core" },
-  { view: "ai-market-intelligence", label: "Market Intelligence", section: "core" },
-  { view: "tasks", label: "Tasks", section: "core" },
-  { view: "invoices", label: "Invoices", section: "core" },
-  { view: "credit-notes", label: "Credit Notes", section: "core" },
-  { view: "invoice-items", label: "Services Library", section: "core" },
-  { view: "bills", label: "Bills", section: "core" },
-  { view: "company-profile", label: "Company Profile", section: "settings" },
-  { view: "settings", label: "Settings", section: "settings" },
-  { view: "team", label: "Team", section: "settings" }
+  { view: "dashboard", label: "Dashboard", section: "dashboard" },
+  { view: "tasks", label: "Tasks", section: "mywork" },
+  { view: "pending-approvals", label: "Approvals", section: "mywork" },
+  { view: "admin-daily-cockpit", label: "Attention required", section: "mywork" },
+  { view: "clients", label: "Workspaces", section: "clients" },
+  { view: "client-portal", label: "Client archive", section: "clients" },
+  { view: "briefs-panel", label: "Briefs", section: "clients" },
+  { view: "projects", label: "Projects", section: "delivery" },
+  { view: "workflow-briefs", label: "Content plans", section: "delivery" },
+  { view: "ai-delivery", label: "AI Delivery", section: "delivery" },
+  { view: "ai-market-intelligence", label: "Analytics", section: "results" },
+  { view: "monthly-reports", label: "Reports", section: "results" },
+  { view: "archive", label: "Assets", section: "library" },
+  { view: "invoice-items", label: "Services library", section: "library" },
+  { view: "invoices", label: "Invoices", section: "finance" },
+  { view: "credit-notes", label: "Credit notes", section: "finance" },
+  { view: "bills", label: "Bills", section: "finance" },
+  { view: "ai-operations", label: "AI operations", section: "administration" },
+  { view: "team", label: "Users and roles", section: "administration" },
+  { view: "modules", label: "Modules", section: "administration" },
+  { view: "tenants", label: "Tenants", section: "administration" },
+  { view: "company-profile", label: "Company profile", section: "administration" },
+  { view: "settings", label: "Settings", section: "administration" }
 ];
 
 type AppNavigationItem = {
@@ -565,31 +570,32 @@ type AppNavigationItem = {
 };
 
 const clientNavigationItems: AppNavigationItem[] = [
-  { view: "dashboard", label: "Dashboard", section: "protected" },
+  { view: "dashboard", label: "Overview", section: "overview", icon: <LayoutDashboard size={16} strokeWidth={2} /> },
   {
     view: "client-portal",
-    label: "Your archive",
-    section: "client",
-    icon: <Archive size={16} strokeWidth={2} />
+    label: "Content",
+    section: "work",
+    icon: <FileText size={16} strokeWidth={2} />
   },
-  { view: "briefs", label: "Briefs", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
-  { view: "workflow-briefs", label: "Production Plan Review", section: "client", icon: <ClipboardList size={16} strokeWidth={2} /> },
+  { view: "briefs", label: "Tasks", section: "work", icon: <ClipboardList size={16} strokeWidth={2} /> },
   {
     view: "pending-approvals",
-    label: "Pending Approvals",
-    section: "client",
+    label: "Approvals",
+    section: "work",
     icon: <Clock size={16} strokeWidth={2} />
   },
+  { view: "workflow-briefs", label: "Content plans", section: "work", icon: <ClipboardList size={16} strokeWidth={2} /> },
   {
     view: "monthly-reports",
-    label: "Monthly Reports",
-    section: "client",
+    label: "Reports",
+    section: "work",
     icon: <BarChart2 size={16} strokeWidth={2} />
   },
-  { view: "archive", label: "Archive", section: "client", icon: <Archive size={16} strokeWidth={2} /> }
+  { view: "archive", label: "Assets", section: "library", icon: <Archive size={16} strokeWidth={2} /> }
 ];
 
 const CLIENT_PORTAL_SHELL_VIEWS = new Set<ViewKey>([
+  "dashboard",
   "client-portal",
   "briefs",
   "workflow-briefs",
@@ -633,7 +639,10 @@ function normalizeHash(hash: string): ViewKey {
   if (value === "client-portal" || value.startsWith("client-portal/")) {
     return "client-portal";
   }
-  if (value === "admin/design-system") {
+  if (value.startsWith("modules/") || value === "modules") {
+    return "modules";
+  }
+  if (value === "admin/design-system" || value === "design-system") {
     return "design-system";
   }
   if (value === "setup") {
@@ -644,7 +653,12 @@ function normalizeHash(hash: string): ViewKey {
   }
   const knownViews = new Set<ViewKey>([
     ...navigationItems.map((item) => item.view),
-    ...clientNavigationItems.map((item) => item.view)
+    ...clientNavigationItems.map((item) => item.view),
+    "design-system",
+    "setup",
+    "briefs",
+    "content-plan-review",
+    "content-draft-review"
   ]);
   return knownViews.has(value as ViewKey) ? (value as ViewKey) : "dashboard";
 }
@@ -831,7 +845,7 @@ function TurnstileWidget({
       containerRef.current.innerHTML = "";
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
-        theme: "auto",
+        theme: "light",
         appearance: "always",
         callback: (token: string) => onTokenChange(token),
         "error-callback": () => onTokenChange(null),
@@ -944,8 +958,8 @@ function LoginScreen({
       <section className="login-panel" aria-labelledby="login-title">
         <div>
           <p className="eyebrow">DCA OS v1 / Lite</p>
-          <h1 id="login-title">Sign In</h1>
-          <p className="login-helper">Access the secure operations workspace.</p>
+          <h1 id="login-title">Sign in</h1>
+          <p className="login-helper">Access your DCA OS Lite workspace.</p>
         </div>
         {error ? <StatusNotice tone="error" message={error} /> : null}
         <form className="auth-form" onSubmit={handleSubmit}>
@@ -1143,14 +1157,12 @@ function DashboardView({
       />
       <div className="summary-grid metric-grid dashboard-command-metrics dashboard-command-metrics--compact" aria-label="Dashboard command metrics">
         <MetricCard
-          accent="violet"
           helper={activeTenant?.slug ?? "not selected"}
           label="Active tenant"
           metricKey="active-tenant"
           value={activeTenant?.name ?? "No tenant"}
         />
         <MetricCard
-          accent={activeTenant ? "success" : "warning"}
           helper={`${permissionCount} permissions`}
           label="Workspace"
           metricKey="workspace-state"
@@ -1530,14 +1542,12 @@ function TeamView({
       <SettingsSubNav activeView="team" />
       <div className="summary-grid metric-grid team-shell-metrics" aria-label="Team shell metrics">
         <MetricCard
-          accent="cyan"
           helper={`${activeMembers.length} active of ${members.length} listed`}
           label="Members"
           metricKey="team-members"
           value={directoryUnavailable ? "—" : String(members.length)}
         />
         <MetricCard
-          accent="purple"
           helper={
             roleLabels.length
               ? formatSettingsRoleList(roleLabels)
@@ -1550,7 +1560,6 @@ function TeamView({
           value={roleLabels.length ? String(roleLabels.length) : directoryUnavailable ? "—" : "None"}
         />
         <MetricCard
-          accent={canManageUsers ? "success" : "violet"}
           helper={canManageUsers ? "Create user and password reset enabled" : "Member directory visibility only"}
           label="Access mode"
           metricKey="team-access-mode"
@@ -1758,21 +1767,18 @@ function SettingsView({
       <SettingsSubNav activeView="settings" />
       <div className="summary-grid metric-grid settings-shell-metrics" aria-label="Settings shell metrics">
         <MetricCard
-          accent="cyan"
           helper={currentUser.email}
           label="Profile"
           metricKey="settings-profile"
           value={currentUser.name || currentUser.email}
         />
         <MetricCard
-          accent="violet"
           helper={tenantSettings?.tenant.slug ?? "read-only context"}
           label="Tenant"
           metricKey="settings-tenant"
           value={tenantSettings?.tenant.name ?? "Unavailable"}
         />
         <MetricCard
-          accent="purple"
           helper={`${areaCounts.available} available · ${areaCounts.deferred} deferred`}
           label="Access mode"
           metricKey="settings-access-mode"
@@ -2130,26 +2136,39 @@ export function App() {
         setTeamMembers(teamMembersResponse.ok ? teamMembersResponse.data : null);
         setTenantSettings(tenantSettingsResponse.ok ? tenantSettingsResponse.data : null);
 
+        const loadedRoles = contextResponse.ok ? contextResponse.data.tenantContext.roles : [];
+        const clientOnlyViewer = isClientOnlyRole(loadedRoles);
+
+        // Client-only sessions are not expected to load admin finance/delivery/module payloads.
+        // Do not surface a global error for those expected permission boundaries.
         if (
-          !contextResponse.ok ||
-          !tenantsResponse.ok ||
-          !companyProfileResponse.ok ||
-          !clientsResponse.ok ||
-          !projectsResponse.ok ||
-          !aiDeliveryResponse.ok ||
-          !tasksResponse.ok ||
-          !invoicesResponse.ok ||
-          !recurringInvoicesResponse.ok ||
-          !invoiceItemsResponse.ok ||
-          !archivedInvoiceItemsResponse.ok ||
-          !vendorsResponse.ok ||
-          !billsResponse.ok ||
-          !tenantModulesResponse.ok
+          !clientOnlyViewer &&
+          (!contextResponse.ok ||
+            !tenantsResponse.ok ||
+            !companyProfileResponse.ok ||
+            !clientsResponse.ok ||
+            !projectsResponse.ok ||
+            !aiDeliveryResponse.ok ||
+            !tasksResponse.ok ||
+            !invoicesResponse.ok ||
+            !recurringInvoicesResponse.ok ||
+            !invoiceItemsResponse.ok ||
+            !archivedInvoiceItemsResponse.ok ||
+            !vendorsResponse.ok ||
+            !billsResponse.ok ||
+            !tenantModulesResponse.ok)
         ) {
           setAppMessage({
             tone: "error",
             text: "Some protected context could not be loaded."
           });
+        } else if (clientOnlyViewer && !contextResponse.ok) {
+          setAppMessage({
+            tone: "error",
+            text: "Some protected context could not be loaded."
+          });
+        } else {
+          setAppMessage(null);
         }
       } catch (error) {
         setAppMessage({ tone: "error", text: maskError(error) });
@@ -4637,9 +4656,10 @@ export function App() {
   const firstRunSetup = deriveFirstRunSetupState(companyProfile, clients, canManageCore);
   const layoutNavigationItems = isClientOnlyViewer
     ? clientNavigationItems
-    : filterNavigationByRole(navigationItems, authContext);
+    : filterAdminOnlyNavigation(filterNavigationByRole(navigationItems, authContext), authContext);
   const isClientPortalView =
     activeView === "client-portal" || (isClientOnlyViewer && CLIENT_PORTAL_SHELL_VIEWS.has(activeView));
+  const shellActiveView = resolveShellActiveView(activeView, window.location.hash);
 
   if (!token || !currentUser) {
     if (token && forcePasswordChangeContext) {
@@ -4656,7 +4676,7 @@ export function App() {
 
   return (
     <AppLayout
-      activeView={activeView}
+      activeView={shellActiveView}
       currentTenant={currentTenant}
       isClientRole={isClientOnlyViewer}
       token={token}

@@ -398,7 +398,7 @@ function buildReadinessState(
       id: "brief",
       label: "Brief submitted",
       state: brief.status === "DRAFT" ? "pending" : "ready",
-      note: brief.status === "DRAFT" ? "Submit the brief to unlock AI reports." : `Status: ${brief.status}`
+      note: brief.status === "DRAFT" ? "Submit the brief for review to unlock AI reports." : `Status: ${brief.status}`
     },
     {
       id: "reports",
@@ -407,7 +407,7 @@ function buildReadinessState(
       note:
         brief.miReports?.[0] && brief.seoReports?.[0]
           ? "Reports generated."
-          : "Run AI to generate reports."
+          : "Generate reports from an eligible brief status."
     },
     {
       id: "plan",
@@ -1078,7 +1078,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       case "release_prepared":
         return "Release prepared";
       case "publication_target_missing":
-        return "Publication target missing";
+        return "Website or channel missing";
       default:
         return value.replace(/_/g, " ");
     }
@@ -1106,7 +1106,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
       case "not_ready":
         return "Not ready";
       case "publication_target_missing":
-        return "Publication target missing";
+        return "Website or channel missing";
       case "release_prep_missing":
         return "Release prep required";
       case "ready_to_execute":
@@ -1356,12 +1356,12 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                   <div className="brief-action-row">
                     {detail.status === "DRAFT" ? (
                       <Button variant="secondary" disabled={actionLoading} onClick={() => void handleSubmit()}>
-                        Submit
+                        Submit brief for review
                       </Button>
                     ) : null}
                     {canRunAi ? (
                       <Button variant="primary" disabled={actionLoading} onClick={() => void handleRunAi()}>
-                        Run AI
+                        Generate reports
                       </Button>
                     ) : null}
                   </div>
@@ -1379,7 +1379,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
               </SectionPanel>
 
               {canManageAi ? (
-                <SectionPanel className="brief-detail-section" title="AI Run Status">
+                <SectionPanel className="brief-detail-section" title="Content generation status">
                   {latestRun ? (
                     <>
                       <div className="brief-detail-meta">
@@ -1439,7 +1439,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     <ReportSectionList sections={miSections} />
                   </>
                 ) : (
-                  <p className="muted-text">No MI report yet. Run AI from an eligible brief status.</p>
+                  <p className="muted-text">No MI report yet. Generate reports from an eligible brief status.</p>
                 )}
               </SectionPanel>
 
@@ -1453,7 +1453,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                     <ReportSectionList sections={seoSections} />
                   </>
                 ) : (
-                  <p className="muted-text">No SEO report yet. Run AI from an eligible brief status.</p>
+                  <p className="muted-text">No SEO report yet. Generate reports from an eligible brief status.</p>
                 )}
               </SectionPanel>
 
@@ -1598,7 +1598,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                         1. Complete the intake fields above (Goal, Business context, Target audience, Offer context)
                       </p>
                       <p className="brief-muted-note muted-text">
-                        2. Run AI to generate MI and SEO reports
+                        2. Generate MI and SEO reports from an eligible brief status
                       </p>
                       <p className="brief-muted-note muted-text">
                         3. Generate a production plan from the reports
@@ -2015,7 +2015,7 @@ export function WorkflowBriefsPage({ canManageAi = false }: { canManageAi?: bool
                             <BriefStatCard label="In client review" value={completenessStatus.clientReviewInProgressCount} />
                             <BriefStatCard label="Release prep" value={formatReleasePrepStage(completenessStatus.releasePrepStage)} />
                             <BriefStatCard
-                              label="Publication target"
+                              label="Website or channel"
                               value={
                                 completenessStatus.publicationTargetAvailable
                                   ? completenessStatus.publicationTargetLabel ?? "Available"

@@ -10,7 +10,7 @@ import {
 } from "./client-portal-api";
 import "./client-portal.css";
 
-const AMBER_TINT = "#C98A42";
+const AMBER_TINT = "#9A6817";
 
 function PortalInlineLoading({ label }: { label: string }) {
   return <LoadingState label={label} variant="inline" />;

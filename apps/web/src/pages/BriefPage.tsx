@@ -192,7 +192,7 @@ function BriefAiResearchPlaceholder() {
         }}
       >
         <p className="muted-text" style={{ margin: 0 }}>
-          AI research will appear here after your brief is processed by the DCA team.
+          AI research will appear here after your brief is reviewed by the DCA team.
         </p>
       </div>
     </div>
@@ -526,9 +526,9 @@ function BriefAwaitingClientInfoBanner() {
       className="portal-inline-notice"
       role="note"
       style={{
-        background: "rgba(96, 165, 250, 0.08)",
-        borderColor: "rgba(96, 165, 250, 0.28)",
-        color: "rgba(147, 197, 253, 0.96)",
+        background: "var(--ds-primary-soft-bg, #EEF2FF)",
+        borderColor: "var(--ds-primary-soft-border, #C7D2FE)",
+        color: "var(--ds-accent-indigo, #3730A3)",
         marginBottom: "1rem"
       }}
     >
@@ -652,7 +652,7 @@ function MonthlyBriefEditor({
             </Button>
           ) : null}
           <Button disabled={saving || submitting} onClick={onSave} variant="secondary">
-            {saving ? "Saving…" : "Save Draft"}
+            {saving ? "Saving…" : "Save draft"}
           </Button>
           {showSubmit ? (
             <Button disabled={saving || submitting} onClick={onSubmit}>
@@ -756,7 +756,7 @@ function AdditionalBriefEditor({
         {!readOnly ? (
           <>
             <Button disabled={saving || submitting} onClick={onSave} variant="secondary">
-              {saving ? "Saving…" : "Save Draft"}
+              {saving ? "Saving…" : "Save draft"}
             </Button>
             {showSubmit ? (
               <Button disabled={saving || submitting} onClick={onSubmit}>
@@ -1477,7 +1477,7 @@ export function BriefPage() {
                         Create Brief
                       </Button>
                     }
-                    message="No brief for this month"
+                    message="No brief for this month. Create one to get started."
                     title="Create brief"
                     variant="inline"
                   />

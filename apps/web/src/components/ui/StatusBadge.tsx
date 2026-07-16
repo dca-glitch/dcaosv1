@@ -40,7 +40,7 @@ export function StatusBadge({ status, displayLabel, className }: StatusBadgeProp
     <span
       className={["ds-badge", "ds-status-badge", className].filter(Boolean).join(" ")}
       data-status={key ?? "unknown"}
-      style={statusBadgeStyle(visual)}
+      style={{ ...statusBadgeStyle(visual), fontSize: "12px", textTransform: "none" }}
     >
       <span className="ds-badge-dot" aria-hidden="true" />
       {label}

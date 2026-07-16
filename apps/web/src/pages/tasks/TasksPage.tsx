@@ -1,6 +1,11 @@
 import { type FormEvent, useMemo, useState } from "react";
 import { Modal } from "../../components/ui";
 import { Button, EmptyState, ErrorState, Input, LoadingState, ModalActions, PageHeader, Select, StatusBadge, Table, Textarea } from "../../components/ui";
+import {
+  persistTableDensityPreference,
+  readTableDensityPreference,
+  type PersistedTableDensity
+} from "../../lib/table-density";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 
 export type TaskSummary = {
@@ -77,11 +82,16 @@ function formatStatusLabel(status: string, isArchived: boolean): string {
 
   switch (status) {
     case "TODO":
-      return "To Do";
+      return "Not started";
     case "IN_PROGRESS":
-      return "In Progress";
+      return "In progress";
     case "DONE":
-      return "Done";
+      return "Completed";
+    case "BLOCKED":
+      return "Blocked";
+    case "CANCELLED":
+    case "CANCELED":
+      return "Cancelled";
     default:
       return status;
   }
@@ -106,10 +116,16 @@ function formatRecurringLabel(recurringType: string): string {
 
 export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive, onRestore, onSave }: TasksPageProps) {
   const [filter, setFilter] = useState<"all" | "active" | "archived">("active");
+  const [tableDensity, setTableDensity] = useState<PersistedTableDensity>(() => readTableDensityPreference());
   const [editorTaskId, setEditorTaskId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<TaskFormValues>(emptyForm());
   const [saving, setSaving] = useState(false);
+
+  function setDensity(next: PersistedTableDensity) {
+    setTableDensity(next);
+    persistTableDensityPreference(next);
+  }
 
   const filteredTasks = useMemo(
     () =>
@@ -177,9 +193,9 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
   }
 
   return (
-    <section className="view-section" aria-labelledby="tasks-title" data-density="compact">
+    <section className="view-section" aria-labelledby="tasks-title" data-density={tableDensity}>
       <PageHeader
-        eyebrow="Delivery"
+        eyebrow="My work"
         title="Tasks"
         titleId="tasks-title"
         description="Delivery tasks linked to projects and clients."
@@ -199,9 +215,29 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
                 </Button>
               ))}
             </div>
+            <div className="filter-bar" role="group" aria-label="Table density">
+              <Button
+                aria-pressed={tableDensity === "comfortable"}
+                className={tableDensity === "comfortable" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                onClick={() => setDensity("comfortable")}
+                type="button"
+                variant="secondary"
+              >
+                Comfortable
+              </Button>
+              <Button
+                aria-pressed={tableDensity === "compact"}
+                className={tableDensity === "compact" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                onClick={() => setDensity("compact")}
+                type="button"
+                variant="secondary"
+              >
+                Compact
+              </Button>
+            </div>
             {canEdit ? (
               <Button onClick={openCreateModal} type="button">
-                Add Task
+                Add task
               </Button>
             ) : null}
           </>
@@ -219,8 +255,8 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
           kind={tasks.length === 0 ? "first-use" : "filtered"}
           message={
             tasks.length === 0
-              ? "Create a task to continue."
-              : "Adjust filters or create a task to continue."
+              ? "No tasks yet. Create a task to get started."
+              : "No tasks match the current filter. Adjust filters or create a task."
           }
           title={tasks.length === 0 ? "No tasks yet" : "No tasks match the current filter"}
           variant="inline"
@@ -230,6 +266,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
           <Table
             aria-label="Tasks"
             className="finance-table tasks-table"
+            density={tableDensity}
             headers={[
               { label: "Task", align: "left" },
               { label: "Project", align: "left" },

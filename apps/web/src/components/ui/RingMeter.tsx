@@ -26,7 +26,7 @@ function clampRatio(value: number, max: number): number {
 
 function resolveStroke(tone: RingMeterProps["tone"]): string {
   if (!tone || tone === "neutral") {
-    return "var(--ds-accent-primary)";
+    return "var(--ds-chart-primary, var(--ds-accent-primary))";
   }
   return `var(--status-${statusTokenSuffix(tone)}-text)`;
 }
@@ -73,7 +73,7 @@ export function RingMeter({
           cy="25"
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="var(--ds-chart-neutral, var(--ds-divider))"
           strokeWidth="2.5"
         />
         <circle

@@ -5,7 +5,7 @@ export const workflowRunStatusLabels: Record<WorkflowRunStatus, string> = {
   DRAFT: "Draft",
   READY: "Ready",
   IN_PROGRESS: "In progress",
-  REVIEW: "Review",
+  REVIEW: "Needs review",
   COMPLETED: "Completed",
   FAILED: "Failed",
   ARCHIVED: "Archived"
@@ -37,7 +37,7 @@ export function getWorkflowRunStatusOptions(status: string | null | undefined): 
 export function getWorkflowRunStatusHelper(status: string | null | undefined): string {
   if (!status) return "New workflow runs start in Draft.";
   const currentStatus = normalizeWorkflowRunStatus(status);
-  if (currentStatus === "FAILED") return "Failed runs can be archived or rerun through the controlled stub execution action.";
+  if (currentStatus === "FAILED") return "Failed runs can be archived or rerun through Run workflow.";
   const nextStatus = getWorkflowRunNextStatus(currentStatus);
   const failedNote = currentStatus === "IN_PROGRESS" || currentStatus === "REVIEW" ? " You can also mark the run as Failed." : "";
   if (!nextStatus) return `No further status transitions are available. Same-status save is allowed for notes/result edits.${failedNote}`;

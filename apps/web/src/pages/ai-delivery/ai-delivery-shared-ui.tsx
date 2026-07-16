@@ -33,5 +33,5 @@ export function AiDeliveryInlineEmpty({
           ? String(children)
           : "";
 
-  return <EmptyState kind={kind} message={message || "Nothing here yet."} variant="inline" />;
+  return <EmptyState kind={kind} message={message || "Nothing here yet. Add an item to get started."} variant="inline" />;
 }

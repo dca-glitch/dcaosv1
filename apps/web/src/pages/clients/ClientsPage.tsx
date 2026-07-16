@@ -17,6 +17,11 @@ import {
   Textarea,
   useUrlFilterState,
 } from "../../components/ui";
+import {
+  persistTableDensityPreference,
+  readTableDensityPreference,
+  type PersistedTableDensity
+} from "../../lib/table-density";
 import type { ProjectSummary } from "../projects/ProjectsPage";
 import {
   buildClientArchiveConfirm,
@@ -149,6 +154,11 @@ export function ClientsPage({
     defaultValue: "all",
     allowed: CLIENT_KIND_FILTERS
   });
+  const [tableDensity, setTableDensity] = useState<PersistedTableDensity>(() => readTableDensityPreference());
+  const setDensity = (next: PersistedTableDensity) => {
+    setTableDensity(next);
+    persistTableDensityPreference(next);
+  };
   const [editorClientId, setEditorClientId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ClientFormValues>(emptyForm());
@@ -283,7 +293,7 @@ export function ClientsPage({
   }
 
   return (
-    <section className="view-section" aria-labelledby="clients-title" data-density="compact">
+    <section className="view-section" aria-labelledby="clients-title" data-density={tableDensity}>
       <PageHeader
         eyebrow="CRM"
         title="Clients"
@@ -311,12 +321,32 @@ export function ClientsPage({
               ]}
               value={filter}
             />
+            <div className="filter-bar" role="group" aria-label="Table density">
+              <Button
+                aria-pressed={tableDensity === "comfortable"}
+                className={tableDensity === "comfortable" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                onClick={() => setDensity("comfortable")}
+                type="button"
+                variant="secondary"
+              >
+                Comfortable
+              </Button>
+              <Button
+                aria-pressed={tableDensity === "compact"}
+                className={tableDensity === "compact" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                onClick={() => setDensity("compact")}
+                type="button"
+                variant="secondary"
+              >
+                Compact
+              </Button>
+            </div>
           </div>
         }
         actions={
           canEdit ? (
             <Button onClick={openCreateModal} type="button" variant="primary">
-              Add Client
+              Add client
             </Button>
           ) : null
         }
@@ -337,6 +367,7 @@ export function ClientsPage({
           <div className="table-wrap table-scroll">
             <Table
               aria-label="Clients"
+              density={tableDensity}
               headers={[
                 { label: "Client", align: "left" },
                 { label: "Kind", align: "left" },

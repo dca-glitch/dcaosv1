@@ -25,7 +25,7 @@ export function buildClientArchiveConfirm(client: {
   return {
     title: `Archive ${client.name}?`,
     description:
-      "This hides the client from active work. Publication targets, credentials, and catalog edits become read-only until restore. The client can be restored later from the Archived filter.",
+      "This hides the client from active work. Websites or channels, credentials, and catalog edits become read-only until restore. The client can be restored later from the Archived filter.",
     confirmLabel: "Archive",
     danger: true
   };
@@ -35,7 +35,7 @@ export function buildClientRestoreConfirm(client: { name: string }): ArchiveConf
   return {
     title: `Restore ${client.name}?`,
     description:
-      "This returns the client to the active clients list and re-enables hub edits for publication targets, credentials, and catalog when you have edit access.",
+      "This returns the client to the active clients list and re-enables hub edits for websites or channels, credentials, and catalog when you have edit access.",
     confirmLabel: "Restore",
     danger: false
   };

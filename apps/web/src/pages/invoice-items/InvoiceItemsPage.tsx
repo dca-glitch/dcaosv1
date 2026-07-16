@@ -146,9 +146,9 @@ export function InvoiceItemsPage({
       />
 
       <div className="summary-grid metric-grid dashboard-command-metrics--compact finance-summary-strip" aria-label="Service library summary from loaded records">
-        <MetricCard label="Active services" value={String(activeItems.length)} helper="Available for invoice drafting" accent="cyan" />
-        <MetricCard label="Archived services" value={String(archivedItems.length)} helper="Hidden from active library" accent={archivedItems.length ? "warning" : "success"} />
-        <MetricCard label="Catalog value" value={formatMoney(totalActiveValue)} helper="Sum of active unit prices" accent="purple" />
+        <MetricCard label="Active services" value={String(activeItems.length)} helper="Available for invoice drafting" />
+        <MetricCard label="Archived services" value={String(archivedItems.length)} helper="Hidden from active library" />
+        <MetricCard label="Catalog value" value={formatMoney(totalActiveValue)} helper="Sum of active unit prices" />
       </div>
 
       <SectionPanel

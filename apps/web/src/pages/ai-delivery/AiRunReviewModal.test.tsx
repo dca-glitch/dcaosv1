@@ -52,7 +52,7 @@ const baseProps = {
   onExecute: vi.fn(),
   canSave: true,
   statusOptions: ["REVIEW", "COMPLETED"],
-  statusLabels: { REVIEW: "Review", COMPLETED: "Completed" },
+  statusLabels: { REVIEW: "Needs review", COMPLETED: "Completed" },
   statusHelper: "Allowed next status: Completed.",
   actionGuidance: "Review the latest run output.",
   formatOptionalDate: (v: string | null | undefined) => v ?? "Not set",
@@ -88,7 +88,7 @@ describe("AiRunReviewModal", () => {
     render(<AiRunReviewModal {...baseProps} runs={[]} selectedRunId={null} />);
     const dialog = getWorkflowRunsDialog();
     expect(within(dialog).getByRole("heading", { name: "Existing workflow runs" })).toBeTruthy();
-    expect(within(dialog).getByText("No workflow runs yet.")).toBeTruthy();
+    expect(within(dialog).getByText("No workflow runs yet. Create a workflow run to start.")).toBeTruthy();
     expect(within(dialog).queryByRole("button", { name: /Review/i })).toBeNull();
   });
 
@@ -125,7 +125,7 @@ describe("AiRunReviewModal", () => {
     render(<AiRunReviewModal {...baseProps} runs={[]} selectedRunId={null} />);
     const dialog = getWorkflowRunsDialog();
     fireEvent.click(within(dialog).getByRole("tab", { name: "Context & Logs" }));
-    expect(within(dialog).getByText("No workflow runs recorded yet.")).toBeTruthy();
+    expect(within(dialog).getByText("No workflow runs recorded yet. Create a workflow run to start.")).toBeTruthy();
   });
 
   it("selects a run from overview Review action", () => {

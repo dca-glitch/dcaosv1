@@ -1,13 +1,15 @@
 import React, { ReactNode, HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 
-export type TableDensity = 'admin' | 'client';
+export type TableDensity = 'admin' | 'client' | 'compact' | 'comfortable';
 
 const densityPad: Record<TableDensity, { th: string; td: string }> = {
-  admin:  { th: 'px-4 py-2.5', td: 'px-4 py-2.5' },
-  client: { th: 'px-6 py-3.5', td: 'px-6 py-3.5' },
+  admin:       { th: 'px-4 py-2.5', td: 'px-4 py-2.5' },
+  compact:     { th: 'px-4 py-2.5', td: 'px-4 py-2.5' },
+  client:      { th: 'px-4 py-3', td: 'px-4 py-3' },
+  comfortable: { th: 'px-4 py-3', td: 'px-4 py-3' },
 };
 
-const DensityContext = React.createContext<TableDensity>('admin');
+const DensityContext = React.createContext<TableDensity>('comfortable');
 
 /* ─────────────────────── TABLE WRAPPER ─────────────────────── */
 interface TableProps extends HTMLAttributes<HTMLDivElement> {
@@ -18,22 +20,22 @@ interface TableProps extends HTMLAttributes<HTMLDivElement> {
 export const Table: React.FC<TableProps> = ({
   children,
   className = '',
-  density = 'admin',
+  density = 'comfortable',
   'aria-label': ariaLabel,
   ...props
 }) => (
   <DensityContext.Provider value={density}>
     <div
-      className={`overflow-x-auto rounded-xl border border-border ${className}`}
+      className={`overflow-x-auto rounded-none border border-border ${className}`}
       data-density={density}
       role={ariaLabel ? 'region' : undefined}
       tabIndex={ariaLabel ? 0 : undefined}
       aria-label={ariaLabel ? `${ariaLabel} (scrollable)` : undefined}
-      style={{ background: 'var(--ds-panel-gradient)' }}
+      style={{ background: 'var(--ds-surface-panel)' }}
       {...props}
     >
       <table
-        className="w-full border-collapse text-[12px]"
+        className="w-full border-collapse text-[14px]"
         style={{ tableLayout: 'fixed' }}
         aria-label={ariaLabel}
       >
@@ -46,7 +48,7 @@ export const Table: React.FC<TableProps> = ({
 /* ─────────────────────── TABLE HEAD ─────────────────────── */
 export const TableHead: React.FC<{ children: ReactNode }> = ({ children }) => (
   <thead
-    className="border-b"
+    className="sticky top-0 z-[var(--ds-z-sticky)] border-b"
     style={{
       background: 'var(--ds-surface-inset)',
       borderColor: 'var(--ds-divider)',
@@ -115,7 +117,7 @@ export const Th: React.FC<TableHeadCellProps> = ({
     <th
       className={[
         pad,
-        'text-[9px] font-semibold uppercase tracking-wider text-text-muted',
+        'text-[13px] font-semibold tracking-wide text-text-muted',
         `text-${align}`,
         sortable ? 'cursor-pointer hover:text-text-secondary transition-colors' : '',
         className,
@@ -193,7 +195,7 @@ export const TdDouble: React.FC<{
   return (
     <td className={`${pad} align-middle ${className}`}>
       <div className="text-[12px] text-text-primary font-medium leading-tight">{primary}</div>
-      <div className="text-[11px] text-text-muted mt-0.5 leading-tight">{secondary}</div>
+      <div className="text-[12px] text-text-muted mt-0.5 leading-tight">{secondary}</div>
     </td>
   );
 };
@@ -282,7 +284,7 @@ export const TimelineItem: React.FC<{
     <div className="flex-1 min-w-0 pb-4">
       <div className="text-[12px] font-medium text-text-primary">{title}</div>
       {meta && (
-        <div className="text-[10px] font-mono mt-0.5" style={{ color: 'var(--ds-text-faint)' }}>
+        <div className="text-[12px] font-mono mt-0.5" style={{ color: 'var(--ds-text-faint)' }}>
           {meta}
         </div>
       )}
@@ -317,12 +319,12 @@ export const ActivityItem: React.FC<{
       <div className="flex items-baseline justify-between gap-2">
         <span className="text-[12px] font-medium text-text-primary truncate">{title}</span>
         {timestamp && (
-          <span className="text-[10px] font-mono flex-shrink-0" style={{ color: 'var(--ds-text-faint)' }}>
+          <span className="text-[12px] font-mono flex-shrink-0" style={{ color: 'var(--ds-text-faint)' }}>
             {timestamp}
           </span>
         )}
       </div>
-      {actor && <div className="text-[11px] text-text-muted mt-0.5">{actor}</div>}
+      {actor && <div className="text-[12px] text-text-muted mt-0.5">{actor}</div>}
       {description && <div className="text-[12px] text-text-secondary mt-1">{description}</div>}
     </div>
   </div>

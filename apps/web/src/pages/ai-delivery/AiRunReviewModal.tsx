@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Alert, Button, LoadingState, Modal, StatusBadge, Tabs } from "../../components/ui";
+import { Alert, Button, LoadingState, Modal, Select, StatusBadge, Tabs, Textarea } from "../../components/ui";
 import { AiDeliveryWorkflowHistoryPanel } from "./AiDeliveryWorkflowHistoryPanel";
 import "./ai-delivery-modals.css";
 import type {
@@ -115,7 +115,7 @@ export function AiRunReviewModal({
     <Modal isOpen={isOpen} footer={footer} onClose={onClose} size="lg" title="Workflow Runs">
       <div className="ai-run-review-modal ai-delivery-lane-modal stack gap-md">
         <div className="ai-run-review-modal__header-meta">
-          <p className="ai-run-review-modal__eyebrow muted-text m-0">AI Run Review</p>
+          <p className="ai-run-review-modal__eyebrow muted-text m-0">Review generated content</p>
           {selectedRun ? <StatusBadge status={headerBadgeStatus} /> : null}
         </div>
 
@@ -163,7 +163,7 @@ export function AiRunReviewModal({
                         <dd className="font-mono text-xs">{resultPreview?.model || "Not recorded"}</dd>
                       </div>
                       <div>
-                        <dt>Executed</dt>
+                        <dt>Completed at</dt>
                         <dd className="font-mono text-xs">
                           {formatOptionalDate(selectedRun?.finishedAt ?? selectedRun?.startedAt ?? selectedRun?.createdAt)}
                         </dd>
@@ -186,45 +186,41 @@ export function AiRunReviewModal({
                   </section>
                 </div>
 
-                <label className="field-span-2">
-                  <span>Admin notes</span>
-                  <textarea
-                    aria-label="Admin notes"
-                    maxLength={4000}
-                    onChange={(event) => onFormChange({ ...form, adminNotes: event.target.value })}
-                    placeholder="Workflow inputs, admin context, blockers, or review notes"
-                    rows={4}
-                    value={form.adminNotes}
-                  />
-                </label>
+                <Textarea
+                  fullWidth
+                  label="Admin notes"
+                  maxLength={4000}
+                  onChange={(event) => onFormChange({ ...form, adminNotes: event.target.value })}
+                  placeholder="Workflow inputs, admin context, blockers, or review notes"
+                  rows={4}
+                  value={form.adminNotes}
+                />
 
                 <section className="field-panel ai-delivery-section-compact">
                   <h3 className="text-sm font-semibold m-0 mb-2">Workflow run editor</h3>
                   <div className="field-grid">
-                    <label>
-                      Status — Required
-                      <select
-                        onChange={(event) => onFormChange({ ...form, status: event.target.value })}
-                        value={form.status}
-                      >
-                        {statusOptions.map((status) => (
-                          <option key={status} value={status}>
-                            {statusLabels[status] ?? status}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="muted-text">{statusHelper}</span>
-                    </label>
-                    <label className="field-span-2">
-                      Output / result summary — Optional
-                      <textarea
-                        maxLength={4000}
-                        onChange={(event) => onFormChange({ ...form, resultPlaceholder: event.target.value })}
-                        placeholder="Summary of output, result, or next handoff step"
-                        rows={3}
-                        value={form.resultPlaceholder}
-                      />
-                    </label>
+                    <Select
+                      fullWidth
+                      helperText={statusHelper}
+                      label="Status — Required"
+                      onChange={(event) => onFormChange({ ...form, status: event.target.value })}
+                      options={statusOptions.map((status) => ({
+                        value: status,
+                        label: statusLabels[status] ?? status,
+                      }))}
+                      required
+                      value={form.status}
+                    />
+                    <Textarea
+                      className="field-span-2"
+                      fullWidth
+                      label="Output / result summary — Optional"
+                      maxLength={4000}
+                      onChange={(event) => onFormChange({ ...form, resultPlaceholder: event.target.value })}
+                      placeholder="Summary of output, result, or next handoff step"
+                      rows={3}
+                      value={form.resultPlaceholder}
+                    />
                   </div>
                   <div className="flex flex-wrap gap-2 mt-3">
                     <Button
@@ -242,7 +238,7 @@ export function AiRunReviewModal({
                   <h3 className="text-sm font-semibold m-0 mb-2">Existing workflow runs</h3>
                   <p className="muted-text text-xs m-0 mb-2">{runs.length} run(s) in this project</p>
                   {runs.length === 0 ? (
-                    <p className="muted-text">No workflow runs yet.</p>
+                    <p className="muted-text">No workflow runs yet. Create a workflow run to start.</p>
                   ) : (
                     <div className="stack gap-sm">
                       {runs.map((run) => {
@@ -276,13 +272,13 @@ export function AiRunReviewModal({
                                 </Button>
                                 {canExecuteRun(run.status) ? (
                                   <Button
-                                    aria-label={`Execute workflow run ${statusLabels[normalizeStatus(run.status)] ?? run.status} from ${formatOptionalDate(run.createdAt)}`}
+                                    aria-label={`Run workflow ${statusLabels[normalizeStatus(run.status)] ?? run.status} from ${formatOptionalDate(run.createdAt)}`}
                                     disabled={saving || Boolean(executingId)}
                                     onClick={() => onExecute(run.id)}
                                     type="button"
                                     variant="primary"
                                   >
-                                    {executingId === run.id ? "Running" : "Execute"}
+                                    {executingId === run.id ? "Running workflow…" : "Run workflow"}
                                   </Button>
                                 ) : null}
                               </div>
@@ -293,7 +289,7 @@ export function AiRunReviewModal({
                                 <dd>{preview?.gateway ?? "Not recorded"}</dd>
                               </div>
                               <div className="field-span-2">
-                                <dt>Result placeholder preview</dt>
+                                <dt>Result summary preview</dt>
                                 <dd>{preview?.summary || formatPreview(run.resultPlaceholder)}</dd>
                               </div>
                               <div className="field-span-2">

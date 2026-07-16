@@ -39,7 +39,7 @@ describe("AppLayout public contract", () => {
     );
 
     expect(screen.getByText("DCA OS Lite")).toBeTruthy();
-    expect(screen.getByText("Operations Command")).toBeTruthy();
+    expect(screen.getByText("Agency workspace")).toBeTruthy();
     expect(screen.getByLabelText("Primary navigation")).toBeTruthy();
     expect(screen.getByRole("link", { name: /AI Delivery/i }).getAttribute("aria-current")).toBe("page");
     expect(screen.getByRole("link", { name: /Dashboard/i }).getAttribute("aria-current")).toBeNull();
@@ -49,8 +49,9 @@ describe("AppLayout public contract", () => {
     expect(document.querySelector(".shell-topbar__title")?.textContent).toBe("AI Delivery");
     expect(screen.queryByRole("heading", { level: 1, name: "AI Delivery" })).toBeNull();
     expect(screen.getByText("Admin content")).toBeTruthy();
+    expect(screen.getByText("LOCAL")).toBeTruthy();
 
-    fireEvent.click(screen.getByRole("button", { name: "Logout" }));
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
     expect(onLogout).toHaveBeenCalledTimes(1);
   });
 
@@ -69,9 +70,9 @@ describe("AppLayout public contract", () => {
       </AppLayout>
     );
 
-    expect(screen.getByText("Client Archive")).toBeTruthy();
-    expect(screen.getByText("Read-only deliverables")).toBeTruthy();
-    expect(screen.getByLabelText("Client archive navigation")).toBeTruthy();
+    expect(screen.getByText("DCA OS Lite")).toBeTruthy();
+    expect(screen.getByText("Client workspace")).toBeTruthy();
+    expect(screen.getByLabelText("Workspace navigation")).toBeTruthy();
     expect(document.querySelector(".nav-section-label")?.textContent).toBeTruthy();
     expect(screen.getByRole("link", { name: "Archive" }).getAttribute("href")).toBe("#/archive");
     expect(screen.getByRole("link", { name: "Your archive" }).getAttribute("aria-current")).toBe("page");
@@ -206,40 +207,42 @@ describe("AppLayout public contract", () => {
 
 describe("shell section labels", () => {
   it("maps admin and portal section labels without renaming view keys", () => {
-    expect(adminSectionLabel("protected")).toBe("Product");
-    expect(adminSectionLabel("core")).toBe("Core workflows");
-    expect(portalSectionLabel("client")).toBe("Archive");
+    expect(adminSectionLabel("protected")).toBe("Dashboard");
+    expect(adminSectionLabel("core")).toBe("Delivery");
+    expect(adminSectionLabel("mywork")).toBe("My work");
+    expect(portalSectionLabel("client")).toBe("Your workspace");
     expect(portalSectionLabel("protected")).toBe("Overview");
+    expect(portalSectionLabel("work")).toBe("Your work");
   });
 });
 
 describe("shell route title matrix", () => {
   const matrix: Array<{ view: string; admin: string; portal?: string }> = [
-    { view: "dashboard", admin: "Dashboard" },
+    { view: "dashboard", admin: "Dashboard", portal: "Overview" },
     { view: "modules", admin: "Modules" },
     { view: "tenants", admin: "Tenants" },
-    { view: "client-portal", admin: "Client Portal", portal: "Your archive" },
-    { view: "briefs", admin: "Briefs" },
+    { view: "client-portal", admin: "Client archive", portal: "Content" },
+    { view: "briefs", admin: "Tasks", portal: "Tasks" },
     { view: "briefs-panel", admin: "Briefs" },
-    { view: "workflow-briefs", admin: "Workflow Briefs" },
-    { view: "pending-approvals", admin: "Pending Approvals" },
-    { view: "monthly-reports", admin: "Monthly Reports" },
-    { view: "archive", admin: "Archive" },
-    { view: "clients", admin: "Clients" },
+    { view: "workflow-briefs", admin: "Content plans" },
+    { view: "pending-approvals", admin: "Approvals" },
+    { view: "monthly-reports", admin: "Reports" },
+    { view: "archive", admin: "Assets", portal: "Assets" },
+    { view: "clients", admin: "Workspaces" },
     { view: "projects", admin: "Projects" },
     { view: "ai-delivery", admin: "AI Delivery" },
-    { view: "ai-operations", admin: "AI Operations" },
-    { view: "ai-market-intelligence", admin: "Market Intelligence" },
+    { view: "ai-operations", admin: "AI operations" },
+    { view: "ai-market-intelligence", admin: "Analytics" },
     { view: "tasks", admin: "Tasks" },
     { view: "invoices", admin: "Invoices" },
-    { view: "credit-notes", admin: "Credit Notes" },
-    { view: "invoice-items", admin: "Services Library" },
+    { view: "credit-notes", admin: "Credit notes" },
+    { view: "invoice-items", admin: "Services library" },
     { view: "bills", admin: "Bills" },
-    { view: "company-profile", admin: "Company Profile" },
+    { view: "company-profile", admin: "Company profile" },
     { view: "settings", admin: "Settings" },
-    { view: "team", admin: "Team" },
-    { view: "admin-daily-cockpit", admin: "Daily Cockpit" },
-    { view: "design-system", admin: "Design System" }
+    { view: "team", admin: "Users and roles" },
+    { view: "admin-daily-cockpit", admin: "Attention required" },
+    { view: "design-system", admin: "Design system" }
   ];
 
   it("maps every known view key to a stable topbar title", () => {

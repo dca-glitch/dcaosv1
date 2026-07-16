@@ -4,6 +4,9 @@ import { AdminSidebar } from "./shell/AdminSidebar";
 import { PortalSidebar } from "./shell/PortalSidebar";
 import { AppTopbar } from "./shell/AppTopbar";
 import { PageContainer } from "./shell/PageContainer";
+import { useFocusTrap } from "./shell/useFocusTrap";
+
+const SIDEBAR_COLLAPSED_KEY = "dca.shell.sidebarCollapsed";
 
 type AppLayoutNavigationItem = {
   view: string;
@@ -36,6 +39,33 @@ type AppLayoutProps = {
   children: React.ReactNode;
 };
 
+function readCollapsedPreference(): boolean {
+  try {
+    return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function persistCollapsedPreference(collapsed: boolean): void {
+  try {
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? "1" : "0");
+  } catch {
+    // Preference is best-effort only.
+  }
+}
+
+function resolveEnvironmentMarker(): string | null {
+  const host = window.location.hostname;
+  if (host === "localhost" || host === "127.0.0.1") {
+    return "LOCAL";
+  }
+  if (host.includes("staging") || host.includes("stage")) {
+    return "STAGING";
+  }
+  return null;
+}
+
 export function AppLayout({
   activeView,
   currentTenant,
@@ -49,6 +79,9 @@ export function AppLayout({
 }: AppLayoutProps) {
   const isPortalShell = shellVariant === "portal";
   const [navOpen, setNavOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => readCollapsedPreference());
+  const environmentMarker = resolveEnvironmentMarker();
+  const drawerTrapRef = useFocusTrap(navOpen);
 
   useEffect(() => {
     setNavOpen(false);
@@ -78,10 +111,19 @@ export function AppLayout({
     }
   }
 
+  function toggleSidebarCollapsed() {
+    setSidebarCollapsed((current) => {
+      const next = !current;
+      persistCollapsedPreference(next);
+      return next;
+    });
+  }
+
   return (
     <div
       className={isPortalShell ? "app-shell portal-shell" : "app-shell"}
       data-nav-open={navOpen ? "true" : "false"}
+      data-sidebar-collapsed={sidebarCollapsed ? "true" : "false"}
     >
       <a className="shell-skip-link" href="#shell-main-content" onClick={handleSkipToContent}>
         Skip to content
@@ -94,23 +136,33 @@ export function AppLayout({
           type="button"
         />
       ) : null}
-      {isPortalShell ? (
-        <PortalSidebar
-          activeView={activeView}
-          currentTenant={currentTenant}
-          navigationItems={navigationItems}
-          onLogout={onLogout}
-          user={user}
-        />
-      ) : (
-        <AdminSidebar
-          activeView={activeView}
-          currentTenant={currentTenant}
-          navigationItems={navigationItems}
-          onLogout={onLogout}
-          user={user}
-        />
-      )}
+      <div className="shell-sidebar-slot" ref={drawerTrapRef}>
+        {isPortalShell ? (
+          <PortalSidebar
+            activeView={activeView}
+            collapsed={sidebarCollapsed}
+            currentTenant={currentTenant}
+            environmentMarker={environmentMarker}
+            isClientRole={isClientRole}
+            navigationItems={navigationItems}
+            onCollapseToggle={toggleSidebarCollapsed}
+            onLogout={onLogout}
+            user={user}
+          />
+        ) : (
+          <AdminSidebar
+            activeView={activeView}
+            collapsed={sidebarCollapsed}
+            currentTenant={currentTenant}
+            environmentMarker={environmentMarker}
+            isClientRole={isClientRole}
+            navigationItems={navigationItems}
+            onCollapseToggle={toggleSidebarCollapsed}
+            onLogout={onLogout}
+            user={user}
+          />
+        )}
+      </div>
       <div className="shell-content-column">
         <AppTopbar
           activeView={activeView}
@@ -123,7 +175,7 @@ export function AppLayout({
         <main
           id="shell-main-content"
           className={isPortalShell ? "main-shell portal-main-shell shell-main" : "main-shell shell-main"}
-          data-density={isPortalShell ? "comfortable" : "compact"}
+          data-density={isPortalShell ? "comfortable" : "comfortable"}
           tabIndex={-1}
         >
           <PageContainer shellVariant={shellVariant}>{children}</PageContainer>

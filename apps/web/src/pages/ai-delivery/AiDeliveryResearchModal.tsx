@@ -1,6 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/ui";
-import { StatusBadge } from "../../components/ui";
+import { Button, Input, Modal, Select, StatusBadge, Textarea } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -121,91 +120,86 @@ export function AiDeliveryResearchModal({
           <section className="field-panel ai-delivery-section-compact">
             <h3>Research request editor</h3>
             <div className="field-grid">
-              <label>
-                Status - Required
-                <select
-                  value={requestForm.status}
-                  onChange={(event) => onRequestFormChange((current) => ({ ...current, status: event.target.value }))}
-                >
-                  {RESEARCH_REQUEST_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {formatEnumLabel(status)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Linked workflow run - Optional
-                <select
-                  value={requestForm.workflowRunId ?? ""}
-                  onChange={(event) =>
-                    onRequestFormChange((current) => ({ ...current, workflowRunId: event.target.value || null }))
-                  }
-                >
-                  <option value="">Manual / unlinked request</option>
-                  {researchWorkflowRuns.map((run) => (
-                    <option key={run.id} value={run.id}>
-                      Workflow run - {formatEnumLabel(run.status)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field-span-2">
-                Title - Required
-                <input
-                  maxLength={255}
-                  placeholder="Competitor review, source gathering, keyword gap, audience research"
-                  value={requestForm.title}
-                  onChange={(event) => onRequestFormChange((current) => ({ ...current, title: event.target.value }))}
-                />
-              </label>
-              <label>
-                Request type / topic - Optional
-                <input
-                  maxLength={255}
-                  placeholder="Competitors, sources, SERP notes, local intent"
-                  value={requestForm.requestType}
-                  onChange={(event) =>
-                    onRequestFormChange((current) => ({ ...current, requestType: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Description / notes - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="What should be reviewed, what to collect manually, and what the source list should prove"
-                  rows={4}
-                  value={requestForm.description}
-                  onChange={(event) =>
-                    onRequestFormChange((current) => ({ ...current, description: event.target.value }))
-                  }
-                />
-                <span className="muted-text">Admin-only. No external fetching runs here.</span>
-              </label>
+              <Select
+                fullWidth
+                label="Status - Required"
+                onChange={(event) => onRequestFormChange((current) => ({ ...current, status: event.target.value }))}
+                options={RESEARCH_REQUEST_STATUSES.map((status) => ({
+                  value: status,
+                  label: formatEnumLabel(status),
+                }))}
+                value={requestForm.status}
+              />
+              <Select
+                fullWidth
+                label="Linked workflow run - Optional"
+                onChange={(event) =>
+                  onRequestFormChange((current) => ({ ...current, workflowRunId: event.target.value || null }))
+                }
+                options={[
+                  { value: "", label: "Manual / unlinked request" },
+                  ...researchWorkflowRuns.map((run) => ({
+                    value: run.id,
+                    label: `Workflow run - ${formatEnumLabel(run.status)}`,
+                  })),
+                ]}
+                value={requestForm.workflowRunId ?? ""}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                label="Title - Required"
+                maxLength={255}
+                onChange={(event) => onRequestFormChange((current) => ({ ...current, title: event.target.value }))}
+                placeholder="Competitor review, source gathering, keyword gap, audience research"
+                value={requestForm.title}
+              />
+              <Input
+                fullWidth
+                label="Request type / topic - Optional"
+                maxLength={255}
+                onChange={(event) =>
+                  onRequestFormChange((current) => ({ ...current, requestType: event.target.value }))
+                }
+                placeholder="Competitors, sources, SERP notes, local intent"
+                value={requestForm.requestType}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Admin-only. No external fetching runs here."
+                label="Description / notes - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onRequestFormChange((current) => ({ ...current, description: event.target.value }))
+                }
+                placeholder="What should be reviewed, what to collect manually, and what the source list should prove"
+                rows={4}
+                value={requestForm.description}
+              />
             </div>
             <div className="modal-footer ai-delivery-modal-footer">
-              <button className="ghost-action" disabled={saving} onClick={onClose} type="button">
+              <Button disabled={saving} onClick={onClose} type="button" variant="tertiary">
                 Close
-              </button>
-              <button className="ghost-action" disabled={saving} onClick={onNewRequest} type="button">
+              </Button>
+              <Button disabled={saving} onClick={onNewRequest} type="button" variant="tertiary">
                 New request
-              </button>
-              <button
-                className="primary-action"
+              </Button>
+              <Button
                 disabled={saving || !requestForm.title.trim()}
                 onClick={() => void onSaveRequest(project.id)}
                 type="button"
+                variant="primary"
               >
                 {saving ? "Saving" : requestEditorId ? "Save request" : "Create request"}
-              </button>
+              </Button>
             </div>
           </section>
 
           <section className="field-panel ai-delivery-section-compact">
             <h3>Existing research requests</h3>
             {researchRequests.length === 0 ? (
-              <AiDeliveryInlineEmpty>No research requests yet. Add a request to continue.</AiDeliveryInlineEmpty>
+              <AiDeliveryInlineEmpty>No research requests yet. Add a research request to get started.</AiDeliveryInlineEmpty>
             ) : null}
             {researchRequests.map((request) => (
               <article className="entity-card" key={request.id}>
@@ -255,156 +249,152 @@ export function AiDeliveryResearchModal({
           <section className="field-panel ai-delivery-section-compact">
             <h3>Research summary editor</h3>
             <div className="field-grid">
-              <label>
-                Status - Required
-                <select
-                  value={summaryForm.status}
-                  onChange={(event) => onSummaryFormChange((current) => ({ ...current, status: event.target.value }))}
-                >
-                  {RESEARCH_SUMMARY_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {formatEnumLabel(status)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Linked workflow run - Optional
-                <select
-                  value={summaryForm.workflowRunId ?? ""}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, workflowRunId: event.target.value || null }))
-                  }
-                >
-                  <option value="">Manual / unlinked summary</option>
-                  {researchWorkflowRuns.map((run) => (
-                    <option key={run.id} value={run.id}>
-                      Workflow run - {formatEnumLabel(run.status)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field-span-2">
-                Title - Required
-                <input
-                  maxLength={255}
-                  placeholder="SEO findings summary for brief revision and content planning"
-                  value={summaryForm.title}
-                  onChange={(event) => onSummaryFormChange((current) => ({ ...current, title: event.target.value }))}
-                />
-              </label>
-              <label className="field-span-2">
-                Summary - Required
-                <textarea
-                  maxLength={4000}
-                  placeholder="Summarize the research findings, business context, and what should influence planning next"
-                  rows={5}
-                  value={summaryForm.summaryText}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, summaryText: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Key findings - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="Top findings the admin team wants to preserve from the manual research review"
-                  rows={3}
-                  value={summaryForm.keyFindings}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, keyFindings: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Audience insights - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="Audience problems, intent signals, and messaging cues discovered during research"
-                  rows={3}
-                  value={summaryForm.audienceInsights}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, audienceInsights: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Competitor insights - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="Competitor positioning, gaps, and useful benchmark observations"
-                  rows={3}
-                  value={summaryForm.competitorInsights}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, competitorInsights: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Keyword opportunities - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="Search themes, target keyword opportunities, and promising topic clusters"
-                  rows={3}
-                  value={summaryForm.keywordOpportunities}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, keywordOpportunities: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Content recommendations - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="Recommended content directions, angles, and deliverable ideas for later planning"
-                  rows={3}
-                  value={summaryForm.contentRecommendations}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, contentRecommendations: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Brief revision notes - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="What should be revised or clarified in the project brief before planning continues"
-                  rows={3}
-                  value={summaryForm.briefRevisionNotes}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, briefRevisionNotes: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Source notes - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="Manual notes about approved sources used for this summary and any limitations to keep in mind"
-                  rows={3}
-                  value={summaryForm.sourceNotes}
-                  onChange={(event) =>
-                    onSummaryFormChange((current) => ({ ...current, sourceNotes: event.target.value }))
-                  }
-                />
-              </label>
+              <Select
+                fullWidth
+                label="Status - Required"
+                onChange={(event) => onSummaryFormChange((current) => ({ ...current, status: event.target.value }))}
+                options={RESEARCH_SUMMARY_STATUSES.map((status) => ({
+                  value: status,
+                  label: formatEnumLabel(status),
+                }))}
+                value={summaryForm.status}
+              />
+              <Select
+                fullWidth
+                label="Linked workflow run - Optional"
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, workflowRunId: event.target.value || null }))
+                }
+                options={[
+                  { value: "", label: "Manual / unlinked summary" },
+                  ...researchWorkflowRuns.map((run) => ({
+                    value: run.id,
+                    label: `Workflow run - ${formatEnumLabel(run.status)}`,
+                  })),
+                ]}
+                value={summaryForm.workflowRunId ?? ""}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                label="Title - Required"
+                maxLength={255}
+                onChange={(event) => onSummaryFormChange((current) => ({ ...current, title: event.target.value }))}
+                placeholder="SEO findings summary for brief revision and content planning"
+                value={summaryForm.title}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Summary - Required"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, summaryText: event.target.value }))
+                }
+                placeholder="Summarize the research findings, business context, and what should influence planning next"
+                rows={5}
+                value={summaryForm.summaryText}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Key findings - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, keyFindings: event.target.value }))
+                }
+                placeholder="Top findings the admin team wants to preserve from the manual research review"
+                rows={3}
+                value={summaryForm.keyFindings}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Audience insights - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, audienceInsights: event.target.value }))
+                }
+                placeholder="Audience problems, intent signals, and messaging cues discovered during research"
+                rows={3}
+                value={summaryForm.audienceInsights}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Competitor insights - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, competitorInsights: event.target.value }))
+                }
+                placeholder="Competitor positioning, gaps, and useful benchmark observations"
+                rows={3}
+                value={summaryForm.competitorInsights}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Keyword opportunities - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, keywordOpportunities: event.target.value }))
+                }
+                placeholder="Search themes, target keyword opportunities, and promising topic clusters"
+                rows={3}
+                value={summaryForm.keywordOpportunities}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Content recommendations - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, contentRecommendations: event.target.value }))
+                }
+                placeholder="Recommended content directions, angles, and deliverable ideas for later planning"
+                rows={3}
+                value={summaryForm.contentRecommendations}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Brief revision notes - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, briefRevisionNotes: event.target.value }))
+                }
+                placeholder="What should be revised or clarified in the project brief before planning continues"
+                rows={3}
+                value={summaryForm.briefRevisionNotes}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Source notes - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSummaryFormChange((current) => ({ ...current, sourceNotes: event.target.value }))
+                }
+                placeholder="Manual notes about approved sources used for this summary and any limitations to keep in mind"
+                rows={3}
+                value={summaryForm.sourceNotes}
+              />
             </div>
             <div className="modal-footer ai-delivery-modal-footer">
-              <button className="ghost-action" disabled={saving} onClick={onClose} type="button">
+              <Button disabled={saving} onClick={onClose} type="button" variant="tertiary">
                 Close
-              </button>
-              <button className="ghost-action" disabled={saving} onClick={onNewSummary} type="button">
+              </Button>
+              <Button disabled={saving} onClick={onNewSummary} type="button" variant="tertiary">
                 New summary
-              </button>
-              <button
-                className="primary-action"
+              </Button>
+              <Button
                 disabled={saving || !summaryForm.title.trim() || !summaryForm.summaryText.trim()}
                 onClick={() => void onSaveSummary(project.id)}
                 type="button"
+                variant="primary"
               >
                 {saving ? "Saving" : summaryEditorId ? "Save summary" : "Create summary"}
-              </button>
+              </Button>
             </div>
           </section>
 
@@ -497,127 +487,119 @@ export function AiDeliveryResearchModal({
           <section className="field-panel ai-delivery-section-compact">
             <h3>Research source editor</h3>
             <div className="field-grid">
-              <label>
-                Status - Required
-                <select
-                  value={sourceForm.status}
-                  onChange={(event) => onSourceFormChange((current) => ({ ...current, status: event.target.value }))}
-                >
-                  {RESEARCH_SOURCE_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {formatEnumLabel(status)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Source type - Required
-                <select
-                  value={sourceForm.sourceType}
-                  onChange={(event) =>
-                    onSourceFormChange((current) => ({ ...current, sourceType: event.target.value }))
-                  }
-                >
-                  {RESEARCH_SOURCE_TYPES.map((sourceType) => (
-                    <option key={sourceType} value={sourceType}>
-                      {formatEnumLabel(sourceType)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Linked research request - Optional
-                <select
-                  value={sourceForm.researchRequestId ?? ""}
-                  onChange={(event) =>
-                    onSourceFormChange((current) => ({
-                      ...current,
-                      researchRequestId: event.target.value || null,
-                    }))
-                  }
-                >
-                  <option value="">Manual / unlinked source</option>
-                  {researchRequests.map((request) => (
-                    <option key={request.id} value={request.id}>
-                      {request.title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Linked workflow run - Optional
-                <select
-                  value={sourceForm.workflowRunId ?? ""}
-                  onChange={(event) =>
-                    onSourceFormChange((current) => ({ ...current, workflowRunId: event.target.value || null }))
-                  }
-                >
-                  <option value="">Manual / unlinked source</option>
-                  {researchWorkflowRuns.map((run) => (
-                    <option key={run.id} value={run.id}>
-                      Workflow run - {formatEnumLabel(run.status)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field-span-2">
-                Source URL - Required
-                <input
-                  maxLength={2048}
-                  placeholder="https://example.com/source-page"
-                  value={sourceForm.sourceUrl}
-                  onChange={(event) =>
-                    onSourceFormChange((current) => ({ ...current, sourceUrl: event.target.value }))
-                  }
-                />
-                <span className="muted-text">Manual URL only. No fetch or crawl runs here.</span>
-              </label>
-              <label className="field-span-2">
-                Source title - Optional
-                <input
-                  maxLength={255}
-                  placeholder="Human-friendly source label for the admin team"
-                  value={sourceForm.sourceTitle}
-                  onChange={(event) =>
-                    onSourceFormChange((current) => ({ ...current, sourceTitle: event.target.value }))
-                  }
-                />
-              </label>
-              <label className="field-span-2">
-                Review notes - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="Why this source was approved, rejected, or archived for manual research use"
-                  rows={4}
-                  value={sourceForm.reviewNotes}
-                  onChange={(event) =>
-                    onSourceFormChange((current) => ({ ...current, reviewNotes: event.target.value }))
-                  }
-                />
-              </label>
+              <Select
+                fullWidth
+                label="Status - Required"
+                onChange={(event) => onSourceFormChange((current) => ({ ...current, status: event.target.value }))}
+                options={RESEARCH_SOURCE_STATUSES.map((status) => ({
+                  value: status,
+                  label: formatEnumLabel(status),
+                }))}
+                value={sourceForm.status}
+              />
+              <Select
+                fullWidth
+                label="Source type - Required"
+                onChange={(event) =>
+                  onSourceFormChange((current) => ({ ...current, sourceType: event.target.value }))
+                }
+                options={RESEARCH_SOURCE_TYPES.map((sourceType) => ({
+                  value: sourceType,
+                  label: formatEnumLabel(sourceType),
+                }))}
+                value={sourceForm.sourceType}
+              />
+              <Select
+                fullWidth
+                label="Linked research request - Optional"
+                onChange={(event) =>
+                  onSourceFormChange((current) => ({
+                    ...current,
+                    researchRequestId: event.target.value || null,
+                  }))
+                }
+                options={[
+                  { value: "", label: "Manual / unlinked source" },
+                  ...researchRequests.map((request) => ({
+                    value: request.id,
+                    label: request.title,
+                  })),
+                ]}
+                value={sourceForm.researchRequestId ?? ""}
+              />
+              <Select
+                fullWidth
+                label="Linked workflow run - Optional"
+                onChange={(event) =>
+                  onSourceFormChange((current) => ({ ...current, workflowRunId: event.target.value || null }))
+                }
+                options={[
+                  { value: "", label: "Manual / unlinked source" },
+                  ...researchWorkflowRuns.map((run) => ({
+                    value: run.id,
+                    label: `Workflow run - ${formatEnumLabel(run.status)}`,
+                  })),
+                ]}
+                value={sourceForm.workflowRunId ?? ""}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                helperText="Manual URL only. No fetch or crawl runs here."
+                label="Source URL - Required"
+                maxLength={2048}
+                onChange={(event) =>
+                  onSourceFormChange((current) => ({ ...current, sourceUrl: event.target.value }))
+                }
+                placeholder="https://example.com/source-page"
+                value={sourceForm.sourceUrl}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                label="Source title - Optional"
+                maxLength={255}
+                onChange={(event) =>
+                  onSourceFormChange((current) => ({ ...current, sourceTitle: event.target.value }))
+                }
+                placeholder="Human-friendly source label for the admin team"
+                value={sourceForm.sourceTitle}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                label="Review notes - Optional"
+                maxLength={4000}
+                onChange={(event) =>
+                  onSourceFormChange((current) => ({ ...current, reviewNotes: event.target.value }))
+                }
+                placeholder="Why this source was approved, rejected, or archived for manual research use"
+                rows={4}
+                value={sourceForm.reviewNotes}
+              />
             </div>
             <div className="modal-footer ai-delivery-modal-footer">
-              <button className="ghost-action" disabled={saving} onClick={onClose} type="button">
+              <Button disabled={saving} onClick={onClose} type="button" variant="tertiary">
                 Close
-              </button>
-              <button className="ghost-action" disabled={saving} onClick={onNewSource} type="button">
+              </Button>
+              <Button disabled={saving} onClick={onNewSource} type="button" variant="tertiary">
                 New source
-              </button>
-              <button
-                className="primary-action"
+              </Button>
+              <Button
                 disabled={saving || !sourceForm.sourceUrl.trim()}
                 onClick={() => void onSaveSource(project.id)}
                 type="button"
+                variant="primary"
               >
                 {saving ? "Saving" : sourceEditorId ? "Save source" : "Create source"}
-              </button>
+              </Button>
             </div>
           </section>
 
           <section className="field-panel ai-delivery-section-compact">
             <h3>Existing research sources</h3>
             {researchSources.length === 0 ? (
-              <AiDeliveryInlineEmpty>No research sources yet. Add a source to continue.</AiDeliveryInlineEmpty>
+              <AiDeliveryInlineEmpty>No research sources yet. Add a research source to get started.</AiDeliveryInlineEmpty>
             ) : null}
             {researchSources.map((source) => (
               <article className="entity-card" key={source.id}>
@@ -698,9 +680,9 @@ export function AiDeliveryResearchModal({
             ))}
           </section>
           <div className="modal-footer ai-delivery-modal-footer">
-            <button className="ghost-action" onClick={onClose} type="button">
+            <Button onClick={onClose} type="button" variant="tertiary">
               Close
-            </button>
+            </Button>
           </div>
         </div>
       ) : (

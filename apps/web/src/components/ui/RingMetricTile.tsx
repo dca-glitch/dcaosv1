@@ -15,23 +15,22 @@ export type RingMetricTileProps = {
 
 function resolveTint(tone: RingMetricTileProps["tone"], alert?: boolean): string | undefined {
   if (!tone || tone === "neutral") {
-    return alert ? "#E07070" : undefined;
+    return alert ? "#A65345" : undefined;
   }
-  // Resolve CSS var to a hex for panelCSS tint (requires #RRGGBB).
-  // Use known STATUS token hexes from tokens.css for tint only.
+  // panelCSS requires #RRGGBB — mirror --ds-chart-* / status token hexes from tokens.css.
   const tintByTone: Partial<Record<StatusKey, string>> = {
-    blocked: "#E07070",
-    overdue: "#E07070",
-    failed: "#E07070",
-    in_review: "#C98A42",
-    changes_requested: "#E07070",
-    ready: "#818CF8",
-    in_progress: "#818CF8",
-    completed: "#4CAF85",
-    approved: "#4CAF85",
-    published: "#4CAF85",
+    blocked: "#765A78",
+    overdue: "#A65345",
+    failed: "#A65345",
+    in_review: "#9A6817",
+    changes_requested: "#A65345",
+    ready: "#3730A3",
+    in_progress: "#3730A3",
+    completed: "#4F7A5B",
+    approved: "#4F7A5B",
+    published: "#4F7A5B",
   };
-  return tintByTone[tone] ?? (alert ? "#E07070" : undefined);
+  return tintByTone[tone] ?? (alert ? "#A65345" : undefined);
 }
 
 /**

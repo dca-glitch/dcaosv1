@@ -30,7 +30,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref,
   ) => {
-    // Spec §4.1 visual 8px radius maps to token --ds-radius-md (Tailwind rounded-md)
     const base =
       'inline-flex items-center justify-center gap-2 rounded-md font-semibold border ' +
       'transition-[opacity,background,border-color,box-shadow,filter] duration-[120ms] ease-out ' +
@@ -42,8 +41,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       primary: {
         className: 'text-white border-transparent hover:brightness-110 active:brightness-95',
         style: {
-          background: 'var(--ds-primary-btn-gradient)',
-          boxShadow: 'var(--ds-shadow-glow)',
+          background: 'var(--ds-accent-cta)',
         },
       },
       secondary: {
@@ -84,9 +82,9 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     const sizes: Record<ButtonSize, string> = {
-      sm: 'px-3 py-1.5 text-[11px]',
-      md: 'px-4 py-2   text-[11px]',
-      lg: 'px-5 py-2.5 text-[12px]',
+      sm: 'px-3 py-1.5 text-[13px]',
+      md: 'px-4 py-2   text-[14px]',
+      lg: 'px-5 py-2.5 text-[14px]',
     };
 
     const v = variants[variant];

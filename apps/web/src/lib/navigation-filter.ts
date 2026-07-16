@@ -14,6 +14,9 @@ export type NavigationViewKey =
   | "ai-delivery"
   | "ai-operations"
   | "ai-market-intelligence"
+  | "admin-daily-cockpit"
+  | "content-plan-review"
+  | "content-draft-review"
   | "tasks"
   | "invoices"
   | "credit-notes"
@@ -21,7 +24,9 @@ export type NavigationViewKey =
   | "bills"
   | "company-profile"
   | "settings"
-  | "team";
+  | "team"
+  | "design-system"
+  | "setup";
 
 export const CLIENT_ONLY_NAV_VIEWS = new Set<string>([
   "dashboard",
@@ -34,6 +39,14 @@ export const CLIENT_ONLY_NAV_VIEWS = new Set<string>([
 ]);
 
 export const CLIENT_ALLOWED_ROUTE_VIEWS = CLIENT_ONLY_NAV_VIEWS;
+
+/** Owner/admin-only sidebar entries — functional screens, not client-facing. */
+export const ADMIN_ONLY_NAV_VIEWS = new Set<string>([
+  "modules",
+  "tenants",
+  "ai-operations",
+  "admin-daily-cockpit"
+]);
 
 export type NavigationItem<T extends string = NavigationViewKey> = {
   view: T;
@@ -55,6 +68,10 @@ export function isClientOnlyRole(roles: string[]): boolean {
   );
 }
 
+export function hasOwnerOrAdminRole(roles: string[]): boolean {
+  return roles.includes("owner") || roles.includes("admin");
+}
+
 export function filterNavigationByRole<T extends string>(
   items: NavigationItem<T>[],
   authContext: NavigationAuthContext
@@ -68,4 +85,27 @@ export function filterNavigationByRole<T extends string>(
   }
 
   return items;
+}
+
+export function filterAdminOnlyNavigation<T extends string>(
+  items: NavigationItem<T>[],
+  authContext: NavigationAuthContext
+): NavigationItem<T>[] {
+  if (!authContext || hasOwnerOrAdminRole(authContext.tenantContext.roles)) {
+    return items;
+  }
+
+  return items.filter((item) => !ADMIN_ONLY_NAV_VIEWS.has(item.view));
+}
+
+/** Map nested client-portal hashes to top-level shell nav keys for active-state highlighting. */
+export function resolveShellActiveView(activeView: string, hash: string): string {
+  const value = hash.replace(/^#\/?/, "");
+  if (value === "client-portal/pending-approvals" || /^client-portal\/deliverables\/.+\/approve$/.test(value)) {
+    return "pending-approvals";
+  }
+  if (value === "client-portal/briefs") {
+    return "briefs";
+  }
+  return activeView;
 }

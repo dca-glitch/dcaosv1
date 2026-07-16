@@ -387,7 +387,6 @@ export function CreditNotesPage({
 
       <div className="summary-grid finance-summary-strip" aria-label="Credit note totals from loaded records">
         <MetricCard
-          accent="cyan"
           helper={`${totals.totalCount} notes · ${totals.draftCount} draft · ${totals.voidedCount} voided`}
           label="Issued value"
           value={formatMoney(totals.issuedCents, "USD")}

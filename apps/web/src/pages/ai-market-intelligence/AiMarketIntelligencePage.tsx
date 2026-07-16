@@ -794,12 +794,12 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
               />
 
               <div className="summary-grid metric-grid operator-summary-metrics mi-summary-metrics">
-                <MetricCard accent="cyan" helper="Curated references" label="Sources" value={sources.filter((s) => !s.isArchived).length} />
-                <MetricCard accent="warning" helper="Admin notes" label="Findings" value={findings.filter((f) => !f.isArchived).length} />
-                <MetricCard accent="violet" helper="Bounded runs" label="Runs" value={runs.filter((r) => r.status === "EXECUTED").length} />
-                <MetricCard accent="purple" helper="Approved handoff" label="Insights" value={approvedInsights.length} />
-                <MetricCard accent="cyan" helper="Draft or final" label="Summaries" value={summaries.filter((s) => !s.isArchived).length} />
-                <MetricCard accent="success" helper="READY or APPLIED" label="Handoffs" value={readyHandoffs.length} />
+                <MetricCard helper="Curated references" label="Sources" value={sources.filter((s) => !s.isArchived).length} />
+                <MetricCard helper="Admin notes" label="Findings" value={findings.filter((f) => !f.isArchived).length} />
+                <MetricCard helper="Bounded runs" label="Runs" value={runs.filter((r) => r.status === "EXECUTED").length} />
+                <MetricCard helper="Approved handoff" label="Insights" value={approvedInsights.length} />
+                <MetricCard helper="Draft or final" label="Summaries" value={summaries.filter((s) => !s.isArchived).length} />
+                <MetricCard helper="READY or APPLIED" label="Handoffs" value={readyHandoffs.length} />
               </div>
 
               <SectionPanel
@@ -1013,7 +1013,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                           <div className="dense-actions">
                             {run.status === "PENDING" ? (
                               <button className="primary-action" onClick={() => void handleExecuteRun(run.id)} type="button">
-                                Execute run
+                                Run research
                               </button>
                             ) : null}
                           </div>
@@ -1035,7 +1035,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
                 tone="compact"
               >
                 {insights.length === 0 ? (
-                  <EmptyState message="Execute a research run or add an insight manually." title="No insights yet" variant="inline" />
+                  <EmptyState message="Generate a research run or add an insight manually." title="No insights yet" variant="inline" />
                 ) : (
                   <div className="dense-list">
                     {insights.map((insight) => (

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import type { NavigationItem } from "./navigation-filter";
 import {
   CLIENT_ALLOWED_ROUTE_VIEWS,
+  filterAdminOnlyNavigation,
   filterNavigationByRole,
-  isClientOnlyRole
+  isClientOnlyRole,
+  resolveShellActiveView
 } from "./navigation-filter";
 
 const sampleItems: NavigationItem[] = [
@@ -78,5 +80,58 @@ describe("filterNavigationByRole", () => {
         tenantContext: { roles: ["client", "admin"] }
       })
     ).toEqual(sampleItems);
+  });
+});
+
+describe("filterAdminOnlyNavigation", () => {
+  it("hides owner/admin-only nav entries for staff without owner/admin role", () => {
+    const items: NavigationItem[] = [
+      { view: "dashboard", label: "Dashboard", section: "dashboard" },
+      { view: "modules", label: "Modules", section: "administration" },
+      { view: "tenants", label: "Tenants", section: "administration" },
+      { view: "tasks", label: "Tasks", section: "mywork" }
+    ];
+
+    expect(
+      filterAdminOnlyNavigation(items, {
+        tenantContext: { roles: ["member"] }
+      }).map((item) => item.view)
+    ).toEqual(["dashboard", "tasks"]);
+  });
+
+  it("keeps admin-only nav for owner", () => {
+    const items: NavigationItem[] = [
+      { view: "modules", label: "Modules", section: "administration" }
+    ];
+
+    expect(
+      filterAdminOnlyNavigation(items, {
+        tenantContext: { roles: ["owner"] }
+      })
+    ).toEqual(items);
+  });
+});
+
+describe("resolveShellActiveView", () => {
+  it("maps nested client-portal pending approvals to top-level nav key", () => {
+    expect(resolveShellActiveView("client-portal", "#/client-portal/pending-approvals")).toBe(
+      "pending-approvals"
+    );
+  });
+
+  it("maps nested client-portal briefs to top-level nav key", () => {
+    expect(resolveShellActiveView("client-portal", "#/client-portal/briefs")).toBe("briefs");
+  });
+
+  it("maps deliverable approval editor to pending approvals nav key", () => {
+    expect(
+      resolveShellActiveView("client-portal", "#/client-portal/deliverables/abc123/approve")
+    ).toBe("pending-approvals");
+  });
+
+  it("returns active view for canonical top-level hashes", () => {
+    expect(resolveShellActiveView("pending-approvals", "#/pending-approvals")).toBe(
+      "pending-approvals"
+    );
   });
 });

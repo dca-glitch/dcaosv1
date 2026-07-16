@@ -86,16 +86,16 @@ describe("StatusBadge public contract", () => {
     const { container } = render(<StatusBadge status="WEIRD_INTERNAL_ENUM" />);
     const pill = container.querySelector(".ds-status-badge");
     expect(pill?.getAttribute("data-status")).toBe("unknown");
-    expect(screen.getByText("Weird Internal Enum")).toBeTruthy();
+    expect(screen.getByText("Weird internal enum")).toBeTruthy();
     expect(pill?.getAttribute("style") ?? "").toContain("var(--status-draft-");
   });
 
   it("allows displayLabel without changing tone/data-status", () => {
     const { container, rerender } = render(
-      <StatusBadge displayLabel="Sent to Client" status="AWAITING_CLIENT" />
+      <StatusBadge displayLabel="Sent to client" status="AWAITING_CLIENT" />
     );
     const pill = container.querySelector(".ds-status-badge");
-    expect(screen.getByText("Sent to Client")).toBeTruthy();
+    expect(screen.getByText("Sent to client")).toBeTruthy();
     expect(pill?.getAttribute("data-status")).toBe("awaiting_client");
     const toneStyle = pill?.getAttribute("style") ?? "";
 
@@ -103,11 +103,22 @@ describe("StatusBadge public contract", () => {
     const canonical = container.querySelector(".ds-status-badge");
     expect(canonical?.getAttribute("data-status")).toBe("awaiting_client");
     expect(canonical?.getAttribute("style") ?? "").toBe(toneStyle);
-    expect(screen.getByText("Awaiting Client")).toBeTruthy();
+    expect(screen.getByText("Pending approval")).toBeTruthy();
   });
 
   it("forwards className", () => {
     const { container } = render(<StatusBadge className="extra-pill" status="APPROVED" />);
     expect(container.querySelector(".ds-status-badge.extra-pill")).not.toBeNull();
+  });
+});
+
+describe("publishing status labels", () => {
+  it("maps publishing enums to unambiguous display labels", async () => {
+    const { getPublishingStatusLabel } = await import("../../design-system/status");
+    expect(getPublishingStatusLabel("draft_prepared")).toBe("Draft prepared");
+    expect(getPublishingStatusLabel("provider_disabled")).toBe("Publishing disabled");
+    expect(getPublishingStatusLabel("published")).toBe("Published");
+    expect(getPublishingStatusLabel("credentials_missing")).toBe("Credentials missing");
+    expect(getPublishingStatusLabel("unknown_enum")).toBeNull();
   });
 });

@@ -1,6 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/ui";
-import { StatusBadge } from "../../components/ui";
+import { Button, Input, Modal, Select, StatusBadge, Textarea } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -174,7 +173,7 @@ export function AiDeliveryContentDraftModal({
             <div className="field-panel">
               <h4>Approved / planned content plan items</h4>
               {eligiblePlanItems.length === 0 ? (
-                <AiDeliveryInlineEmpty>No ready plan items yet. Approve or add content plan items to continue draft production.</AiDeliveryInlineEmpty>
+                <AiDeliveryInlineEmpty>No ready plan items yet. Approve or add content plan items to start draft production.</AiDeliveryInlineEmpty>
               ) : null}
               {eligiblePlanItems.map((item) => {
                 const linkedDraft = contentDrafts.find((draftItem) => draftItem.contentPlanItemId === item.id && !draftItem.isArchived) ?? null;
@@ -300,116 +299,113 @@ export function AiDeliveryContentDraftModal({
               </div>
             ) : null}
             <div className="field-grid field-grid-compact">
-              <label>
-                Status - Required
-                <select
-                  value={form.status}
-                  onChange={(event) => onFormChange((current) => ({ ...current, status: event.target.value }))}
-                >
-                  {CONTENT_DRAFT_STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {formatContentDraftStatus(status)}
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Admin-only production state.</span>
-              </label>
-              <label>
-                Linked SEO topic / monthly content plan item - Optional
-                <select
-                  value={form.contentPlanItemId ?? ""}
-                  onChange={(event) =>
-                    onFormChange((current) => ({ ...current, contentPlanItemId: event.target.value || null }))
-                  }
-                >
-                  <option value="">Manual / unlinked production record</option>
-                  {eligiblePlanItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.sortOrder}. {item.title} ({formatContentPlanItemApprovalStatus(item.approvalStatus)})
-                    </option>
-                  ))}
-                </select>
-                <span className="muted-text">Link to the monthly content plan item this draft fulfills.</span>
-              </label>
-              <label className="field-span-2">
-                Title - Required
-                <input
-                  maxLength={255}
-                  placeholder="Working article title or draft headline"
-                  required
-                  value={form.title}
-                  onChange={(event) => onFormChange((current) => ({ ...current, title: event.target.value }))}
-                />
-                <span className="muted-text">Platform-neutral article title for admin editing.</span>
-              </label>
-              <label>
-                Slug - Optional
-                <input
-                  maxLength={255}
-                  placeholder="Optional URL slug or short working slug"
-                  value={form.slug}
-                  onChange={(event) => onFormChange((current) => ({ ...current, slug: event.target.value }))}
-                />
-                <span className="muted-text">Admin-only.</span>
-              </label>
-              <label className="field-span-2">
-                Draft body - Required before client review
-                <textarea
-                  maxLength={4000}
-                  placeholder="Manual draft body, article outline, sections, and review-ready copy"
-                  rows={8}
-                  value={form.draftBody}
-                  onChange={(event) => onFormChange((current) => ({ ...current, draftBody: event.target.value }))}
-                />
-                <span className="muted-text">Save before using ready-for-review.</span>
-              </label>
-              <label className="field-span-2">
-                Review / admin notes - Optional
-                <textarea
-                  maxLength={4000}
-                  placeholder="Admin comments, blockers, revision guidance, or handoff notes"
-                  rows={3}
-                  value={form.notes}
-                  onChange={(event) => onFormChange((current) => ({ ...current, notes: event.target.value }))}
-                />
-                <span className="muted-text">Admin-only. Client comments appear in draft status above.</span>
-              </label>
+              <Select
+                fullWidth
+                helperText="Admin-only production state."
+                label="Status - Required"
+                onChange={(event) => onFormChange((current) => ({ ...current, status: event.target.value }))}
+                options={CONTENT_DRAFT_STATUS_OPTIONS.map((status) => ({
+                  value: status,
+                  label: formatContentDraftStatus(status),
+                }))}
+                value={form.status}
+              />
+              <Select
+                fullWidth
+                helperText="Link to the monthly content plan item this draft fulfills."
+                label="Linked SEO topic / monthly content plan item - Optional"
+                onChange={(event) =>
+                  onFormChange((current) => ({ ...current, contentPlanItemId: event.target.value || null }))
+                }
+                options={[
+                  { value: "", label: "Manual / unlinked production record" },
+                  ...eligiblePlanItems
+                    .filter((item): item is typeof item & { id: string } => Boolean(item.id))
+                    .map((item) => ({
+                      value: item.id,
+                      label: `${item.sortOrder}. ${item.title} (${formatContentPlanItemApprovalStatus(item.approvalStatus)})`,
+                    })),
+                ]}
+                value={form.contentPlanItemId ?? ""}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                helperText="Platform-neutral article title for admin editing."
+                label="Title - Required"
+                maxLength={255}
+                onChange={(event) => onFormChange((current) => ({ ...current, title: event.target.value }))}
+                placeholder="Working article title or draft headline"
+                required
+                value={form.title}
+              />
+              <Input
+                fullWidth
+                helperText="Admin-only."
+                label="Slug - Optional"
+                maxLength={255}
+                onChange={(event) => onFormChange((current) => ({ ...current, slug: event.target.value }))}
+                placeholder="Optional URL slug or short working slug"
+                value={form.slug}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Save before using ready-for-review."
+                label="Draft body - Required before client review"
+                maxLength={4000}
+                onChange={(event) => onFormChange((current) => ({ ...current, draftBody: event.target.value }))}
+                placeholder="Manual draft body, article outline, sections, and review-ready copy"
+                rows={8}
+                value={form.draftBody}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Admin-only. Client comments appear in draft status above."
+                label="Review / admin notes - Optional"
+                maxLength={4000}
+                onChange={(event) => onFormChange((current) => ({ ...current, notes: event.target.value }))}
+                placeholder="Admin comments, blockers, revision guidance, or handoff notes"
+                rows={3}
+                value={form.notes}
+              />
             </div>
             <div className="modal-footer ai-delivery-modal-footer">
-              <button className="ghost-action" disabled={saving} onClick={onClose} type="button">
+              <Button disabled={saving} onClick={onClose} type="button" variant="tertiary">
                 Close
-              </button>
-              <button className="ghost-action" disabled={saving} onClick={onNewDraft} type="button">
+              </Button>
+              <Button disabled={saving} onClick={onNewDraft} type="button" variant="tertiary">
                 New draft
-              </button>
-              <button
-                className="primary-action"
-                disabled={saving || !canSave}
-                onClick={() => void onSave(project.id)}
-                type="button"
-              >
-                {saving ? "Saving" : primaryActionLabel}
-              </button>
-              {activeRecord && !activeRecord.isArchived ? (
-                <button
-                  className="secondary-action"
-                  disabled={saving || !canMarkReady}
-                  onClick={() => void onRequestReview(project.id, activeRecord.id)}
-                  type="button"
-                >
-                  Mark ready for review
-                </button>
-              ) : null}
+              </Button>
               {activeRecord && !activeRecord.isArchived && activeRecord.status !== "DRAFT" ? (
-                <button
-                  className="secondary-action"
+                <Button
                   disabled={saving || !canReturn}
                   onClick={() => void onReturnToDraft(project.id, activeRecord.id)}
                   type="button"
+                  variant="secondary"
                 >
                   Return to draft
-                </button>
+                </Button>
               ) : null}
+              {activeRecord && !activeRecord.isArchived ? (
+                <Button
+                  disabled={saving || !canMarkReady}
+                  onClick={() => void onRequestReview(project.id, activeRecord.id)}
+                  type="button"
+                  variant="secondary"
+                >
+                  Mark ready for review
+                </Button>
+              ) : null}
+              <Button
+                disabled={saving || !canSave}
+                onClick={() => void onSave(project.id)}
+                type="button"
+                variant="primary"
+              >
+                {saving ? "Saving" : primaryActionLabel}
+              </Button>
             </div>
           </section>
 

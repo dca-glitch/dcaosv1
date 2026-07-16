@@ -322,7 +322,7 @@ export function AiOrchestratorLitePanel() {
             ) : null}
             {killSwitch ? (
               <div className="admin-operations-row">
-                <span className="muted-text">Kill switch / live-safe</span>
+                <span className="muted-text">Pause AI processing / live-safe</span>
                 <StatusBadge status={killSwitch.orchestratorLiveSafe ? localOkBadge() : "Warning"} />
                 <span className="muted-text">
                   {killSwitch.orchestratorLiveSafe
@@ -421,7 +421,7 @@ export function AiOrchestratorLitePanel() {
               </span>
             </div>
             <div className="admin-operations-row">
-              <span className="muted-text">Budget kill switch</span>
+              <span className="muted-text">Budget pause</span>
               <StatusBadge status={plan.preview.budget.killSwitchActive ? "Warning" : "Inactive"} />
               <span className="muted-text">{plan.preview.budget.killSwitchActive ? "active" : "inactive"}</span>
             </div>

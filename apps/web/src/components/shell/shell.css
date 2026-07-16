@@ -1,23 +1,26 @@
 /*
- * Phase 2 â€” Global Application Shell
- * Narrow overrides for AppLayout / components/shell.
- * Canonical values: docs/design/DESIGN_SYSTEM_SPEC.md
+ * Botanical Light — Global Application Shell
  * Loaded via AppLayout import (after styles.css in the module graph).
  */
 
-/* â”€â”€â”€ Shell grid: 220px sidebar â”€â”€â”€
- * Higher specificity than legacy styles.css `.app-shell { 292px }` (line ~822),
- * which also sits after that file's max-width:800px collapse and would otherwise win.
- */
 html body .app-shell {
   display: grid;
-  grid-template-columns: var(--ds-sidebar-width, 220px) minmax(0, 1fr);
+  grid-template-columns: var(--ds-sidebar-width, 240px) minmax(0, 1fr);
   min-height: 100vh;
-  background: var(--ds-page-gradient, var(--ds-surface-page, #06070d));
+  background: var(--ds-surface-page, #E9E9E4);
+  transition: grid-template-columns var(--ds-transition-base, 150ms ease);
+}
+
+html body .app-shell[data-sidebar-collapsed="true"] {
+  grid-template-columns: var(--ds-sidebar-collapsed, 64px) minmax(0, 1fr);
 }
 
 html body .app-shell.portal-shell {
-  grid-template-columns: var(--ds-sidebar-width, 220px) minmax(0, 1fr);
+  grid-template-columns: var(--ds-sidebar-width, 240px) minmax(0, 1fr);
+}
+
+html body .app-shell.portal-shell[data-sidebar-collapsed="true"] {
+  grid-template-columns: var(--ds-sidebar-collapsed, 64px) minmax(0, 1fr);
 }
 
 .shell-content-column {
@@ -27,27 +30,30 @@ html body .app-shell.portal-shell {
   min-height: 100vh;
 }
 
-/* â”€â”€â”€ Skip link â”€â”€â”€ */
+.shell-sidebar-slot {
+  min-width: 0;
+}
+
 .shell-skip-link {
   position: absolute;
   left: -9999px;
   top: 0;
   z-index: 1000;
   padding: 8px 12px;
-  background: var(--ds-surface-panel, #0c0f1a);
-  color: var(--ds-text-primary, #e2e6f2);
-  border: 1px solid var(--ds-border-strong, rgba(255, 255, 255, 0.11));
-  border-radius: var(--ds-radius-md, 8px);
+  background: var(--ds-surface-panel, #F1F1ED);
+  color: var(--ds-text-primary, #171717);
+  border: 1px solid var(--ds-border-strong, #6B6F68);
+  border-radius: var(--ds-radius-control, 3px);
 }
 
 .shell-skip-link:focus {
   left: 12px;
   top: 12px;
   outline: none;
-  box-shadow: var(--ds-shadow-focus, 0 0 0 2px rgba(99, 102, 241, 0.4));
+  box-shadow: var(--ds-shadow-focus);
 }
 
-/* â”€â”€â”€ Sidebar: solid surface, no glass â”€â”€â”€ */
+/* Sidebar */
 .app-shell .sidebar.shell-sidebar,
 .app-shell .shell-sidebar {
   position: sticky;
@@ -59,17 +65,17 @@ html body .app-shell.portal-shell {
   gap: 12px;
   padding: 14px 12px;
   overflow: hidden;
-  background: var(--ds-surface-sidebar, #04050a);
-  border-right: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
+  background: var(--ds-surface-sidebar, #F1F1ED);
+  border-right: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: 0;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
 
-.app-shell.portal-shell .shell-sidebar {
-  background: var(--ds-surface-sidebar, #04050a);
-  box-shadow: none;
-  gap: 14px;
+.app-shell .shell-sidebar--collapsed {
+  padding: 12px 8px;
+  align-items: stretch;
 }
 
 .shell-sidebar .sidebar-nav {
@@ -80,47 +86,103 @@ html body .app-shell.portal-shell {
   overflow-y: auto;
 }
 
-/* â”€â”€â”€ Brand â”€â”€â”€ */
+.shell-sidebar-footer {
+  display: grid;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--ds-divider, #D6D6D1);
+}
+
+.shell-env-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border: 1px solid var(--ds-env-marker-border, #9A6817);
+  border-radius: var(--ds-radius-control, 3px);
+  background: var(--ds-env-marker-bg, #F8EDCF);
+  color: var(--ds-env-marker-text, #9A6817);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.shell-collapse-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: var(--ds-radius-control, 3px);
+  background: var(--ds-surface-panel, #F1F1ED);
+  color: var(--ds-accent-indigo, #3730A3);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--ds-transition-base), border-color var(--ds-transition-base);
+}
+
+.shell-sidebar--collapsed .shell-collapse-toggle {
+  justify-content: center;
+  padding: 6px;
+}
+
+.shell-collapse-toggle:hover {
+  background: var(--ds-primary-soft-bg, #EEF2FF);
+  border-color: var(--ds-primary-soft-border, #C7D2FE);
+}
+
+.shell-collapse-toggle:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-shadow-focus);
+}
+
+/* Brand */
 .shell-brand .brand-mark {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: var(--ds-radius-md, 8px);
+  background: var(--ds-accent-indigo, #3730A3);
+  border: 1px solid var(--ds-accent-primary-deep, #312E81);
+  border-radius: var(--ds-radius-control, 3px);
   box-shadow: none;
   height: 32px;
   width: 40px;
-  font-size: 0.72rem;
-}
-
-.portal-shell .shell-brand .brand-mark {
-  box-shadow: none;
+  font-size: 12px;
+  color: #F1F1ED;
 }
 
 .shell-brand .brand-copy strong {
-  color: var(--ds-text-primary, #e2e6f2);
-  font-size: 13px;
+  color: var(--ds-text-primary, #171717);
+  font-size: 14px;
   font-weight: 600;
 }
 
 .shell-brand .brand-copy small {
-  color: var(--ds-text-muted, #7F89A8);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  color: var(--ds-text-muted, #5C5C56);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: none;
 }
 
-/* â”€â”€â”€ Nav: active = indigo 10% bg + #A5B4FC, NO left border â”€â”€â”€ */
+.shell-sidebar--collapsed .shell-brand .brand-copy {
+  display: none;
+}
+
+/* Nav */
 .app-shell .shell-nav.nav-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .app-shell .shell-nav .nav-section {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border-top: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
+  border-top: 1px solid var(--ds-divider, #D6D6D1);
   padding-top: 10px;
 }
 
@@ -130,54 +192,66 @@ html body .app-shell.portal-shell {
 }
 
 .app-shell .shell-nav .nav-section-label {
-  color: var(--ds-text-muted, #7F89A8);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  color: var(--ds-text-muted, #5C5C56);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
   padding: 4px 10px 6px;
 }
 
 .app-shell .shell-nav a.shell-nav-link,
 .app-shell .shell-nav a {
+  position: relative;
   align-items: center;
   display: flex;
   gap: 10px;
-  min-height: 34px;
+  min-height: 36px;
   padding: 7px 10px;
   border: 1px solid transparent;
-  border-left: none;
-  border-radius: var(--ds-radius-md, 8px);
-  color: var(--ds-text-secondary, #9ba3bf);
-  font-size: 12px;
+  border-radius: var(--ds-radius-control, 3px);
+  color: var(--ds-accent-indigo, #3730A3);
+  font-size: 14px;
   font-weight: 500;
   text-decoration: none;
   background: transparent;
   box-shadow: none;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color var(--ds-transition-base), color var(--ds-transition-base);
+}
+
+.app-shell .shell-nav--collapsed a.shell-nav-link {
+  justify-content: center;
+  padding: 8px;
 }
 
 .app-shell .shell-nav a.shell-nav-link:hover {
-  background: var(--ds-surface-hover, #111525);
-  color: var(--ds-text-secondary, #9ba3bf);
-  border-color: transparent;
-  box-shadow: none;
+  background: var(--ds-surface-hover, #EEF0E9);
+  color: var(--ds-accent-indigo, #3730A3);
 }
 
 .app-shell .shell-nav a.shell-nav-link--active,
 .app-shell .shell-nav a.shell-nav-link[aria-current="page"],
 .app-shell .shell-nav a[aria-current="page"] {
-  background: rgba(99, 102, 241, 0.1);
-  color: #a5b4fc;
+  background: var(--ds-primary-nav-active, #EEF2FF);
+  color: var(--ds-accent-indigo, #3730A3);
   border-color: transparent;
-  border-left: none;
   box-shadow: none;
   font-weight: 600;
 }
 
+.shell-nav-indicator {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: var(--ds-accent-indigo, #3730A3);
+  border-radius: 0;
+}
+
 .app-shell .shell-nav a.shell-nav-link:focus-visible {
   outline: none;
-  box-shadow: var(--ds-shadow-focus, 0 0 0 2px rgba(99, 102, 241, 0.4));
+  box-shadow: var(--ds-shadow-focus);
 }
 
 .shell-nav-icon {
@@ -185,33 +259,26 @@ html body .app-shell.portal-shell {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  width: 13px;
-  height: 13px;
-  opacity: 0.45;
-  color: inherit;
+  width: 16px;
+  height: 16px;
+  color: var(--ds-accent-indigo, #3730A3);
+  opacity: 1;
 }
 
 .shell-nav-icon--active {
-  opacity: 0.85;
+  opacity: 1;
 }
 
 .shell-nav-icon svg,
 .shell-nav-icon .nav-dot {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
 }
 
 .shell-nav-icon .nav-dot {
-  border-radius: 999px;
+  border-radius: 3px;
   background: currentColor;
-  box-shadow: none;
-}
-
-.app-shell .shell-nav a[aria-current="page"] .nav-dot,
-.app-shell .shell-nav a.shell-nav-link--active .nav-dot {
-  background: currentColor;
-  box-shadow: none;
 }
 
 .shell-nav-label {
@@ -221,14 +288,13 @@ html body .app-shell.portal-shell {
   white-space: nowrap;
 }
 
-/* Portal nav density â€” slightly roomier */
 .portal-shell .shell-nav a.shell-nav-link {
-  min-height: 36px;
+  min-height: 38px;
   padding: 8px 10px;
-  font-size: 12px;
+  font-size: 14px;
 }
 
-/* â”€â”€â”€ Workspace switcher (UI-only when no handler) â”€â”€â”€ */
+/* Workspace switcher */
 .shell-workspace-switcher {
   display: grid;
   gap: 4px;
@@ -236,11 +302,11 @@ html body .app-shell.portal-shell {
 }
 
 .shell-workspace-switcher__eyebrow {
-  color: var(--ds-text-muted, #7F89A8);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  color: var(--ds-text-muted, #5C5C56);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: none;
   padding: 0 8px;
 }
 
@@ -250,12 +316,17 @@ html body .app-shell.portal-shell {
   gap: 8px;
   width: 100%;
   padding: 8px 10px;
-  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
-  border-radius: var(--ds-radius-md, 8px);
-  background: var(--ds-surface-panel, #0c0f1a);
-  color: var(--ds-text-primary, #e2e6f2);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: var(--ds-radius-control, 3px);
+  background: var(--ds-surface-panel, #F1F1ED);
+  color: var(--ds-text-primary, #171717);
   text-align: left;
   cursor: default;
+}
+
+.shell-workspace-switcher--collapsed .shell-workspace-switcher__control {
+  justify-content: center;
+  padding: 8px;
 }
 
 .shell-workspace-switcher__control--static {
@@ -267,19 +338,18 @@ button.shell-workspace-switcher__control {
 }
 
 button.shell-workspace-switcher__control:hover {
-  background: var(--ds-surface-hover, #111525);
+  background: var(--ds-primary-soft-bg, #EEF2FF);
 }
 
 button.shell-workspace-switcher__control:focus-visible {
   outline: none;
-  box-shadow: var(--ds-shadow-focus, 0 0 0 2px rgba(99, 102, 241, 0.4));
+  box-shadow: var(--ds-shadow-focus);
 }
 
 .shell-workspace-switcher__icon,
 .shell-workspace-switcher__chevron {
   flex-shrink: 0;
-  opacity: 0.55;
-  color: var(--ds-text-secondary, #9ba3bf);
+  color: var(--ds-accent-indigo, #3730A3);
 }
 
 .shell-workspace-switcher__copy {
@@ -290,29 +360,29 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 .shell-workspace-switcher__copy strong {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--ds-text-primary, #e2e6f2);
+  color: var(--ds-text-primary, #171717);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .shell-workspace-switcher__copy small {
-  font-size: 10px;
-  color: var(--ds-text-faint, #3a4060);
+  font-size: 12px;
+  color: var(--ds-text-muted, #5C5C56);
   font-family: var(--ds-font-mono, ui-monospace, monospace);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* â”€â”€â”€ User panel â”€â”€â”€ */
+/* User panel */
 .app-shell .shell-user-panel.user-panel {
-  background: var(--ds-surface-panel, #0c0f1a);
-  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
-  border-radius: var(--ds-radius-lg, 12px);
-  box-shadow: var(--ds-shadow-flat, 0 1px 4px rgba(0, 0, 0, 0.3));
+  background: var(--ds-surface-panel, #F1F1ED);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: 0;
+  box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   padding: 12px;
@@ -320,17 +390,36 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 .app-shell .shell-user-panel span {
-  color: var(--ds-text-primary, #e2e6f2);
-  font-size: 12px;
+  color: var(--ds-text-primary, #171717);
+  font-size: 13px;
   font-weight: 600;
 }
 
 .app-shell .shell-user-panel small {
-  color: var(--ds-text-muted, #7F89A8);
-  font-size: 11px;
+  color: var(--ds-text-muted, #5C5C56);
+  font-size: 12px;
 }
 
-/* â”€â”€â”€ Topbar 52px â”€â”€â”€ */
+.shell-user-panel--collapsed {
+  display: grid;
+  justify-items: center;
+  padding: 8px;
+}
+
+.shell-user-panel__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  background: var(--ds-primary-soft-bg, #EEF2FF);
+  color: var(--ds-accent-indigo, #3730A3);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Topbar */
 .shell-topbar {
   position: relative;
   z-index: 40;
@@ -338,24 +427,23 @@ button.shell-workspace-switcher__control:focus-visible {
   align-items: center;
   justify-content: space-between;
   flex-shrink: 0;
-  height: var(--ds-topbar-height, 52px);
-  min-height: var(--ds-topbar-height, 52px);
+  height: var(--ds-topbar-height, 56px);
+  min-height: var(--ds-topbar-height, 56px);
   padding: 0 20px;
-  border-bottom: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
-  background: color-mix(in srgb, var(--ds-surface-panel, #0c0f1a) 92%, transparent);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--ds-border, #D6D6D1);
+  background: var(--ds-surface-panel, #F1F1ED);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .shell-topbar__title {
   margin: 0;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  color: var(--ds-text-primary, #e2e6f2);
+  color: var(--ds-text-primary, #171717);
   line-height: 1.2;
 }
 
-/* Defeat legacy div[role=dialog][aria-modal=true] fixed fullscreen rule (styles.css) */
 .app-shell .shell-topbar .shell-notification-panel[role="dialog"][aria-modal="true"],
 .shell-topbar .shell-notification-panel[role="dialog"][aria-modal="true"] {
   align-items: stretch;
@@ -394,42 +482,42 @@ button.shell-workspace-switcher__control:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 28px;
-  min-width: 28px;
+  min-height: 32px;
+  min-width: 32px;
   padding: 4px 8px;
   border: 1px solid transparent;
-  border-radius: var(--ds-radius-md, 8px);
+  border-radius: var(--ds-radius-control, 3px);
   background: transparent;
-  color: var(--ds-text-muted, #7F89A8);
-  font-size: 11px;
+  color: var(--ds-accent-indigo, #3730A3);
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color var(--ds-transition-base), color var(--ds-transition-base);
 }
 
 .shell-topbar__icon-btn:hover {
-  background: var(--ds-surface-hover, #111525);
-  color: var(--ds-text-secondary, #9ba3bf);
+  background: var(--ds-primary-soft-bg, #EEF2FF);
+  color: var(--ds-accent-indigo, #3730A3);
 }
 
 .shell-topbar__icon-btn:focus-visible {
   outline: none;
-  box-shadow: var(--ds-shadow-focus, 0 0 0 2px rgba(99, 102, 241, 0.4));
+  box-shadow: var(--ds-shadow-focus);
 }
 
 .shell-topbar__icon-badge {
   min-width: 16px;
   padding: 0 4px;
-  border-radius: 999px;
-  background: #4f46e5;
-  color: #f5f7ff;
-  font-size: 10px;
+  border-radius: 3px;
+  background: var(--ds-accent-indigo, #3730A3);
+  color: #F1F1ED;
+  font-size: 12px;
   font-weight: 700;
-  line-height: 14px;
+  line-height: 16px;
   text-align: center;
 }
 
-/* â”€â”€â”€ Main + page container gutters â”€â”€â”€ */
+/* Main + page container */
 .app-shell .main-shell.shell-main,
 .app-shell .shell-main.main-shell {
   flex: 1 1 auto;
@@ -440,36 +528,27 @@ button.shell-workspace-switcher__control:focus-visible {
   display: block;
   gap: 0;
   padding: 0;
-  background: transparent;
+  background: var(--ds-surface-page, #E9E9E4);
 }
 
 .shell-page-container {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   align-content: start;
   min-width: 0;
 }
 
 .shell-page-container--admin {
-  padding: 20px 28px 28px;
+  padding: 24px 28px 32px;
 }
 
 .shell-page-container--portal {
-  padding: 24px 32px 32px;
+  padding: 24px 28px 32px;
 }
 
-.app-shell:not(.portal-shell) .shell-page-container--admin {
-  gap: 16px;
-}
-
-.app-shell.portal-shell .shell-page-container--portal {
-  gap: 24px;
-}
-
-/* Preserve legacy density vars on main */
 .app-shell .main-shell[data-density="compact"] {
   --form-control-min-height: 36px;
-  --table-cell-py: 9px;
+  --table-cell-py: 8px;
 }
 
 .app-shell .main-shell[data-density="comfortable"],
@@ -478,17 +557,17 @@ button.shell-workspace-switcher__control:focus-visible {
   --table-cell-py: 12px;
 }
 
-/* â”€â”€â”€ Notification panel â”€â”€â”€ */
+/* Notification panel */
 .shell-notification-panel {
   position: absolute;
   top: calc(100% + 6px);
   right: 12px;
   z-index: 50;
   width: min(360px, calc(100vw - 24px));
-  border: 1px solid var(--ds-border-strong, rgba(255, 255, 255, 0.11));
-  border-radius: var(--ds-radius-lg, 12px);
-  background: var(--ds-surface-panel, #0c0f1a);
-  box-shadow: var(--ds-shadow-overlay, 0 16px 48px rgba(0, 0, 0, 0.7));
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: 0;
+  background: var(--ds-surface-panel, #F1F1ED);
+  box-shadow: none;
   outline: none;
 }
 
@@ -498,14 +577,14 @@ button.shell-workspace-switcher__control:focus-visible {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  border-bottom: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
+  border-bottom: 1px solid var(--ds-divider, #D6D6D1);
 }
 
 .shell-notification-panel__title {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--ds-text-primary, #e2e6f2);
+  color: var(--ds-text-primary, #171717);
 }
 
 .shell-notification-panel__header-actions {
@@ -515,8 +594,8 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 .shell-notification-panel__count {
-  color: var(--ds-text-faint, #3a4060);
-  font-size: 11px;
+  color: var(--ds-text-muted, #5C5C56);
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -531,29 +610,29 @@ button.shell-workspace-switcher__control:focus-visible {
   justify-items: center;
   gap: 6px;
   text-align: center;
-  color: var(--ds-text-faint, #3a4060);
+  color: var(--ds-text-muted, #5C5C56);
 }
 
 .shell-notification-panel__empty p {
   margin: 0;
-  font-size: 12px;
-  color: var(--ds-text-muted, #7F89A8);
+  font-size: 13px;
+  color: var(--ds-text-muted, #5C5C56);
 }
 
 .shell-notification-panel__empty small {
-  font-size: 11px;
-  color: var(--ds-text-faint, #3a4060);
+  font-size: 12px;
+  color: var(--ds-text-faint, #6B6F68);
 }
 
 .shell-notification-panel__empty-icon {
-  opacity: 0.45;
+  opacity: 0.55;
   margin-bottom: 4px;
 }
 
 .shell-notification-panel__state p {
   margin: 0;
-  color: var(--ds-text-muted, #7F89A8);
-  font-size: 12px;
+  color: var(--ds-text-muted, #5C5C56);
+  font-size: 13px;
 }
 
 .shell-notification-panel__list {
@@ -565,9 +644,9 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 .shell-notification-panel__item {
-  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
-  border-radius: 8px;
-  background: var(--ds-surface-inset, #08090f);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: 0;
+  background: var(--ds-surface-inset, #F0F1EC);
   padding: 10px;
   display: grid;
   gap: 8px;
@@ -582,21 +661,21 @@ button.shell-workspace-switcher__control:focus-visible {
 
 .shell-notification-panel__item-title {
   margin: 0;
-  color: var(--ds-text-primary, #e2e6f2);
-  font-size: 12px;
+  color: var(--ds-text-primary, #171717);
+  font-size: 13px;
   font-weight: 600;
 }
 
 .shell-notification-panel__item-time {
-  color: var(--ds-text-faint, #3a4060);
-  font-size: 10px;
+  color: var(--ds-text-muted, #5C5C56);
+  font-size: 12px;
   white-space: nowrap;
 }
 
 .shell-notification-panel__item-body {
   margin: 0;
-  color: var(--ds-text-muted, #7F89A8);
-  font-size: 12px;
+  color: var(--ds-text-secondary, #3D3D38);
+  font-size: 13px;
 }
 
 .shell-notification-panel__item-actions {
@@ -607,21 +686,21 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 .shell-notification-panel__status {
-  color: var(--ds-text-faint, #3a4060);
-  font-size: 11px;
+  color: var(--ds-text-muted, #5C5C56);
+  font-size: 12px;
   font-weight: 600;
 }
 
 .shell-notification-panel__status.unread {
-  color: var(--ds-text-secondary, #9ba3bf);
+  color: var(--ds-accent-indigo, #3730A3);
 }
 
 .shell-notification-panel__mark-read {
-  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
-  border-radius: 6px;
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: var(--ds-radius-control, 3px);
   background: transparent;
-  color: var(--ds-text-secondary, #9ba3bf);
-  font-size: 11px;
+  color: var(--ds-text-secondary, #3D3D38);
+  font-size: 12px;
   font-weight: 600;
   padding: 4px 8px;
   cursor: pointer;
@@ -632,7 +711,7 @@ button.shell-workspace-switcher__control:focus-visible {
   cursor: not-allowed;
 }
 
-/* â”€â”€â”€ Search overlay â”€â”€â”€ */
+/* Search overlay */
 .shell-search-overlay {
   position: fixed;
   inset: 0;
@@ -647,7 +726,7 @@ button.shell-workspace-switcher__control:focus-visible {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(3, 3, 8, 0.72);
+  background: var(--ds-modal-backdrop, rgba(23, 23, 23, 0.40));
   cursor: pointer;
 }
 
@@ -655,19 +734,19 @@ button.shell-workspace-switcher__control:focus-visible {
   position: relative;
   z-index: 1;
   width: min(560px, 100%);
-  border: 1px solid var(--ds-border-strong, rgba(255, 255, 255, 0.11));
-  border-radius: var(--ds-radius-lg, 12px);
-  background: var(--ds-surface-panel, #0c0f1a);
-  box-shadow: var(--ds-shadow-overlay, 0 16px 48px rgba(0, 0, 0, 0.7));
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: 0;
+  background: var(--ds-surface-panel, #F1F1ED);
+  box-shadow: none;
   padding: 14px;
   outline: none;
 }
 
 .shell-search-overlay__title {
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  color: var(--ds-text-primary, #e2e6f2);
+  color: var(--ds-text-primary, #171717);
 }
 
 .shell-search-overlay__field {
@@ -675,15 +754,14 @@ button.shell-workspace-switcher__control:focus-visible {
   align-items: center;
   gap: 8px;
   padding: 8px 10px;
-  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
-  border-radius: var(--ds-radius-md, 8px);
-  background: var(--ds-surface-inset, #08090f);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: var(--ds-radius-control, 3px);
+  background: var(--ds-surface-white, #F1F1ED);
 }
 
 .shell-search-overlay__icon {
   flex-shrink: 0;
-  opacity: 0.45;
-  color: var(--ds-text-muted, #7F89A8);
+  color: var(--ds-accent-indigo, #3730A3);
 }
 
 .shell-search-overlay__input {
@@ -691,13 +769,13 @@ button.shell-workspace-switcher__control:focus-visible {
   min-width: 0;
   border: 0;
   background: transparent;
-  color: var(--ds-text-primary, #e2e6f2);
-  font-size: 13px;
+  color: var(--ds-text-primary, #171717);
+  font-size: 14px;
   outline: none;
 }
 
 .shell-search-overlay__input::placeholder {
-  color: var(--ds-text-muted, #7F89A8);
+  color: var(--ds-text-muted, #5C5C56);
 }
 
 .shell-search-overlay__empty {
@@ -708,48 +786,47 @@ button.shell-workspace-switcher__control:focus-visible {
 
 .shell-search-overlay__empty p {
   margin: 0;
-  font-size: 12px;
-  color: var(--ds-text-faint, #3a4060);
+  font-size: 13px;
+  color: var(--ds-text-muted, #5C5C56);
 }
 
-/* â”€â”€â”€ 404 / access-denied presentational states â”€â”€â”€ */
+/* 404 / access-denied */
 .shell-state-panel {
   display: grid;
   justify-items: center;
   gap: 8px;
   text-align: center;
   padding: 48px 24px;
-  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
-  border-radius: var(--ds-radius-lg, 12px);
-  background: var(--ds-panel-gradient, linear-gradient(135deg, #06070d 0%, #0d0818 100%));
-  box-shadow: var(--ds-shadow-flat, 0 1px 4px rgba(0, 0, 0, 0.3));
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: 0;
+  background: var(--ds-surface-panel, #F1F1ED);
+  box-shadow: none;
 }
 
 .shell-state-panel__icon {
-  color: var(--ds-text-muted, #7F89A8);
-  opacity: 0.7;
+  color: var(--ds-text-muted, #5C5C56);
   margin-bottom: 4px;
 }
 
 .shell-state-panel__title {
   margin: 0;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--ds-text-primary, #e2e6f2);
+  color: var(--ds-text-primary, #171717);
 }
 
 .shell-state-panel__description {
   margin: 0;
   max-width: 36ch;
-  font-size: 12px;
-  color: var(--ds-text-secondary, #9ba3bf);
+  font-size: 14px;
+  color: var(--ds-text-secondary, #3D3D38);
 }
 
 .shell-state-panel__action {
   margin-top: 12px;
 }
 
-/* â”€â”€â”€ Responsive â”€â”€â”€ */
+/* Responsive / mobile drawer */
 .shell-topbar__menu-btn {
   display: none;
 }
@@ -760,7 +837,9 @@ button.shell-workspace-switcher__control:focus-visible {
 
 @media (max-width: 1024px) {
   html body .app-shell,
-  html body .app-shell.portal-shell {
+  html body .app-shell.portal-shell,
+  html body .app-shell[data-sidebar-collapsed="true"],
+  html body .app-shell.portal-shell[data-sidebar-collapsed="true"] {
     grid-template-columns: 1fr;
   }
 
@@ -775,18 +854,22 @@ button.shell-workspace-switcher__control:focus-visible {
     min-width: 0;
   }
 
+  .shell-collapse-toggle {
+    display: none;
+  }
+
   .app-shell .sidebar.shell-sidebar {
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
-    z-index: var(--ds-z-overlay, 40);
-    width: min(280px, 88vw);
+    z-index: var(--ds-z-drawer, 350);
+    width: min(300px, 88vw);
     height: 100%;
     max-height: 100dvh;
     transform: translateX(-105%);
-    transition: transform 160ms ease;
-    box-shadow: var(--ds-shadow-overlay, 0 18px 48px rgba(0, 0, 0, 0.4));
+    transition: transform var(--ds-transition-base, 150ms ease);
+    box-shadow: none;
   }
 
   .app-shell[data-nav-open="true"] .sidebar.shell-sidebar {
@@ -797,11 +880,11 @@ button.shell-workspace-switcher__control:focus-visible {
     display: block;
     position: fixed;
     inset: 0;
-    z-index: calc(var(--ds-z-overlay, 40) - 1);
+    z-index: calc(var(--ds-z-drawer, 350) - 1);
     border: 0;
     padding: 0;
     margin: 0;
-    background: rgba(3, 3, 8, 0.62);
+    background: var(--ds-modal-backdrop, rgba(23, 23, 23, 0.40));
     cursor: pointer;
   }
 
@@ -823,7 +906,8 @@ button.shell-workspace-switcher__control:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .app-shell .sidebar.shell-sidebar {
+  .app-shell .sidebar.shell-sidebar,
+  html body .app-shell {
     transition: none;
   }
 }
