@@ -18,6 +18,14 @@ Run in this exact order and stop on first failure:
 4. `npm.cmd run smoke:local` — only if `validate` passed and the scoped task requires it
 5. `npm.cmd run smoke:browser` — only if `validate` passed and the scoped task requires it
 
+## 2.1 Local tooling and Prisma recovery
+
+- Use Graphify-first navigation when `graphify-out/graph.json` exists; the verified local baseline is Graphify `0.9.17` and Codex/Graphify configuration at commit `5ad4eeb`.
+- For a Windows Prisma `EPERM` on `query_engine-windows.dll.node`, identify the process holding the DLL, inspect its command line and parent, and stop only the confirmed DCA OS process tree. The verified incident was the DCA OS API Node process; after one retry, `npm.cmd run validate` passed and `npm.cmd run smoke:local` passed with API/database ready.
+- Never stop all Node processes. After an equivalent repeated failure, change the hypothesis and escalate for Critical review rather than retrying unchanged.
+- OpenClaw `2026.7.1` plus the official Codex plugin may orchestrate local development through OpenAI OAuth; no API key is required. Gateway remains loopback-only with token authentication, `tools.elevated` and heartbeat are disabled, and no Scheduled Task or autonomous recurring monitoring is approved.
+- OpenClaw is temporary development/deployment orchestration only, not a DCA OS runtime component. Do not install it in the product runtime or on the production VPS.
+
 ## 3. What validate is expected to prove
 
 - Prisma client generation

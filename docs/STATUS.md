@@ -65,3 +65,19 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 ## 6. Historical evidence location
 
 Use retained evidence under `docs/audits/`, `docs/audit/`, `docs/releases/`, selected `docs/runbooks/`, and selected `docs/security/` files when you need proof provenance, deployment history, rollback context, or compliance/security history.
+
+## 7. Verified local engineering-operation state (2026-07-17)
+
+| Item | Verified current state |
+|---|---|
+| Repository navigation | Graphify `0.9.17` is operational and Graphify-first access passed; Codex/Graphify configuration is committed locally as `5ad4eeb` |
+| Prisma recovery | A confirmed DCA OS API Node process held `query_engine-windows.dll.node`, causing Windows Prisma `EPERM`; only that confirmed DCA OS process tree was stopped |
+| Local proof | `npm.cmd run validate` passed; `npm.cmd run smoke:local` passed with API/database ready |
+| Local orchestrator | OpenClaw `2026.7.1` and the official Codex plugin are installed locally; OpenAI OAuth is used and no API key is required |
+| Orchestrator security | Gateway is loopback-only with token authentication; `tools.elevated` and heartbeat are disabled; no Scheduled Task or autonomous recurring monitoring is approved |
+| Runtime boundary | OpenClaw is temporary development/deployment orchestration only until live-VPS launch and is not part of the DCA OS runtime |
+| Delegated authority | Owner-approved `AUTONOMY-HIGH` (2026-07-17) permits gated routine local commits, feature-branch pushes, draft PRs, CI repair, and review loops |
+| Owner gates | Production, VPS, destructive migrations, secrets, spending, legal/privacy decisions, and unresolved Critical issues remain owner-gated |
+| Review proof | Terra executor plus independent Sol reviewer proof passed with `APPROVE_READ_ONLY` and an unchanged repository |
+
+DCA OS and Tellanic OS remain separate scopes; no orchestration work changes that boundary.

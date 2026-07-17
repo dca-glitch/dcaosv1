@@ -86,3 +86,11 @@ Treat the following as `APPROVED_DIRECTION_NOT_IMPLEMENTED` unless a higher-auth
 ## 9. Historical evidence boundary
 
 Historical staging/production proofs, UI audits, deployment closeouts, and release notes remain evidence only. Use them for provenance, recovery, security, or deployment history — not for current readiness claims.
+
+## 10. Local development orchestration boundary
+
+- Graphify `0.9.17` is operational; Graphify-first repository access passed. Codex/Graphify configuration is recorded locally in commit `5ad4eeb`.
+- OpenClaw `2026.7.1` and the official Codex plugin are installed for temporary local development/deployment orchestration. OpenAI OAuth is used; no API key is required.
+- OpenClaw is not part of the DCA OS runtime and must not be installed into it or onto the production VPS. This boundary lasts until the approved live-VPS launch gate closes, when retention/removal needs a separate owner decision.
+- Gateway access is loopback-only with token authentication; `tools.elevated` and heartbeat are disabled. No OpenClaw Scheduled Task or autonomous recurring monitoring is approved.
+- The owner approved `AUTONOMY-HIGH` on 2026-07-17: gated routine local commits, task-branch pushes, draft PRs, CI repair, and review loops may proceed autonomously. Production/VPS actions, destructive migrations, secrets, spending, legal/privacy decisions, and unresolved Critical issues remain owner-gated.

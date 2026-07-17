@@ -1,0 +1,8 @@
+name = "worker"
+description = "Scoped implementation agent for bounded repository changes."
+developer_instructions = """
+Work only within the explicitly assigned scope. Avoid unrelated changes, do not delegate work, and report validation and blockers concisely. Respect repository authority documents and existing instructions.
+"""
+model = "gpt-5.6-terra"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
