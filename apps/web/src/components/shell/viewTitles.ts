@@ -3,35 +3,46 @@ const VIEW_TITLES: Record<string, string> = {
   dashboard: "Dashboard",
   modules: "Modules",
   tenants: "Tenants",
-  "client-portal": "Client Portal",
-  briefs: "Briefs",
+  "client-portal": "Client archive",
+  briefs: "Tasks",
   "briefs-panel": "Briefs",
-  "workflow-briefs": "Workflow Briefs",
-  "pending-approvals": "Pending Approvals",
-  "monthly-reports": "Monthly Reports",
-  archive: "Archive",
-  clients: "Clients",
+  "workflow-briefs": "Content plans",
+  "pending-approvals": "Approvals",
+  "monthly-reports": "Reports",
+  archive: "Assets",
+  clients: "Workspaces",
   projects: "Projects",
   "ai-delivery": "AI Delivery",
-  "ai-operations": "AI Operations",
-  "ai-market-intelligence": "Market Intelligence",
-  "content-plan-review": "Content Plan Review",
-  "content-draft-review": "Content Draft Review",
+  "ai-operations": "AI operations",
+  "ai-market-intelligence": "Analytics",
+  "content-plan-review": "Content plan review",
+  "content-draft-review": "Content draft review",
   tasks: "Tasks",
   invoices: "Invoices",
-  "credit-notes": "Credit Notes",
-  "invoice-items": "Services Library",
+  "credit-notes": "Credit notes",
+  "invoice-items": "Services library",
   bills: "Bills",
-  "company-profile": "Company Profile",
+  "company-profile": "Company profile",
   settings: "Settings",
-  team: "Team",
-  "admin-daily-cockpit": "Daily Cockpit",
-  "design-system": "Design System"
+  team: "Users and roles",
+  "admin-daily-cockpit": "Attention required",
+  "design-system": "Design system"
 };
 
 export function getShellViewTitle(activeView: string, shellVariant: "admin" | "portal"): string {
-  if (shellVariant === "portal" && activeView === "client-portal") {
-    return "Your archive";
+  if (shellVariant === "portal") {
+    if (activeView === "client-portal") {
+      return "Content";
+    }
+    if (activeView === "dashboard") {
+      return "Overview";
+    }
+    if (activeView === "briefs") {
+      return "Tasks";
+    }
+    if (activeView === "archive") {
+      return "Assets";
+    }
   }
 
   return VIEW_TITLES[activeView] ?? activeView;

@@ -24,7 +24,7 @@
 
 /* Overdue: coral due-date text only — never tint the row background */
 .finance-due-date.is-overdue {
-  color: var(--ds-accent-coral, #e07070);
+  color: var(--ds-accent-coral, #A65345);
   font-weight: 600;
 }
 

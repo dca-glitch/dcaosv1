@@ -477,7 +477,7 @@ export function ArchiveHubPage() {
       >
         {monthGroups.length === 0 ? (
           <EmptyState
-            message="Briefs and published articles older than 90 days will appear here, grouped by month."
+            message="Briefs and published articles older than 90 days will appear here, grouped by month. Check back after items are archived."
             title="No archived items yet"
             variant="inline"
           />

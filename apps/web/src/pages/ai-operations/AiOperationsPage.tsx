@@ -9,7 +9,6 @@ import type {
 import { formatAiOperationsWorkflowKindLabel, formatAiWorkflowTokenEstimate } from "@dca-os-v1/shared";
 import {
   Alert,
-  Badge,
   Button,
   EmptyState,
   ErrorState,
@@ -80,8 +79,19 @@ async function apiRequest<T>(path: string): Promise<ApiResponse<T>> {
   return payload;
 }
 
+function contextStatusKey(status: AiWorkflowContextUsageSummary["status"]): string {
+  if (status === "used") return "completed";
+  if (status === "skipped") return "archived";
+  return "draft";
+}
+
 function contextStatusBadge(status: AiWorkflowContextUsageSummary["status"]) {
-  return <Badge variant="neutral">{contextStatusLabel(status)}</Badge>;
+  return (
+    <StatusBadge
+      displayLabel={contextStatusLabel(status)}
+      status={contextStatusKey(status)}
+    />
+  );
 }
 
 /**
@@ -122,7 +132,7 @@ function RunDetailModal({
               {run.workflowKind === "ai_delivery_workflow_run" ? (
                 <div><dt>Context</dt><dd>{contextStatusBadge(run.contextUsage.status)}</dd></div>
               ) : null}
-              <div><dt>Executed</dt><dd>{formatAiOpsTimestamp(run.executedAt)}</dd></div>
+              <div><dt>Completed at</dt><dd>{formatAiOpsTimestamp(run.executedAt)}</dd></div>
               {run.workflowKind === "ai_delivery_workflow_run" ? (
                 <>
                   <div><dt>Result version</dt><dd>{run.resultVersion ?? "Not recorded"}</dd></div>
@@ -146,7 +156,7 @@ function RunDetailModal({
               <dl className="detail-grid compact">
                 <div><dt>Title</dt><dd>{run.resultSummary.title ?? "Not recorded"}</dd></div>
                 <div><dt>Summary</dt><dd>{run.resultSummary.summary ?? "Not recorded"}</dd></div>
-                <div><dt>Output type</dt><dd>{formatAiOpsLabel(run.resultSummary.outputType)}</dd></div>
+                <div><dt>Deliverable type</dt><dd>{formatAiOpsLabel(run.resultSummary.outputType)}</dd></div>
                 <div><dt>Generated at</dt><dd>{formatAiOpsTimestamp(run.resultSummary.generatedAt)}</dd></div>
               </dl>
             </SectionPanel>
@@ -484,10 +494,10 @@ export function AiOperationsPage() {
                 value={gatewayFilter}
               />
               <Select
-                label="Output type"
+                label="Deliverable type"
                 onChange={(event) => setOutputTypeFilter(event.target.value as AiOpsOutputTypeFilter)}
                 options={[
-                  { value: "ALL", label: "All output types" },
+                  { value: "ALL", label: "All deliverable types" },
                   { value: "summary", label: "summary" },
                   { value: "content_plan_draft", label: "content plan draft" },
                   { value: "article_draft", label: "article draft" },
@@ -504,7 +514,7 @@ export function AiOperationsPage() {
             {filteredRuns.length === 0 ? (
               <EmptyState
                 title="No AI operations runs"
-                message={runs.length === 0 ? "Execute an AI Delivery workflow or Market Intelligence research run to populate this console." : "No runs match the current filters."}
+                message={runs.length === 0 ? "Run an AI Delivery workflow or a Market Intelligence research run to populate this console." : "No runs match the current filters. Adjust filters to see more results."}
               />
             ) : (
               <>
@@ -524,7 +534,7 @@ export function AiOperationsPage() {
                       { label: "Model", align: "left" },
                       { label: "Context", align: "left" },
                       { label: "Tokens (est.)", align: "left" },
-                      { label: "Executed", align: "left" },
+                      { label: "Completed at", align: "left" },
                       { label: "Actions", align: "right" }
                     ]}
                     rows={pageSlice.items.map((run) => ({

@@ -36,7 +36,6 @@ export function SideSheet({
         role="presentation"
         style={{
           background: "var(--ds-modal-backdrop)",
-          backdropFilter: "blur(2px)",
         }}
       />
       <div
@@ -49,8 +48,7 @@ export function SideSheet({
         style={{
           borderRadius: "var(--ds-radius-lg) 0 0 var(--ds-radius-lg)",
           border: "1px solid var(--ds-modal-border)",
-          background: "var(--ds-modal-gradient)",
-          boxShadow: "var(--ds-shadow-overlay)",
+          background: "var(--ds-surface-panel)",
         }}
         {...props}
       >

@@ -1,6 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/ui";
-import { StatusBadge } from "../../components/ui";
+import { Button, Input, Modal, Select, StatusBadge, Textarea, getPublishingStatusLabel } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -323,7 +322,7 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                 <AiDeliveryInlineNotice>
                   <strong>Handoff context:</strong>{" "}
                   {deliverableLinkedDraftRecord?.status === "APPROVED" && deliverableReadinessBlockers.length === 0
-                    ? "Context ready — approved draft linked and readiness guard clear."
+                    ? "Context ready — approved draft linked and readiness check clear."
                     : "Context missing or blocked — link an approved draft and clear readiness blockers before this package can advance."}
                 </AiDeliveryInlineNotice>
                 <dl className="brief-grid">
@@ -348,7 +347,7 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                     <dd>{formatDeliverableStatus(deliverableForm.status)}</dd>
                   </div>
                   <div>
-                    <dt>Ready-state guard</dt>
+                    <dt>Ready-state check</dt>
                     <dd>{deliverableReadinessBlockers.length === 0 ? "Clear" : "Blocked"}</dd>
                   </div>
                 </dl>
@@ -419,89 +418,174 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                 </dl>
               </div>
               <div className="field-grid field-grid-compact">
-                <label>
-                  Linked content draft - Optional
-                  <select value={deliverableForm.contentDraftId || ""} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: e.target.value || null }))}>
-                    <option value="">None</option>
-                    {deliverableDraftOptions.map((draftItem) => (
-                      <option key={draftItem.id} value={draftItem.id}>{draftItem.title} ({formatContentDraftStatus(draftItem.status)})</option>
-                    ))}
-                  </select>
-                  <span className="muted-text">Approved draft for this package record.</span>
-                </label>
-                <label>
-                  Linked article image - Optional
-                  <select value={deliverableForm.articleImageId || ""} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, articleImageId: e.target.value || null }))}>
-                    <option value="">None</option>
-                    {deliverableArticleImageOptions.map((ai) => (
-                      <option key={ai.id} value={ai.id}>{ai.title} ({formatArticleImageStatus(ai.status)})</option>
-                    ))}
-                  </select>
-                  <span className="muted-text">Approved or final-ready image for the client-safe package.</span>
-                </label>
-                <label className="field-span-2">
-                  Title - Required
-                  <input maxLength={255} placeholder="Internal package name for this content or image handoff record" required value={deliverableForm.title || ""} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, title: e.target.value }))} />
-                  <span className="muted-text">Platform-neutral package name.</span>
-                </label>
-                <label className="field-span-2">
-                  Description - Optional
-                  <textarea maxLength={4000} placeholder="What this deliverable contains and what stage it is in" rows={3} value={deliverableForm.description || ""} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, description: e.target.value }))} />
-                  <span className="muted-text">Internal packaging summary only.</span>
-                </label>
-                <label>
-                  Delivery type - Required
-                  <select value={deliverableForm.deliveryType || "CONTENT_PACKAGE"} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, deliveryType: e.target.value }))}>
-                    {(["CONTENT_PACKAGE","ARTICLE_DRAFT","ARTICLE_IMAGE","CLIENT_HANDOFF","OTHER"] as const).map((dt) => <option key={dt} value={dt}>{dt}</option>)}
-                  </select>
-                  <span className="muted-text">Platform-neutral classification.</span>
-                </label>
-                <label>
-                  Status - {deliverableEditorId ? "Workflow-controlled" : "Required"}
-                  {deliverableEditorId ? (
-                    <>
-                      <input type="text" readOnly value={formatDeliverableStatus(activeDeliverableRecord?.isArchived ? "ARCHIVED" : deliverableForm.status)} />
-                      <span className="muted-text">Status is driven by workflow actions (mark ready, send for client review, accept, archive/restore). Saving other fields will not change it.</span>
-                    </>
-                  ) : (
-                    <>
-                      <input type="text" readOnly value={formatDeliverableStatus("DRAFT")} />
-                      <span className="muted-text">New deliverables always start as Draft. Use workflow actions after create for ready, revision, accept, and restore.</span>
-                    </>
+                <Select
+                  fullWidth
+                  helperText="Approved draft for this package record."
+                  label="Linked content draft - Optional"
+                  onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, contentDraftId: e.target.value || null }))}
+                  options={[
+                    { value: "", label: "None" },
+                    ...deliverableDraftOptions.map((draftItem) => ({
+                      value: draftItem.id,
+                      label: `${draftItem.title} (${formatContentDraftStatus(draftItem.status)})`,
+                    })),
+                  ]}
+                  value={deliverableForm.contentDraftId || ""}
+                />
+                <Select
+                  fullWidth
+                  helperText="Approved or final-ready image for the client-safe package."
+                  label="Linked article image - Optional"
+                  onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, articleImageId: e.target.value || null }))}
+                  options={[
+                    { value: "", label: "None" },
+                    ...deliverableArticleImageOptions.map((ai) => ({
+                      value: ai.id,
+                      label: `${ai.title} (${formatArticleImageStatus(ai.status)})`,
+                    })),
+                  ]}
+                  value={deliverableForm.articleImageId || ""}
+                />
+                <Input
+                  className="field-span-2"
+                  fullWidth
+                  helperText="Platform-neutral package name."
+                  label="Title - Required"
+                  maxLength={255}
+                  onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, title: e.target.value }))}
+                  placeholder="Internal package name for this content or image handoff record"
+                  required
+                  value={deliverableForm.title || ""}
+                />
+                <Textarea
+                  className="field-span-2"
+                  fullWidth
+                  helperText="Internal packaging summary only."
+                  label="Description - Optional"
+                  maxLength={4000}
+                  onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, description: e.target.value }))}
+                  placeholder="What this deliverable contains and what stage it is in"
+                  rows={3}
+                  value={deliverableForm.description || ""}
+                />
+                <Select
+                  fullWidth
+                  helperText="Platform-neutral classification."
+                  label="Delivery type - Required"
+                  onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, deliveryType: e.target.value }))}
+                  options={(["CONTENT_PACKAGE", "ARTICLE_DRAFT", "ARTICLE_IMAGE", "CLIENT_HANDOFF", "OTHER"] as const).map((dt) => ({
+                    value: dt,
+                    label: dt,
+                  }))}
+                  value={deliverableForm.deliveryType || "CONTENT_PACKAGE"}
+                />
+                <Input
+                  fullWidth
+                  helperText={
+                    deliverableEditorId
+                      ? "Status is driven by workflow actions (mark ready, send for client review, accept, archive/restore). Saving other fields will not change it."
+                      : "New deliverables always start as Draft. Use workflow actions after create for ready, revision, accept, and restore."
+                  }
+                  label={`Status - ${deliverableEditorId ? "Workflow-controlled" : "Required"}`}
+                  readOnly
+                  value={formatDeliverableStatus(
+                    deliverableEditorId
+                      ? activeDeliverableRecord?.isArchived
+                        ? "ARCHIVED"
+                        : deliverableForm.status
+                      : "DRAFT",
                   )}
-                </label>
-                <label>
-                  Export reference - Optional
-                  <input maxLength={2048} type="url" placeholder="Safe export URL for client handoff (e.g., shared Google Docs or approved PDF link)" value={deliverableForm.exportUrl || ""} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, exportUrl: e.target.value }))} />
-                  <span className="muted-text">Client-visible in Client Portal. Safe URLs only.</span>
-                </label>
-                <label className="field-span-2">
-                  Storage key reference - Optional
-                  <input maxLength={1024} placeholder="Internal private-storage reference, if already assigned elsewhere" value={deliverableForm.storageKey || ""} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, storageKey: e.target.value }))} />
-                  <span className="muted-text">Internal reference. Use per-record upload controls below.</span>
-                </label>
-                <label className="field-span-2">
-                  Packaging notes - Optional
-                  <textarea maxLength={4000} placeholder="Internal QA notes, packaging context, or revision details for the admin team" rows={3} value={deliverableForm.notes || ""} onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, notes: e.target.value }))} />
-                  <span className="muted-text">Admin and review placeholders only.</span>
-                </label>
+                />
+                <Input
+                  fullWidth
+                  helperText="Client-visible in Client Portal. Safe URLs only."
+                  label="Export reference - Optional"
+                  maxLength={2048}
+                  onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, exportUrl: e.target.value }))}
+                  placeholder="Safe export URL for client handoff (e.g., shared Google Docs or approved PDF link)"
+                  type="url"
+                  value={deliverableForm.exportUrl || ""}
+                />
+                <Input
+                  className="field-span-2"
+                  fullWidth
+                  helperText="Internal reference. Use per-record upload controls below."
+                  label="Storage key reference - Optional"
+                  maxLength={1024}
+                  onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, storageKey: e.target.value }))}
+                  placeholder="Internal private-storage reference, if already assigned elsewhere"
+                  value={deliverableForm.storageKey || ""}
+                />
+                <Textarea
+                  className="field-span-2"
+                  fullWidth
+                  helperText="Admin and review placeholders only."
+                  label="Packaging notes - Optional"
+                  maxLength={4000}
+                  onChange={(e) => onFormChange((current: AiDeliveryDeliverableFormValues) => ({ ...current, notes: e.target.value }))}
+                  placeholder="Internal QA notes, packaging context, or revision details for the admin team"
+                  rows={3}
+                  value={deliverableForm.notes || ""}
+                />
               </div>
               <div className="modal-footer ai-delivery-modal-footer">
-                <button className="ghost-action" disabled={saving} onClick={onClose} type="button">Close</button>
-                <button className="ghost-action" disabled={saving} onClick={() => { onEditorIdChange(null); onFormChange(emptyDeliverableForm()); }} type="button">New deliverable</button>
-                <button className="primary-action" disabled={saving || !(deliverableForm.title || "").trim()} onClick={() => void saveDeliverable(project.id)} type="button">{saving ? "Saving" : deliverableEditorId ? "Save deliverable" : "Create deliverable"}</button>
+                <Button disabled={saving} onClick={onClose} type="button" variant="tertiary">Close</Button>
+                <Button
+                  disabled={saving}
+                  onClick={() => { onEditorIdChange(null); onFormChange(emptyDeliverableForm()); }}
+                  type="button"
+                  variant="tertiary"
+                >
+                  New deliverable
+                </Button>
                 {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
-                  <button className="secondary-action" disabled={saving || activeDeliverableRecord.status === "READY"} onClick={() => void markDeliverableReady(project.id, activeDeliverableRecord.id)} type="button">Mark ready</button>
+                  <Button
+                    disabled={saving || activeDeliverableRecord.status === "READY"}
+                    onClick={() => void markDeliverableReady(project.id, activeDeliverableRecord.id)}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Mark ready
+                  </Button>
                 ) : null}
                 {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
-                  <button className="secondary-action" disabled={saving || !["READY", "ACCEPTED", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void requestDeliverableRevision(project.id, activeDeliverableRecord.id)} type="button">Request revision</button>
+                  <Button
+                    disabled={saving || !["READY", "ACCEPTED", "DELIVERED"].includes(activeDeliverableRecord.status)}
+                    onClick={() => void requestDeliverableRevision(project.id, activeDeliverableRecord.id)}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Request revision
+                  </Button>
                 ) : null}
                 {activeDeliverableRecord && !activeDeliverableRecord.isArchived ? (
-                  <button className="secondary-action" disabled={saving || !["READY", "DELIVERED"].includes(activeDeliverableRecord.status)} onClick={() => void acceptDeliverable(project.id, activeDeliverableRecord.id)} type="button">Internal accept</button>
+                  <Button
+                    disabled={saving || !["READY", "DELIVERED"].includes(activeDeliverableRecord.status)}
+                    onClick={() => void acceptDeliverable(project.id, activeDeliverableRecord.id)}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Internal accept
+                  </Button>
                 ) : null}
                 {activeDeliverableRecord?.isArchived ? (
-                  <button className="secondary-action" disabled={saving} onClick={() => void restoreDeliverable(project.id, activeDeliverableRecord.id)} type="button">Restore deliverable</button>
+                  <Button
+                    disabled={saving}
+                    onClick={() => void restoreDeliverable(project.id, activeDeliverableRecord.id)}
+                    type="button"
+                    variant="secondary"
+                  >
+                    Restore deliverable
+                  </Button>
                 ) : null}
+                <Button
+                  disabled={saving || !(deliverableForm.title || "").trim()}
+                  onClick={() => void saveDeliverable(project.id)}
+                  type="button"
+                  variant="primary"
+                >
+                  {saving ? "Saving" : deliverableEditorId ? "Save deliverable" : "Create deliverable"}
+                </Button>
               </div>
             </section>
 
@@ -520,22 +604,19 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                 No prepared WordPress draft is final client copy. Compliance review and admin review must pass before final archive or client delivery.
               </AiDeliveryInlineNotice>
               {deliverablePublicationTargets.length === 0 ? (
-                <AiDeliveryInlineEmpty>No publication targets for this client yet. Add one in Client Hub before website publishing.</AiDeliveryInlineEmpty>
+                <AiDeliveryInlineEmpty>No websites or channels for this client yet. Add one in Client Hub before website publishing.</AiDeliveryInlineEmpty>
               ) : (
                 <>
-                  <label>
-                    Publication target
-                    <select
-                      onChange={(event) => onPublicationTargetIdChange(event.target.value)}
-                      value={deliverablePublicationTargetId}
-                    >
-                      {deliverablePublicationTargets.map((target) => (
-                        <option key={target.id} value={target.id}>
-                          {target.label} ({target.siteUrl}){target.isDefault ? " — default" : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                  <Select
+                    fullWidth
+                    label="Website or channel"
+                    onChange={(event) => onPublicationTargetIdChange(event.target.value)}
+                    options={deliverablePublicationTargets.map((target) => ({
+                      value: target.id,
+                      label: `${target.label} (${target.siteUrl})${target.isDefault ? " — default" : ""}`,
+                    }))}
+                    value={deliverablePublicationTargetId}
+                  />
                   <dl className="brief-grid brief-grid-spaced-top">
                     <div>
                       <dt>Selected site</dt>
@@ -545,9 +626,9 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                       <dt>Credentials</dt>
                       <dd>
                         {deliverablePublicationCredentialStatus?.configured ? (
-                          <StatusBadge status="CONFIGURED" />
+                          <StatusBadge displayLabel="Configured" status="CONFIGURED" />
                         ) : (
-                          <StatusBadge status="NOT_CONFIGURED" />
+                          <StatusBadge displayLabel="Not configured" status="NOT_CONFIGURED" />
                         )}
                       </dd>
                     </div>
@@ -711,9 +792,14 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                         ) : null}
                         {deliverableWordPressDraft.wordpressDraft.publishGateStatus ? (
                           <div>
-                            <dt>Publish gate</dt>
+                            <dt>Publishing readiness</dt>
                             <dd>
-                              <StatusBadge status={deliverableWordPressDraft.wordpressDraft.publishGateStatus} />
+                              <StatusBadge
+                                displayLabel={getPublishingStatusLabel(
+                                  deliverableWordPressDraft.wordpressDraft.publishGateStatus
+                                ) ?? undefined}
+                                status={deliverableWordPressDraft.wordpressDraft.publishGateStatus}
+                              />
                               {deliverableWordPressDraft.wordpressDraft.credentialConfigured === false
                                 ? " · credentials not configured"
                                 : ""}
@@ -743,8 +829,15 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                       <h4>WordPress publish result</h4>
                      <dl className="brief-grid">
                        <div>
-                         <dt>Provider status</dt>
-                         <dd><StatusBadge status={deliverableWordPressPublishResult.result.status} /></dd>
+                         <dt>Publish status</dt>
+                         <dd>
+                           <StatusBadge
+                             displayLabel={
+                               getPublishingStatusLabel(deliverableWordPressPublishResult.result.status) ?? undefined
+                             }
+                             status={deliverableWordPressPublishResult.result.status}
+                           />
+                         </dd>
                        </div>
                        <div>
                          <dt>External post ID</dt>
@@ -770,7 +863,7 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                                : deliverableWordPressPublishResult.result.status === "draft_prepared"
                                  ? "Draft prepared locally — not published."
                                  : deliverableWordPressPublishResult.result.status === "provider_disabled"
-                                   ? "Provider disabled — no external publish."
+                                   ? "Publishing disabled — no external publish."
                                    : deliverableWordPressPublishResult.result.ok
                                      ? "Publish request finished."
                                      : "Publish did not complete.")}
@@ -787,8 +880,16 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                       <h4>Google Doc export result</h4>
                       <dl className="brief-grid">
                         <div>
-                          <dt>Provider status</dt>
-                          <dd><StatusBadge status={deliverableGoogleDocExportResult.result.providerStatus} /></dd>
+                          <dt>Publish status</dt>
+                          <dd>
+                            <StatusBadge
+                              displayLabel={
+                                getPublishingStatusLabel(deliverableGoogleDocExportResult.result.providerStatus) ??
+                                undefined
+                              }
+                              status={deliverableGoogleDocExportResult.result.providerStatus}
+                            />
+                          </dd>
                         </div>
                         <div>
                           <dt>Export available</dt>
@@ -811,7 +912,7 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                           <dd>
                             {deliverableGoogleDocExportResult.result.exportUrl
                               ? <a href={deliverableGoogleDocExportResult.result.exportUrl} rel="noreferrer" target="_blank">Open in Google Docs</a>
-                              : (deliverableGoogleDocExportResult.result.providerDisabledReason || "Google Drive provider is not configured. Enable GOOGLE_DRIVE_EXPORT_ENABLED and provide service account credentials to activate.")}
+                              : (deliverableGoogleDocExportResult.result.providerDisabledReason || "Google Drive export is not configured. Contact your administrator to enable export.")}
                           </dd>
                         </div>
                       </dl>
@@ -819,20 +920,20 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                   ) : null}
                   {!d.isArchived ? (
                     <div className="field-grid brief-grid-spaced-top">
-                      <label className="field-span-2">
-                        Private document upload - Optional
-                        <input
-                          accept=".pdf,image/png,image/jpeg,image/webp"
-                          onChange={(event) =>
-                            onDocumentFilesChange((current) => ({
-                              ...current,
-                              [d.id]: event.target.files?.[0] ?? null
-                            }))
-                          }
-                          type="file"
-                        />
-                        <span className="muted-text">Private asset upload for this record.</span>
-                      </label>
+                      <Input
+                        accept=".pdf,image/png,image/jpeg,image/webp"
+                        className="field-span-2"
+                        fullWidth
+                        helperText="Private asset upload for this record."
+                        label="Private document upload - Optional"
+                        onChange={(event) =>
+                          onDocumentFilesChange((current) => ({
+                            ...current,
+                            [d.id]: event.target.files?.[0] ?? null
+                          }))
+                        }
+                        type="file"
+                      />
                     </div>
                   ) : null}
                   <div className="card-actions card-actions-spaced">
@@ -909,46 +1010,61 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
                         <strong>{selectedReviewDeliverable.title}</strong>
                         <span className="muted-text">Review placeholder for this deliverable only.</span>
                       </div>
-                      <label>
-                        Review status - Required
-                        <select value={deliverableReviewForm.status} onChange={(event) => onReviewFormChange((current) => ({ ...current, status: event.target.value }))}>
-                          {(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"] as const).map((status) => <option key={status} value={status}>{formatEnumLabel(status)}</option>)}
-                        </select>
-                        <span className="muted-text">Current internal review status.</span>
-                      </label>
-                      <label>
-                        Reviewer name - Optional
-                        <input
-                          maxLength={255}
-                          placeholder="Admin reviewer or operator name"
-                          value={deliverableReviewForm.reviewerName}
-                          onChange={(event) => onReviewFormChange((current) => ({ ...current, reviewerName: event.target.value }))}
-                        />
-                        <span className="muted-text">Admin-only.</span>
-                      </label>
-                      <label className="field-span-2">
-                        Review notes / change request - Optional
-                        <textarea
-                          maxLength={4000}
-                          placeholder="Change requests, approval notes, or internal review context"
-                          rows={3}
-                          value={deliverableReviewForm.reviewNotes}
-                          onChange={(event) => onReviewFormChange((current) => ({ ...current, reviewNotes: event.target.value }))}
-                        />
-                        <span className="muted-text">Not shown to client.</span>
-                      </label>
+                      <Select
+                        fullWidth
+                        helperText="Current internal review status."
+                        label="Review status - Required"
+                        onChange={(event) => onReviewFormChange((current) => ({ ...current, status: event.target.value }))}
+                        options={(["NOT_STARTED", "ADMIN_REVIEW", "CHANGES_REQUESTED", "APPROVED", "ARCHIVED"] as const).map((status) => ({
+                          value: status,
+                          label: formatEnumLabel(status),
+                        }))}
+                        value={deliverableReviewForm.status}
+                      />
+                      <Input
+                        fullWidth
+                        helperText="Admin-only."
+                        label="Reviewer name - Optional"
+                        maxLength={255}
+                        onChange={(event) => onReviewFormChange((current) => ({ ...current, reviewerName: event.target.value }))}
+                        placeholder="Admin reviewer or operator name"
+                        value={deliverableReviewForm.reviewerName}
+                      />
+                      <Textarea
+                        className="field-span-2"
+                        fullWidth
+                        helperText="Not shown to client."
+                        label="Review notes / change request - Optional"
+                        maxLength={4000}
+                        onChange={(event) => onReviewFormChange((current) => ({ ...current, reviewNotes: event.target.value }))}
+                        placeholder="Change requests, approval notes, or internal review context"
+                        rows={3}
+                        value={deliverableReviewForm.reviewNotes}
+                      />
                     </div>
                     <div className="modal-footer ai-delivery-modal-footer">
-                      <button className="ghost-action" disabled={deliverableReviewsSaving} onClick={onClose} type="button">Close</button>
-                      <button className="ghost-action" disabled={deliverableReviewsSaving} onClick={() => { onReviewEditorIdChange(null); onReviewFormChange(emptyDeliverableReview()); }} type="button">New review placeholder</button>
-                      <button className="primary-action" disabled={deliverableReviewsSaving} onClick={() => void saveDeliverableReview(project.id)} type="button">
+                      <Button disabled={deliverableReviewsSaving} onClick={onClose} type="button" variant="tertiary">Close</Button>
+                      <Button
+                        disabled={deliverableReviewsSaving}
+                        onClick={() => { onReviewEditorIdChange(null); onReviewFormChange(emptyDeliverableReview()); }}
+                        type="button"
+                        variant="tertiary"
+                      >
+                        New review placeholder
+                      </Button>
+                      <Button
+                        disabled={deliverableReviewsSaving}
+                        onClick={() => void saveDeliverableReview(project.id)}
+                        type="button"
+                        variant="primary"
+                      >
                         {deliverableReviewsSaving ? "Saving" : deliverableReviewEditorId ? "Save review" : "Create review placeholder"}
-                      </button>
+                      </Button>
                     </div>
 
                     <h4>Existing review placeholders ({deliverableReviews.length})</h4>
                     {!deliverableReviewsError && deliverableReviews.length === 0 ? (
-                      <AiDeliveryInlineEmpty>No review placeholders yet. Add one to continue internal QA.</AiDeliveryInlineEmpty>
+                      <AiDeliveryInlineEmpty>No review placeholders yet. Add one to start internal QA.</AiDeliveryInlineEmpty>
                     ) : null}
                     {[...deliverableReviews].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map((review) => (
                       <article className="entity-card" key={review.id}>

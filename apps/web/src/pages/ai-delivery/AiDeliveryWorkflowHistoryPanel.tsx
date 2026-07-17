@@ -27,7 +27,7 @@ export function AiDeliveryWorkflowHistoryPanel({
   );
 
   if (ordered.length === 0) {
-    return <AiDeliveryInlineEmpty>No workflow runs recorded yet.</AiDeliveryInlineEmpty>;
+    return <AiDeliveryInlineEmpty>No workflow runs recorded yet. Create a workflow run to start.</AiDeliveryInlineEmpty>;
   }
 
   return (

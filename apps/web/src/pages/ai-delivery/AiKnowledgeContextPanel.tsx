@@ -4,7 +4,7 @@ import type {
   AiKnowledgeItemInputRequest,
   AiKnowledgeItemSummary
 } from "@dca-os-v1/shared";
-import { Alert, LoadingState, Modal, SectionPanel, StatusBadge } from "../../components/ui";
+import { Alert, Button, Checkbox, Input, LoadingState, Modal, SectionPanel, Select, StatusBadge, Textarea } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 
 type AiKnowledgeContextPanelProps = {
@@ -216,52 +216,62 @@ export function AiKnowledgeContextPanel({
 
             <SectionPanel description="Creates RAW item; approve to allow prompt use." title="Create knowledge item" tone="compact">
               <form className="stack gap-sm ai-knowledge-create-form" onSubmit={(event) => void handleCreate(event)}>
-                <label className="form-field">
-                  <span>Title</span>
-                  <input value={form.title} onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))} />
-                </label>
-                <label className="form-field">
-                  <span>Type</span>
-                  <select value={form.type} onChange={(event) => setForm((current) => ({ ...current, type: event.target.value as AiKnowledgeItemInputRequest["type"] }))}>
-                    {knowledgeTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {type}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="form-field">
-                  <span>Body</span>
-                  <textarea rows={3} value={form.body} onChange={(event) => setForm((current) => ({ ...current, body: event.target.value }))} />
-                </label>
-                <button className="primary-action" disabled={saving || !form.title.trim()} type="submit">
+                <Input
+                  fullWidth
+                  label="Title"
+                  onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                  value={form.title}
+                />
+                <Select
+                  fullWidth
+                  label="Type"
+                  onChange={(event) => setForm((current) => ({ ...current, type: event.target.value as AiKnowledgeItemInputRequest["type"] }))}
+                  options={knowledgeTypes.map((type) => ({
+                    value: type,
+                    label: type,
+                  }))}
+                  value={form.type}
+                />
+                <Textarea
+                  fullWidth
+                  label="Body"
+                  onChange={(event) => setForm((current) => ({ ...current, body: event.target.value }))}
+                  rows={3}
+                  value={form.body}
+                />
+                <Button disabled={saving || !form.title.trim()} type="submit" variant="primary">
                   Create RAW item
-                </button>
+                </Button>
               </form>
             </SectionPanel>
 
-            <SectionPanel description="Dry-run only — no provider call." title="Context preview" tone="compact">
+            <SectionPanel description="Preview only — no content generation." title="Context preview" tone="compact">
               <div className="stack gap-sm ai-knowledge-preview-controls">
-                <label className="form-field">
-                  <span>Workflow type</span>
-                  <select value={workflowType} onChange={(event) => setWorkflowType(event.target.value)}>
-                    <option value="dry_run">dry_run</option>
-                    <option value="article_draft">article_draft</option>
-                    <option value="content_plan_draft">content_plan_draft</option>
-                    <option value="summary">summary</option>
-                  </select>
-                </label>
-                <label className="checkbox-field">
-                  <input checked={includeRaw} onChange={(event) => setIncludeRaw(event.target.checked)} type="checkbox" />
-                  <span>Include raw/reviewed (preview warns)</span>
-                </label>
-                <label className="checkbox-field">
-                  <input checked={saveSnapshot} onChange={(event) => setSaveSnapshot(event.target.checked)} type="checkbox" />
-                  <span>Save snapshot</span>
-                </label>
-                <button className="ghost-action" disabled={previewLoading} onClick={() => void handlePreview()} type="button">
+                <Select
+                  fullWidth
+                  label="Workflow type"
+                  onChange={(event) => setWorkflowType(event.target.value)}
+                  options={[
+                    { value: "dry_run", label: "dry_run" },
+                    { value: "article_draft", label: "article_draft" },
+                    { value: "content_plan_draft", label: "content_plan_draft" },
+                    { value: "summary", label: "summary" },
+                  ]}
+                  value={workflowType}
+                />
+                <Checkbox
+                  checked={includeRaw}
+                  label="Include raw/reviewed (preview warns)"
+                  onChange={(event) => setIncludeRaw(event.target.checked)}
+                />
+                <Checkbox
+                  checked={saveSnapshot}
+                  label="Save snapshot"
+                  onChange={(event) => setSaveSnapshot(event.target.checked)}
+                />
+                <Button disabled={previewLoading} onClick={() => void handlePreview()} type="button" variant="tertiary">
                   Preview AI context
-                </button>
+                </Button>
               </div>
 
               {previewLoading ? <KnowledgeInlineLoading label="Building context preview" /> : null}

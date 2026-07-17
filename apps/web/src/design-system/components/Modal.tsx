@@ -45,7 +45,6 @@ const Modal: React.FC<ModalProps> = ({
       className="fixed inset-0 z-modal flex items-center justify-center p-4"
       style={{
         background: 'var(--ds-modal-backdrop)',
-        backdropFilter: 'blur(2px)',
         zIndex: 'var(--ds-z-modal, var(--z-modal))',
       }}
       onClick={closeOnBackdrop ? onClose : undefined}
@@ -66,8 +65,7 @@ const Modal: React.FC<ModalProps> = ({
         style={{
           borderRadius: 'var(--ds-radius-xl)',
           border: '1px solid var(--ds-modal-border)',
-          background: 'var(--ds-modal-gradient)',
-          boxShadow: 'var(--ds-shadow-modal)',
+          background: 'var(--ds-surface-panel)',
         }}
         onClick={(e) => e.stopPropagation()}
       >

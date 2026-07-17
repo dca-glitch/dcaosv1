@@ -28,6 +28,7 @@ export {
   STATUS_KEYS,
   normalizeStatusKey,
   getClientStatusLabel,
+  getPublishingStatusLabel,
   isClientVisibleStatus,
   StatusDot,
   ClientStatusBadge,

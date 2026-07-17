@@ -1,11 +1,15 @@
-import { describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, fireEvent, within } from "@testing-library/react";
 import {
   AiDeliveryBriefModal,
   type AiDeliveryBriefDetail,
   type AiDeliveryBriefModalProps,
 } from "./AiDeliveryBriefModal";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
+
+afterEach(() => {
+  cleanup();
+});
 
 const project: AiDeliveryProjectSummary = {
   id: "p1",
@@ -89,7 +93,7 @@ describe("AiDeliveryBriefModal", () => {
     );
     expect(
       within(getDialog()).getByText(
-        /No brief is available for this project yet\. Create or open the project record to continue briefing\./,
+        /No brief is available for this project yet\. Create or open the project record to start briefing\./,
       ),
     ).toBeTruthy();
   });

@@ -96,7 +96,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={[
-              'w-full rounded-md bg-card border px-3 py-2',
+              'w-full rounded-md bg-[var(--ds-surface-white)] border px-3 py-2',
               'text-body-sm text-text-primary placeholder:text-text-disabled',
               'transition-[border-color,box-shadow,opacity] duration-[120ms] ease-out',
               'focus:outline-none focus:shadow-focus',
@@ -105,7 +105,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               iconRight ? 'pr-9'  : '',
               hasError
                 ? 'border-border-danger focus:border-danger-text'
-                : 'border-border focus:border-primary-text',
+                : 'border-border focus:border-[var(--ds-focus-ring-color)]',
               className,
             ].join(' ')}
             aria-invalid={hasError}
@@ -164,14 +164,14 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={inputId}
           rows={minRows}
           className={[
-            'w-full rounded-md bg-card border px-3 py-2.5',
+            'w-full rounded-md bg-[var(--ds-surface-white)] border px-3 py-2.5',
             'text-body-sm text-text-primary placeholder:text-text-disabled',
             'transition-[border-color,box-shadow,opacity] duration-[120ms] ease-out resize-y',
             'focus:outline-none focus:shadow-focus',
             'disabled:opacity-40 disabled:cursor-not-allowed',
             hasError
               ? 'border-border-danger focus:border-danger-text'
-              : 'border-border focus:border-primary-text',
+              : 'border-border focus:border-[var(--ds-focus-ring-color)]',
             className,
           ].join(' ')}
           aria-invalid={hasError}
@@ -239,7 +239,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={inputId}
             className={[
-              'w-full rounded-md bg-card border pr-8 py-2',
+              'w-full rounded-md bg-[var(--ds-surface-white)] border pr-8 py-2',
               'text-body-sm text-text-primary',
               'transition-[border-color,box-shadow,opacity] duration-[120ms] ease-out appearance-none cursor-pointer',
               'focus:outline-none focus:shadow-focus',
@@ -247,7 +247,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
               icon ? 'pl-9' : 'pl-3',
               hasError
                 ? 'border-border-danger focus:border-danger-text'
-                : 'border-border focus:border-primary-text',
+                : 'border-border focus:border-[var(--ds-focus-ring-color)]',
               className,
             ].join(' ')}
             aria-invalid={hasError}
@@ -303,7 +303,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
             ref={ref}
             id={inputId}
             type="checkbox"
-            className="w-4 h-4 rounded-sm border border-border bg-card cursor-pointer accent-primary-text focus:outline-none focus:shadow-focus disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-4 h-4 rounded-sm border border-border bg-[var(--ds-surface-white)] cursor-pointer accent-primary-text focus:outline-none focus:shadow-focus disabled:opacity-50 disabled:cursor-not-allowed"
             aria-invalid={hasError}
             aria-describedby={describedById(inputId, hasError, helperText)}
             {...props}
@@ -378,7 +378,7 @@ export const RadioGroup: React.FC<RadioGroupProps> = ({
               checked={value === opt.value}
               onChange={(e) => onChange?.(e.target.value)}
               disabled={opt.disabled}
-              className="w-4 h-4 rounded-full border border-border bg-card cursor-pointer accent-primary-text focus:outline-none focus:shadow-focus disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-4 h-4 rounded-full border border-border bg-[var(--ds-surface-white)] cursor-pointer accent-primary-text focus:outline-none focus:shadow-focus disabled:opacity-50 disabled:cursor-not-allowed"
             />
             <label
               htmlFor={`${name}-${opt.value}`}

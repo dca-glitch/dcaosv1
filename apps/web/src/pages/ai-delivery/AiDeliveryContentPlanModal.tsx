@@ -1,6 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/ui";
-import { EmptyState, MetricCard, SectionPanel, StatusBadge } from "../../components/ui";
+import { Button, EmptyState, Input, MetricCard, Modal, SectionPanel, Select, StatusBadge, Textarea } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -227,11 +226,11 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
               </dl>
               <div className="field-panel" style={{ marginTop: "1rem" }}>
                 <div className="summary-grid" style={{ marginTop: "0.5rem" }}>
-                  <MetricCard accent="violet" label="Research" value={workflowShell.hasResearchRequests ? "Started" : "Pending"} helper={workflowShell.researchStep} />
-                  <MetricCard accent="cyan" label="Sources" value={workflowShell.hasResearchSources ? "Recorded" : "Pending"} helper={workflowShell.sourceStep} />
-                  <MetricCard accent="warning" label="Summaries" value={workflowShell.hasResearchSummaries ? "Ready" : "Pending"} helper={workflowShell.summaryStep} />
-                  <MetricCard accent="success" label="Content plan" value={workflowShell.hasPlan ? "Open" : "Pending"} helper={workflowShell.planStep} />
-                  <MetricCard accent="purple" label="Draft handoff" value={workflowShell.hasDraftHandOff ? "Ready" : "Pending"} helper={workflowShell.draftStep} />
+                  <MetricCard label="Research" value={workflowShell.hasResearchRequests ? "Started" : "Pending"} helper={workflowShell.researchStep} />
+                  <MetricCard label="Sources" value={workflowShell.hasResearchSources ? "Recorded" : "Pending"} helper={workflowShell.sourceStep} />
+                  <MetricCard label="Summaries" value={workflowShell.hasResearchSummaries ? "Ready" : "Pending"} helper={workflowShell.summaryStep} />
+                  <MetricCard label="Content plan" value={workflowShell.hasPlan ? "Open" : "Pending"} helper={workflowShell.planStep} />
+                  <MetricCard label="Draft handoff" value={workflowShell.hasDraftHandOff ? "Ready" : "Pending"} helper={workflowShell.draftStep} />
                 </div>
               </div>
             </SectionPanel>
@@ -272,7 +271,7 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
                 <section className="field-panel ai-delivery-section-compact">
                   <h3>Monthly plan items</h3>
                   {items.length === 0 ? (
-                    <AiDeliveryInlineEmpty>No monthly plan items yet. Add a topic to continue planning.</AiDeliveryInlineEmpty>
+                    <AiDeliveryInlineEmpty>No monthly plan items yet. Add a topic to start planning.</AiDeliveryInlineEmpty>
                   ) : null}
                   {items.map((item, index) => {
                     const persistedItem = plan.items.find((planItem) => planItem.id === item.localId) ?? null;
@@ -282,93 +281,89 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
 
                     return (
                     <div className="field-grid" key={item.localId}>
-                      <label className="field-span-2">
-                        Topic / working title - Required
-                        <input
-                          maxLength={255}
-                          placeholder="Main topic, keyword cluster, or service page focus"
-                          onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, title: event.target.value } : draftItem))}
-                          required
-                          value={item.title}
-                        />
-                        <span className="muted-text">Used by admin to prepare monthly platform-neutral SEO/content work.</span>
-                      </label>
-                      <label>
-                        Target keyword - Optional
-                        <input
-                          maxLength={80}
-                          placeholder="Primary keyword or search phrase"
-                          onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, targetKeyword: event.target.value } : draftItem))}
-                          value={item.targetKeyword}
-                        />
-                        <span className="muted-text">Visible only to admin team.</span>
-                      </label>
-                      <label>
-                        Search intent - Optional
-                        <select
-                          value={item.searchIntent}
-                          onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, searchIntent: event.target.value } : draftItem))}
-                        >
-                          {CONTENT_PLAN_SEARCH_INTENT_OPTIONS.map((option) => (
-                            <option key={option.value || "unset"} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
-                        <span className="muted-text">Stored with the plan item for monthly SEO planning.</span>
-                      </label>
-                      <label className="field-span-2">
-                        Planning notes - Optional
-                        <textarea
-                          maxLength={4000}
-                          placeholder="Audience angle, SERP notes, internal review context"
-                          onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
-                          rows={3}
-                          value={item.notes}
-                        />
-                        <span className="muted-text">Admin-only notes for this monthly plan item.</span>
-                      </label>
-                      <label>
-                        Production type - Optional
-                        <input
-                          maxLength={80}
-                          placeholder="Blog post, service page, landing page, or other"
-                          onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
-                          value={item.contentType}
-                        />
-                        <span className="muted-text">Internal planning label for the monthly content plan.</span>
-                      </label>
-                      <label>
-                        Item status - Required
-                        <select
-                          value={item.approvalStatus}
-                          onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, approvalStatus: event.target.value } : draftItem))}
-                        >
-                          {contentPlanItemApprovalStatuses.map((status) => (
-                            <option key={status} value={status}>{formatContentPlanItemApprovalStatus(status)}</option>
-                          ))}
-                        </select>
-                        <span className="muted-text">Internal review state for this monthly plan item.</span>
-                      </label>
+                      <Input
+                        className="field-span-2"
+                        fullWidth
+                        helperText="Used by admin to prepare monthly platform-neutral SEO/content work."
+                        label="Topic / working title - Required"
+                        maxLength={255}
+                        onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, title: event.target.value } : draftItem))}
+                        placeholder="Main topic, keyword cluster, or service page focus"
+                        required
+                        value={item.title}
+                      />
+                      <Input
+                        fullWidth
+                        helperText="Visible only to admin team."
+                        label="Target keyword - Optional"
+                        maxLength={80}
+                        onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, targetKeyword: event.target.value } : draftItem))}
+                        placeholder="Primary keyword or search phrase"
+                        value={item.targetKeyword}
+                      />
+                      <Select
+                        fullWidth
+                        helperText="Stored with the plan item for monthly SEO planning."
+                        label="Search intent - Optional"
+                        onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, searchIntent: event.target.value } : draftItem))}
+                        options={CONTENT_PLAN_SEARCH_INTENT_OPTIONS.map((option) => ({
+                          value: option.value,
+                          label: option.label,
+                        }))}
+                        value={item.searchIntent}
+                      />
+                      <Textarea
+                        className="field-span-2"
+                        fullWidth
+                        helperText="Admin-only notes for this monthly plan item."
+                        label="Planning notes - Optional"
+                        maxLength={4000}
+                        onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, notes: event.target.value } : draftItem))}
+                        placeholder="Audience angle, SERP notes, internal review context"
+                        rows={3}
+                        value={item.notes}
+                      />
+                      <Input
+                        fullWidth
+                        helperText="Internal planning label for the monthly content plan."
+                        label="Production type - Optional"
+                        maxLength={80}
+                        onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, contentType: event.target.value } : draftItem))}
+                        placeholder="Blog post, service page, landing page, or other"
+                        value={item.contentType}
+                      />
+                      <Select
+                        fullWidth
+                        helperText="Internal review state for this monthly plan item."
+                        label="Item status - Required"
+                        onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, approvalStatus: event.target.value } : draftItem))}
+                        options={contentPlanItemApprovalStatuses.map((status) => ({
+                          value: status,
+                          label: formatContentPlanItemApprovalStatus(status),
+                        }))}
+                        value={item.approvalStatus}
+                      />
                       <div>
                         <span>Priority</span>
                         <strong>{index + 1}</strong>
                         <span className="muted-text">{formatContentPlanSearchIntent(item.searchIntent)} intent • lower numbers publish first.</span>
                         <div className="modal-footer modal-footer--flush ai-delivery-modal-footer">
-                          <button
-                            className="ghost-action"
+                          <Button
                             disabled={busy || index === 0}
                             onClick={() => onItemsChange((current) => moveContentPlanItem(current, index, -1))}
                             type="button"
+                            variant="tertiary"
                           >
                             Move up
-                          </button>
-                          <button
-                            className="ghost-action"
+                          </Button>
+                          <Button
                             disabled={busy || index === items.length - 1}
                             onClick={() => onItemsChange((current) => moveContentPlanItem(current, index, 1))}
                             type="button"
+                            variant="tertiary"
                           >
                             Move down
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       <div>
@@ -377,17 +372,16 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
                         <span className="muted-text">Latest persisted approval state for this record.</span>
                       </div>
                       <div className="field-span-2">
-                        <label>
-                          Approval / revision note - Optional
-                          <textarea
-                            maxLength={4000}
-                            placeholder="Why this item is approved, still planned, or needs revision before review"
-                            onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, clientComment: event.target.value } : draftItem))}
-                            rows={3}
-                            value={item.clientComment}
-                          />
-                          <span className="muted-text">Use for internal approval context and any revision note that may later support review handling.</span>
-                        </label>
+                        <Textarea
+                          fullWidth
+                          helperText="Use for internal approval context and any revision note that may later support review handling."
+                          label="Approval / revision note - Optional"
+                          maxLength={4000}
+                          onChange={(event) => onItemsChange((current) => current.map((draftItem) => draftItem.localId === item.localId ? { ...draftItem, clientComment: event.target.value } : draftItem))}
+                          placeholder="Why this item is approved, still planned, or needs revision before review"
+                          rows={3}
+                          value={item.clientComment}
+                        />
                       </div>
                       <div className="field-span-2">
                         <span>Saved approval / revision note</span>
@@ -396,15 +390,15 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
                       </div>
                       <div className="field-span-2">
                         <div className="modal-footer modal-footer--flush ai-delivery-modal-footer">
-                          <button
-                            className="ghost-action"
+                          <Button
                             disabled={busy || !persistedItem?.id || persistedItem.approvalStatus === "CLIENT_CHANGES_REQUESTED"}
                             onClick={() => (persistedItem ? onGenerateDraft(project.id, persistedItem) : undefined)}
                             title={!persistedItem?.id ? "Save the monthly content plan before generating a draft from this item." : undefined}
                             type="button"
+                            variant="tertiary"
                           >
                             {generatingItemId === persistedItem?.id ? "Generating draft" : linkedDraft ? "Regenerate admin draft" : "Generate admin draft"}
-                          </button>
+                          </Button>
                         </div>
                         <span className="muted-text">
                           {!persistedItem?.id
@@ -413,39 +407,41 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
                         </span>
                       </div>
                       <div className="field-span-2">
-                        <button
-                          className="ghost-action"
+                        <Button
                           disabled={busy}
                           onClick={() => onItemsChange((current) => current.filter((draftItem) => draftItem.localId !== item.localId))}
                           type="button"
+                          variant="destructive"
                         >
                           Remove topic
-                        </button>
+                        </Button>
                       </div>
                     </div>
                     );
                   })}
-                  <button
-                    className="ghost-action"
+                  <Button
                     disabled={busy}
                     onClick={() => onItemsChange((current) => [...current, emptyContentPlanItem()])}
                     type="button"
+                    variant="secondary"
                   >
                     Add monthly plan item
-                  </button>
+                  </Button>
                 </section>
 
                 <div className="modal-footer ai-delivery-modal-footer">
-                  <button className="ghost-action" disabled={busy} onClick={onClose} type="button">Close</button>
-                  <button className="ghost-action" disabled={busy} onClick={() => onRequestReview(project.id)} type="button">Mark ready for review</button>
-                  <button className="ghost-action" disabled={busy} onClick={() => onRequestChanges(project.id)} type="button">Request changes</button>
-                  <button className="ghost-action" disabled={busy} onClick={() => onApprove(project.id)} type="button">Approve plan</button>
-                  <button className="ghost-action" disabled={busy || pdfGenerating} onClick={() => onExportPdf(project.id)} type="button">{pdfGenerating ? "Generating PDF…" : "Export PDF"}</button>
-                  <button className="ghost-action" disabled={busy || pdfGenerating || pdfReady !== true} onClick={() => onDownloadPdf(project.id)} type="button">Download PDF</button>
+                  <Button disabled={busy} onClick={onClose} type="button" variant="tertiary">Close</Button>
+                  <Button disabled={busy || pdfGenerating} onClick={() => onExportPdf(project.id)} type="button" variant="tertiary">
+                    {pdfGenerating ? "Generating PDF…" : "Export PDF"}
+                  </Button>
+                  <Button disabled={busy || pdfGenerating || pdfReady !== true} onClick={() => onDownloadPdf(project.id)} type="button" variant="tertiary">Download PDF</Button>
                   <span className="muted-text" role="status">{pdfReady === true ? "PDF ready" : pdfReady === false ? "No PDF generated yet" : ""}</span>
-                  <button className="primary-action" disabled={busy || items.some((item) => !item.title.trim())} onClick={() => onSave(project.id)} type="button">
+                  <Button disabled={busy} onClick={() => onRequestReview(project.id)} type="button" variant="secondary">Mark ready for review</Button>
+                  <Button disabled={busy} onClick={() => onRequestChanges(project.id)} type="button" variant="secondary">Request changes</Button>
+                  <Button disabled={busy} onClick={() => onApprove(project.id)} type="button" variant="secondary">Approve plan</Button>
+                  <Button disabled={busy || items.some((item) => !item.title.trim())} onClick={() => onSave(project.id)} type="button" variant="primary">
                     {saving ? "Saving" : "Save draft"}
-                  </button>
+                  </Button>
                 </div>
                 </>
 
@@ -453,11 +449,11 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
               <div>
                 <EmptyState
                   title="No AI SEO content plan yet"
-                  message="This project does not have an AI SEO content plan yet. Create or generate a plan to continue."
+                  message="This project does not have an AI SEO content plan yet. Create or generate a plan to get started."
                   action={(
-                    <button className="primary-action" disabled={busy} onClick={() => onCreate(project.id)} type="button">
+                    <Button disabled={busy} onClick={() => onCreate(project.id)} type="button" variant="primary">
                       {saving ? "Creating" : "Create content plan"}
-                    </button>
+                    </Button>
                   )}
                 />
               </div>

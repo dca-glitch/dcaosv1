@@ -111,7 +111,7 @@ export function toBriefStatusPresentation(
   if (status === "AWAITING_CLIENT") {
     return role === "client"
       ? { label: "Awaiting your input", tone: "info" }
-      : { label: "Sent to Client", tone: "info" };
+      : { label: "Sent to client", tone: "info" };
   }
   return { label: "In progress", tone: "info" };
 }

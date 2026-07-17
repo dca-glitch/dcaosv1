@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/ui";
+import { Button, Modal, Textarea } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -99,91 +99,109 @@ export function AiDeliveryBriefModal({
             </dl>
 
             <section className="field-panel ai-delivery-section-compact">
-              <h3>Client input / priorities - Optional</h3>
               {editable ? (
-                <textarea
-                  aria-label="Client input / priorities - Optional"
+                <Textarea
+                  fullWidth
+                  id="ai-brief-client-priorities"
+                  label="Client input / priorities - Optional"
+                  onChange={(e) => onBriefChange({ ...brief, clientPriorities: e.target.value })}
                   placeholder="Client priorities, requested topics, or campaign focus"
                   rows={3}
                   value={brief.clientPriorities ?? ""}
-                  onChange={(e) => onBriefChange({ ...brief, clientPriorities: e.target.value })}
                 />
               ) : (
-                <pre className="pre-wrap-block">{brief.clientPriorities ?? "Not set"}</pre>
+                <>
+                  <h3>Client input / priorities - Optional</h3>
+                  <pre className="pre-wrap-block">{brief.clientPriorities ?? "Not set"}</pre>
+                </>
               )}
             </section>
 
             <section className="field-panel ai-delivery-section-compact">
-              <h3>Products / services focus - Optional</h3>
               {editable ? (
-                <textarea
-                  aria-label="Products / services focus - Optional"
+                <Textarea
+                  fullWidth
+                  id="ai-brief-products-services"
+                  label="Products / services focus - Optional"
+                  onChange={(e) => onBriefChange({ ...brief, productsServicesFocus: e.target.value })}
                   placeholder="Products, services, or offers to emphasize"
                   rows={3}
                   value={brief.productsServicesFocus ?? ""}
-                  onChange={(e) => onBriefChange({ ...brief, productsServicesFocus: e.target.value })}
                 />
               ) : (
-                <pre className="pre-wrap-block">{brief.productsServicesFocus ?? "Not set"}</pre>
+                <>
+                  <h3>Products / services focus - Optional</h3>
+                  <pre className="pre-wrap-block">{brief.productsServicesFocus ?? "Not set"}</pre>
+                </>
               )}
             </section>
 
             <section className="field-panel ai-delivery-section-compact">
-              <h3>Target audience - Optional</h3>
               {editable ? (
-                <textarea
-                  aria-label="Target audience - Optional"
+                <Textarea
+                  fullWidth
+                  id="ai-brief-target-audience"
+                  label="Target audience - Optional"
+                  onChange={(e) => onBriefChange({ ...brief, targetAudience: e.target.value })}
                   placeholder="Audience segments, buyer roles, or reader context"
                   rows={3}
                   value={brief.targetAudience ?? ""}
-                  onChange={(e) => onBriefChange({ ...brief, targetAudience: e.target.value })}
                 />
               ) : (
-                <pre className="pre-wrap-block">{brief.targetAudience ?? "Not set"}</pre>
+                <>
+                  <h3>Target audience - Optional</h3>
+                  <pre className="pre-wrap-block">{brief.targetAudience ?? "Not set"}</pre>
+                </>
               )}
             </section>
 
             <section className="field-panel ai-delivery-section-compact">
-              <h3>Research / admin feedback - Optional</h3>
               {editable ? (
-                <textarea
-                  aria-label="Research / admin feedback - Optional"
+                <Textarea
+                  fullWidth
+                  id="ai-brief-research-feedback"
+                  label="Research / admin feedback - Optional"
+                  onChange={(e) => onBriefChange({ ...brief, marketsCompetitors: e.target.value })}
                   placeholder="Markets, competitors, research findings, or admin feedback"
                   rows={3}
                   value={brief.marketsCompetitors ?? ""}
-                  onChange={(e) => onBriefChange({ ...brief, marketsCompetitors: e.target.value })}
                 />
               ) : (
-                <pre className="pre-wrap-block">{brief.marketsCompetitors ?? "Not set"}</pre>
+                <>
+                  <h3>Research / admin feedback - Optional</h3>
+                  <pre className="pre-wrap-block">{brief.marketsCompetitors ?? "Not set"}</pre>
+                </>
               )}
             </section>
 
             <section className="field-panel ai-delivery-section-compact">
-              <h3>Optional internal notes</h3>
               {editable ? (
-                <>
-                  <textarea
-                    aria-label="Optional internal notes"
-                    placeholder="Notes for admin team only"
-                    rows={6}
-                    value={brief.notes ?? ""}
-                    onChange={(e) => onBriefChange({ ...brief, notes: e.target.value })}
-                  />
-                  <span className="muted-text">Admin-only.</span>
-                </>
+                <Textarea
+                  fullWidth
+                  helperText="Admin-only."
+                  id="ai-brief-internal-notes"
+                  label="Optional internal notes"
+                  onChange={(e) => onBriefChange({ ...brief, notes: e.target.value })}
+                  placeholder="Notes for admin team only"
+                  rows={6}
+                  value={brief.notes ?? ""}
+                />
               ) : (
-                <pre className="pre-wrap-block">{brief.notes ?? "Not set"}</pre>
+                <>
+                  <h3>Optional internal notes</h3>
+                  <pre className="pre-wrap-block">{brief.notes ?? "Not set"}</pre>
+                </>
               )}
             </section>
 
             <div className="modal-footer ai-delivery-modal-footer">
-              <button className="ghost-action" onClick={onClose} type="button">
+              <Button onClick={onClose} type="button" variant="tertiary">
                 Close
-              </button>
+              </Button>
               {editable ? (
-                <button className="primary-action" onClick={() => onSave(project.id)} type="button">
+                <Button onClick={() => onSave(project.id)} type="button" variant="primary">
                   Save brief
-                </button>
+                </Button>
               ) : null}
             </div>
           </div>
@@ -213,14 +231,14 @@ export function AiDeliveryBriefModal({
               <pre className="pre-wrap-block">{project.plannedContentScopeNotes ?? "Not set"}</pre>
             </section>
             <div className="modal-footer ai-delivery-modal-footer">
-              <button className="ghost-action" onClick={onClose} type="button">
+              <Button onClick={onClose} type="button" variant="tertiary">
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
           <AiDeliveryInlineEmpty>
-            No brief is available for this project yet. Create or open the project record to continue briefing.
+            No brief is available for this project yet. Create or open the project record to start briefing.
           </AiDeliveryInlineEmpty>
         )
       ) : (

@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal } from "../../components/ui";
+import { Button, Checkbox, Modal } from "../../components/ui";
 
 export type AiDeliveryWordPressPublishConfirmModalProps = {
   deliverableTitle: string;
@@ -25,22 +25,22 @@ export function AiDeliveryWordPressPublishConfirmModal({
   return (
     <Modal
       isOpen
-      title="Confirm WordPress publish"
+      title="Publish to WordPress"
       onClose={onCancel}
       footer={
-        <>
-          <button className="secondary-action" onClick={onCancel} type="button">
+        <div className="ai-delivery-modal-actions">
+          <Button onClick={onCancel} type="button" variant="tertiary">
             Cancel
-          </button>
-          <button
-            className="primary-action"
+          </Button>
+          <Button
             disabled={!acknowledged || publishInProgress}
             onClick={() => void onConfirm()}
             type="button"
+            variant="primary"
           >
             Publish to WordPress
-          </button>
-        </>
+          </Button>
+        </div>
       }
     >
       <p>
@@ -49,19 +49,17 @@ export function AiDeliveryWordPressPublishConfirmModal({
         {publicationTargetSiteUrl ?? "site URL not set"}).
       </p>
       <p className="muted-text">
-        Live WordPress publish is deferred by default. The attempt writes a WordPress post only when credentials and <code>WORDPRESS_PUBLISH_ENABLED</code> are explicitly configured in a separately approved block. Otherwise the attempt is logged as provider-disabled and no external publish occurs.
+        Live WordPress publish is deferred by default. The attempt writes a WordPress post only when credentials and publishing are explicitly enabled in a separately approved block. Otherwise the attempt is logged and no external publish occurs.
       </p>
       <p className="muted-text">
         The prepared draft remains an internal scaffold until compliance review and admin review pass. Client delivery happens only through final archive or approved monthly report outputs.
       </p>
-      <label style={{ display: "flex", gap: "0.5rem", marginTop: "1rem" }}>
-        <input
-          checked={acknowledged}
-          onChange={(event) => onAcknowledgedChange(event.target.checked)}
-          type="checkbox"
-        />
-        I confirm this is a draft-only handoff attempt; live publish is deferred unless explicitly enabled.
-      </label>
+      <Checkbox
+        checked={acknowledged}
+        className="mt-4"
+        label="I acknowledge this is a draft-only handoff attempt; live publish is deferred unless explicitly enabled."
+        onChange={(event) => onAcknowledgedChange(event.target.checked)}
+      />
     </Modal>
   );
 }

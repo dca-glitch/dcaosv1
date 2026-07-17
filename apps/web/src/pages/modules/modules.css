@@ -20,9 +20,9 @@
   justify-content: space-between;
   gap: 0.65rem 1rem;
   padding: 0.75rem 0.9rem;
-  border-radius: var(--ds-radius-md, 10px);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  background: rgba(15, 23, 42, 0.28);
+  border-radius: var(--ds-radius-md, 3px);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  background: var(--ds-surface-panel, #F1F1ED);
 }
 
 .modules-availability-copy {
@@ -35,7 +35,7 @@
 
 .modules-availability-copy strong {
   font-size: 0.92rem;
-  color: var(--text-primary, inherit);
+  color: var(--ds-text-primary, inherit);
 }
 
 .modules-availability-meta {
@@ -72,9 +72,9 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.9rem 1rem;
-  border-radius: var(--ds-radius-md, 10px);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  background: rgba(15, 23, 42, 0.28);
+  border-radius: var(--ds-radius-md, 3px);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  background: var(--ds-surface-inset, #F0F1EC);
 }
 
 @media (max-width: 720px) {

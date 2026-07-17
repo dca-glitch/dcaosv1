@@ -18,8 +18,8 @@ export type TableProps = TableHTMLAttributes<HTMLTableElement> & {
   density?: TableDensity;
 };
 
-/** Preserved headers/rows adapter API — density optional (default admin). */
-export function Table({ headers, rows, className, density = "admin", ...tableProps }: TableProps) {
+/** Preserved headers/rows adapter API — density optional (default comfortable). */
+export function Table({ headers, rows, className, density = "comfortable", ...tableProps }: TableProps) {
   const { "aria-label": ariaLabel, ...rest } = tableProps;
   return (
     <DSTable aria-label={ariaLabel} className={className} density={density} {...rest}>

@@ -18,6 +18,7 @@ interface BadgeProps {
   icon?:      ReactNode;
   children:   ReactNode;
   className?: string;
+  style?:     React.CSSProperties;
 }
 
 const variantClass: Record<BadgeVariant, string> = {
@@ -34,8 +35,12 @@ const Badge: React.FC<BadgeProps> = ({
   icon,
   children,
   className = '',
+  style,
 }) => (
-  <span className={`ds-badge ${variantClass[variant]} ${className}`}>
+  <span
+    className={`ds-badge ${variantClass[variant]} ${className}`}
+    style={{ fontSize: '12px', textTransform: 'none', ...style }}
+  >
     {icon && !dot && (
       <span className="flex-shrink-0 flex items-center" aria-hidden="true">{icon}</span>
     )}
@@ -64,7 +69,7 @@ export const StatusBadge: React.FC<{
     <span
       className={`ds-badge ds-status-badge ${className}`.trim()}
       data-status={key ?? 'unknown'}
-      style={statusBadgeStyle(visual)}
+      style={{ ...statusBadgeStyle(visual), fontSize: '12px', textTransform: 'none' }}
     >
       <span className="ds-badge-dot" aria-hidden="true" />
       {label}
@@ -93,7 +98,7 @@ export const ClientStatusBadge: React.FC<{ status: string; className?: string }>
       className={`ds-badge ds-status-badge ${className}`.trim()}
       data-status={key}
       data-surface="client"
-      style={statusBadgeStyle(visual)}
+      style={{ ...statusBadgeStyle(visual), fontSize: '12px', textTransform: 'none' }}
     >
       <span className="ds-badge-dot" aria-hidden="true" />
       {clientLabel}

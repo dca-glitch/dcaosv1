@@ -1,4 +1,4 @@
-/* AI Operations Console â€” Phase 9 local styles */
+/* AI Operations Console — Phase 9 local styles */
 
 .ai-ops-console {
   gap: 1rem;
@@ -40,9 +40,9 @@
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   padding: 0.65rem 0.75rem;
-  border: 1px solid var(--ds-border, rgba(255, 255, 255, 0.08));
-  border-radius: var(--ds-radius-md, 8px);
-  background: var(--ds-surface-panel, #0c0f1a);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  border-radius: var(--ds-radius-md, 3px);
+  background: var(--ds-surface-panel, #F1F1ED);
 }
 
 .ai-ops-error-log__meta {
@@ -55,7 +55,7 @@
 
 .ai-ops-error-log__message {
   margin: 0;
-  color: var(--ds-text-muted, #7F89A8);
+  color: var(--ds-text-muted, #5C5C56);
   font-size: 0.8125rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -63,7 +63,7 @@
 
 .ai-ops-context-detail {
   margin: 0;
-  color: var(--ds-text-secondary, #a8b0c8);
+  color: var(--ds-text-secondary, #3D3D38);
   font-size: 0.875rem;
   line-height: 1.45;
 }

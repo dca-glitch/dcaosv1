@@ -49,11 +49,11 @@ function statusVars(key: StatusKey): Pick<StatusVisual, "text" | "bg" | "border"
 
 export const STATUS: Record<StatusKey, StatusVisual> = {
   draft: { label: "Draft", ...statusVars("draft") },
-  ready: { label: "Ready", ...statusVars("ready") },
-  in_progress: { label: "In Progress", ...statusVars("in_progress") },
-  in_review: { label: "In Review", ...statusVars("in_review") },
-  awaiting_client: { label: "Awaiting Client", ...statusVars("awaiting_client") },
-  changes_requested: { label: "Changes Requested", ...statusVars("changes_requested") },
+  ready: { label: "Ready for review", ...statusVars("ready") },
+  in_progress: { label: "In progress", ...statusVars("in_progress") },
+  in_review: { label: "Needs review", ...statusVars("in_review") },
+  awaiting_client: { label: "Pending approval", ...statusVars("awaiting_client") },
+  changes_requested: { label: "Changes requested", ...statusVars("changes_requested") },
   approved: { label: "Approved", ...statusVars("approved") },
   completed: { label: "Completed", ...statusVars("completed") },
   published: { label: "Published", ...statusVars("published") },
@@ -66,10 +66,10 @@ export const STATUS: Record<StatusKey, StatusVisual> = {
 /** Client-safe labels (SPEC §3.2). `null` = hide from client surfaces. */
 export const CLIENT_STATUS_LABELS: Record<StatusKey, string | null> = {
   draft: "Planning",
-  ready: "Ready",
-  in_progress: "In Production",
-  in_review: "Ready for Review",
-  awaiting_client: "Awaiting Your Response",
+  ready: "Ready for review",
+  in_progress: "In progress",
+  in_review: "Ready for review",
+  awaiting_client: "Awaiting your response",
   changes_requested: null,
   approved: "Approved",
   completed: "Delivered",
@@ -151,9 +151,35 @@ export function normalizeStatusKey(input: string): StatusKey | null {
     // Finance
     issued: "ready",
     sent: "ready",
+    // Task lifecycle
+    not_started: "ready",
+    // Publishing / credentials
+    draft_prepared: "draft",
+    provider_disabled: "archived",
+    provider_not_configured: "failed",
+    publish_error: "failed",
+    error: "failed",
+    published_to_wordpress: "published",
+    exported: "completed",
+    scheduled: "in_progress",
+    publishing: "in_progress",
+    not_scheduled: "ready",
+    configured: "approved",
+    not_configured: "failed",
+    credentials_missing: "failed",
+    target_configured: "approved",
+    publication_target_missing: "blocked",
+    default: "ready",
+    // Approval / queue
+    waiting: "awaiting_client",
+    // Admin ops chips
+    warning: "in_review",
+    system: "draft",
+    inactive: "archived",
+    withdrawn: "archived",
     // Display labels already title-cased
     planning: "draft",
-    ready_for_review: "in_review",
+    ready_for_review: "ready",
   };
 
   return aliases[normalized] ?? null;
@@ -269,10 +295,35 @@ export function toneToStatusKey(tone: LegacyStatusTone): StatusKey {
   }
 }
 
+/** Unambiguous client/admin labels for publishing and export enums. */
+const PUBLISHING_STATUS_LABELS: Record<string, string> = {
+  published: "Published",
+  draft_prepared: "Draft prepared",
+  provider_disabled: "Publishing disabled",
+  provider_not_configured: "Provider not configured",
+  exported: "Exported",
+  error: "Publish failed",
+  publish_error: "Publish failed",
+  disabled: "Publishing disabled",
+  credentials_missing: "Credentials missing",
+  target_configured: "Target configured",
+};
+
+export function getPublishingStatusLabel(status: string | null | undefined): string | null {
+  if (!status?.trim()) {
+    return null;
+  }
+  const normalized = status.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return PUBLISHING_STATUS_LABELS[normalized] ?? null;
+}
+
 export function formatStatusLabel(value?: string | null): string {
   if (!value) return "Not set";
-  return String(value)
+  const normalized = String(value)
     .toLowerCase()
     .replace(/_/g, " ")
-    .replace(/(^|\s)\S/g, (s) => s.toUpperCase());
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!normalized) return "Not set";
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
 }

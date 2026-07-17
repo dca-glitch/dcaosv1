@@ -25,6 +25,7 @@ export {
   getClientStatusLabel,
   isClientVisibleStatus,
   formatStatusLabel,
+  getPublishingStatusLabel,
   statusBadgeStyle,
   toneToStatusKey,
   statusTokenSuffix,

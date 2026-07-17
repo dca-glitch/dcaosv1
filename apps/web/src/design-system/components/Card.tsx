@@ -156,20 +156,20 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   tint,
 }) => (
   <div
-    className={`card-elevated ${className}`}
+    className={`metric-card ${className}`}
     style={{
-      ...panelCSS(tint, true),
+      ...panelCSS(tint),
       borderRadius: 'var(--ds-radius-lg)',
-      padding: 'var(--ds-card-padding-admin)',
+      padding: '12px 16px',
     }}
   >
-    <p className="text-[9px] font-semibold uppercase tracking-widest text-text-muted">
+    <p className="text-[12px] font-semibold tracking-wide text-text-muted">
       {label}
     </p>
-    <div className="flex items-baseline gap-1 mt-2">
+    <div className="flex items-baseline gap-1 mt-1">
       <span
         className={[
-          'text-[26px] font-semibold leading-none',
+          'text-[22px] font-semibold leading-none',
           alert ? 'text-danger-text' : valueColorClass[valueColor],
           mono ? 'font-mono' : '',
         ].join(' ')}
@@ -183,7 +183,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     {(helper || trend) && (
       <p
         className={[
-          'text-[11px] mt-1.5',
+          'text-[12px] mt-1',
           trend?.direction === 'up'      ? 'text-success-text' :
           trend?.direction === 'down'    ? 'text-danger-text'  :
           'text-text-muted',

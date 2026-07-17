@@ -261,7 +261,7 @@ export const PURIVA_DAILY_PATH = [
 export const DEFERRED_GATED_ITEMS = [
   "Staging deploy / environment proof",
   "Production deploy / readiness",
-  "Live AI provider execution (OpenRouter)",
+  "Live AI processing",
   "Live WordPress publish",
   "GA/GSC live sync — WITHDRAWN",
   "R2 live bucket IO",

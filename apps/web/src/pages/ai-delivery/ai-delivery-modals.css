@@ -12,15 +12,15 @@
   gap: 0.5rem;
   justify-content: flex-end;
   padding-top: 0.75rem;
-  border-top: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
+  border-top: 1px solid var(--ds-divider, #D6D6D1);
 }
 
 .ai-delivery-inline-notice {
   margin: 0;
   padding: 0.5rem 0.75rem;
-  border-radius: var(--ds-radius-lg, 8px);
-  border: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
-  background: rgba(255, 255, 255, 0.02);
+  border-radius: var(--ds-radius-lg, 3px);
+  border: 1px solid var(--ds-divider, #D6D6D1);
+  background: var(--ds-surface-inset, #F0F1EC);
 }
 
 .ai-run-review-modal__header-meta {
@@ -42,8 +42,8 @@
   overflow: auto;
   padding: 0.75rem;
   border-radius: var(--ds-radius-lg, 8px);
-  border: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
-  background: var(--ds-surface-inset, #08090f);
+  border: 1px solid var(--ds-divider, #D6D6D1);
+  background: var(--ds-surface-inset, #F0F1EC);
 }
 
 .ai-delivery-workflow-history {
@@ -66,8 +66,7 @@
   height: 7px;
   margin-top: 0.45rem;
   border-radius: 9999px;
-  background: #818cf8;
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
+  background: var(--ds-accent-indigo, #3730A3);
 }
 
 .ai-delivery-workflow-history__header {
@@ -84,7 +83,7 @@
 }
 
 .ai-delivery-workflow-history__time {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--ds-text-muted, var(--muted));
   font-family: var(--ds-font-mono, ui-monospace, monospace);
 }
@@ -95,7 +94,7 @@
 }
 
 .ai-delivery-lane-modal .entity-card.is-selected {
-  outline: 1px solid rgba(129, 140, 248, 0.45);
+  outline: 1px solid var(--ds-accent-indigo, #3730A3);
 }
 
 @media (max-width: 768px) {
@@ -130,22 +129,22 @@
 .ai-delivery-article-images-panel .modal-footer,
 .ai-delivery-article-images-panel .ai-delivery-modal-footer,
 .ai-delivery-research-editor .modal-footer,
-.ai-delivery-research-editor .ai-delivery-modal-footer {
+.ai-delivery-research-editor .ai-delivery-modal-footer,
+.monthly-report-footer {
   position: sticky;
   bottom: 0;
   z-index: 1;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-wrap: nowrap;
+  gap: 0.75rem;
   align-items: center;
+  justify-content: flex-end;
   margin-top: 0.75rem;
-  padding: 0.75rem 0 0.15rem;
-  background: linear-gradient(
-    to top,
-    var(--ds-surface, #0b0d14) 70%,
-    rgba(11, 13, 20, 0.92) 100%
-  );
-  border-top: 1px solid var(--ds-divider, rgba(255, 255, 255, 0.06));
+  padding: 0.85rem 0 0.25rem;
+  background: var(--ds-surface-panel, #F1F1ED);
+  border-top: 1px solid var(--ds-divider, #D6D6D1);
+  min-height: 3rem;
+  overflow-x: auto;
 }
 
 .ai-delivery-deliverables-panel .modal-footer > button,
@@ -159,8 +158,18 @@
 .ai-delivery-article-images-panel .modal-footer > button,
 .ai-delivery-article-images-panel .ai-delivery-modal-footer > button,
 .ai-delivery-research-editor .modal-footer > button,
-.ai-delivery-research-editor .ai-delivery-modal-footer > button {
+.ai-delivery-research-editor .ai-delivery-modal-footer > button,
+.monthly-report-footer > button {
   max-width: 100%;
+  flex: 0 1 auto;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.ai-delivery-modal-footer > button[data-variant="destructive"],
+.ai-delivery-modal-footer > .btn-danger,
+.monthly-report-footer > button[data-variant="destructive"] {
+  margin-right: auto;
 }
 
 @media (max-width: 768px) {
@@ -175,8 +184,10 @@
   .ai-delivery-article-images-panel .modal-footer,
   .ai-delivery-article-images-panel .ai-delivery-modal-footer,
   .ai-delivery-research-editor .modal-footer,
-  .ai-delivery-research-editor .ai-delivery-modal-footer {
+  .ai-delivery-research-editor .ai-delivery-modal-footer,
+  .monthly-report-footer {
     flex-direction: column;
+    flex-wrap: wrap;
     align-items: stretch;
   }
 
@@ -191,8 +202,17 @@
   .ai-delivery-article-images-panel .modal-footer > button,
   .ai-delivery-article-images-panel .ai-delivery-modal-footer > button,
   .ai-delivery-research-editor .modal-footer > button,
-  .ai-delivery-research-editor .ai-delivery-modal-footer > button {
+  .ai-delivery-research-editor .ai-delivery-modal-footer > button,
+  .monthly-report-footer > button {
     width: 100%;
+    white-space: normal;
+  }
+
+  .ai-delivery-modal-footer > button[data-variant="destructive"],
+  .ai-delivery-modal-footer > .btn-danger,
+  .monthly-report-footer > button[data-variant="destructive"] {
+    margin-right: 0;
+    order: 3;
   }
 }
 

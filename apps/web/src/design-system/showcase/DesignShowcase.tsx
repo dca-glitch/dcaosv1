@@ -40,7 +40,7 @@ const DesignShowcase: React.FC = () => {
 
       <PageHeader
         title="Design system"
-        subtitle="Component reference for DCA OS Lite — dark theme"
+        subtitle="Component reference for DCA OS Lite — light theme"
         breadcrumb="Admin / Settings"
       />
 

@@ -17,6 +17,11 @@ import {
   useUrlFilterState,
 } from "../../components/ui";
 import {
+  persistTableDensityPreference,
+  readTableDensityPreference,
+  type PersistedTableDensity
+} from "../../lib/table-density";
+import {
   buildProjectArchiveConfirm,
   buildProjectRestoreConfirm,
   type ArchiveConfirmCopy
@@ -113,6 +118,11 @@ export function ProjectsPage({
     defaultValue: "active",
     allowed: PROJECT_FILTERS
   });
+  const [tableDensity, setTableDensity] = useState<PersistedTableDensity>(() => readTableDensityPreference());
+  const setDensity = (next: PersistedTableDensity) => {
+    setTableDensity(next);
+    persistTableDensityPreference(next);
+  };
   const [editorProjectId, setEditorProjectId] = useState<string | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [draft, setDraft] = useState<ProjectFormValues>(emptyForm());
@@ -227,7 +237,7 @@ export function ProjectsPage({
   }
 
   return (
-    <section className="view-section" aria-labelledby="projects-title" data-density="compact">
+    <section className="view-section" aria-labelledby="projects-title" data-density={tableDensity}>
       <PageHeader
         eyebrow="Delivery"
         title="Projects"
@@ -245,7 +255,27 @@ export function ProjectsPage({
               ]}
               value={filter}
             />
-            {canEdit ? <Button onClick={openCreateModal}>Add Project</Button> : null}
+            <div className="filter-bar" role="group" aria-label="Table density">
+              <Button
+                aria-pressed={tableDensity === "comfortable"}
+                className={tableDensity === "comfortable" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                onClick={() => setDensity("comfortable")}
+                type="button"
+                variant="secondary"
+              >
+                Comfortable
+              </Button>
+              <Button
+                aria-pressed={tableDensity === "compact"}
+                className={tableDensity === "compact" ? "secondary-action filter-chip is-active" : "secondary-action filter-chip"}
+                onClick={() => setDensity("compact")}
+                type="button"
+                variant="secondary"
+              >
+                Compact
+              </Button>
+            </div>
+            {canEdit ? <Button onClick={openCreateModal}>Add project</Button> : null}
           </>
         }
       />
@@ -278,6 +308,7 @@ export function ProjectsPage({
           <div className="table-wrap table-scroll">
             <Table
               aria-label="Projects"
+              density={tableDensity}
               headers={[
                 { label: "Project", align: "left" },
                 { label: "Client", align: "left" },
@@ -346,7 +377,7 @@ export function ProjectsPage({
 
       {pendingLifecycle ? (
         <Modal isOpen
-          eyebrow="Confirm"
+          eyebrow="Review action"
           onClose={() => {
             if (!lifecycleBusy) {
               setPendingLifecycle(null);

@@ -30,25 +30,21 @@ export function AiDeliveryOperatorSummary({
         <summary className="operator-summary-summary">Show metrics</summary>
         <div className="summary-grid metric-grid operator-summary-metrics" aria-label="AI Delivery operator summary">
           <MetricCard
-            accent="cyan"
             label="AI Delivery projects"
             value={projectsLength}
             helper={`Active ${activeProjectCount} · Archived ${archivedProjectCount}`}
           />
           <MetricCard
-            accent="violet"
             label="Project briefs"
             value={projectBriefCountsAvailable}
             helper={`Available ${projectBriefCountsAvailable} · Pending ${projectBriefCountsPending}`}
           />
           <MetricCard
-            accent="purple"
             label="Workflow runs"
             value={workflowRunsValue}
             helper={workflowRunsHelper}
           />
           <MetricCard
-            accent="success"
             label="Deliverables"
             value={deliverablesValue}
             helper={deliverablesHelper}

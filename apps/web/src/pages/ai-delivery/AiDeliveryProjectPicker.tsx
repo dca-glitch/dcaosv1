@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { EmptyState, SectionPanel, StatusBadge } from "../../components/ui";
+import { EmptyState, Input, SectionPanel, StatusBadge } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 import {
   AI_DELIVERY_PROJECT_PICKER_PAGE_SIZE,
@@ -47,17 +47,17 @@ export function AiDeliveryProjectPicker({
       tone="compact"
     >
       <div className="stack gap-sm" style={{ marginBottom: "0.75rem" }}>
-        <label className="field-span-2" htmlFor="ai-delivery-project-search">
-          Search projects
-          <input
-            autoComplete="off"
-            id="ai-delivery-project-search"
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Name, client, month, status…"
-            type="search"
-            value={searchQuery}
-          />
-        </label>
+        <Input
+          autoComplete="off"
+          className="field-span-2"
+          fullWidth
+          id="ai-delivery-project-search"
+          label="Search projects"
+          onChange={(event) => setSearchQuery(event.target.value)}
+          placeholder="Name, client, month, status…"
+          type="search"
+          value={searchQuery}
+        />
         <p className="muted-text" role="status">
           Showing {slice.visibleProjects.length} of {slice.matchCount} matching project
           {slice.matchCount === 1 ? "" : "s"}

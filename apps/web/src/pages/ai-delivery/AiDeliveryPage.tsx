@@ -1,6 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Modal } from "../../components/ui";
-import { Button, EmptyState, PageHeader } from "../../components/ui";
+import { Button, EmptyState, Input, Modal, PageHeader, Select } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 import { MonthlyReportPanel } from "./MonthlyReportPanel";
@@ -832,15 +831,15 @@ export function AiDeliveryPage({
   }, [activeDeliverableRecord?.isArchived, articleImageDrafts, articleImages, deliverableForm]);
   const workflowRunActionGuidance = useMemo(() => {
     if (workflowRunExecutingId) {
-      return "Execute is locked while the current local stub execution is in progress.";
+      return "A workflow run is in progress. Wait for it to finish before starting another.";
     }
     if (!workflowRunBeingEdited) {
-      return "Only Draft, Ready, or Failed runs can execute through the local stub. Save a run first to use Execute.";
+      return "Save a workflow run first. Run workflow is available for Draft, Ready, or Failed runs.";
     }
     if (!canExecuteWorkflowRun(workflowRunBeingEdited.status)) {
-      return "This workflow run is not in an executable state. Use the allowed next status shown above before retrying.";
+      return "This workflow run is not in a runnable state. Use the allowed next status shown above before retrying.";
     }
-    return "Execute uses the local stub only. Use [stub-fail] in admin notes when you need a controlled failure path.";
+    return "Use [stub-fail] in admin notes when you need a controlled failure path during testing.";
   }, [workflowRunBeingEdited, workflowRunExecutingId]);
   const aiSeoWorkflowShell = useMemo(() => {
     const hasResearchRequests = researchRequests.length > 0;
@@ -1189,7 +1188,7 @@ export function AiDeliveryPage({
     if (deliverablePublicationTargets.length === 0) {
       setDeliverableWordPressPublishError({
         recordId: deliverableId,
-        message: "Add a publication target in Client Hub before publishing."
+        message: "Add a website or channel in Client Hub before publishing."
       });
       return;
     }
@@ -2715,7 +2714,7 @@ export function AiDeliveryPage({
               <Button onClick={openCreateModal}>Add AI Delivery</Button>
             ) : null
           }
-          message={projects.length === 0 ? "Add a project to start the monthly delivery workflow." : "No projects match this filter."}
+          message={projects.length === 0 ? "Add a project to start the monthly delivery workflow." : "No projects match this filter. Adjust filters to see more results."}
           title="No AI delivery projects"
         />
       ) : (
@@ -2892,7 +2891,7 @@ export function AiDeliveryPage({
                 <h3>Applied handoffs</h3>
                 <p className="muted-text">Internal admin context only. Not visible to clients.</p>
                 {miContextItems.length === 0 ? (
-                  <EmptyState title="No handoffs applied" message="No Market Intelligence handoffs are currently applied to this project. Apply one below." />
+                  <EmptyState title="No handoffs applied" message="No Market Intelligence handoffs are applied to this project. Apply one below to get started." />
                 ) : miContextItems.map((h) => (
                   <article key={h.id} className="entity-card">
                     <div className="entity-card-header">
@@ -2920,7 +2919,7 @@ export function AiDeliveryPage({
                 <h3>Applied MI summaries</h3>
                 <p className="muted-text">Finalized MI_SUMMARY_V1 records linked to this project.</p>
                 {miSummaryItems.length === 0 ? (
-                  <EmptyState title="No summaries applied" message="Apply a finalized MI summary below." />
+                  <EmptyState title="No summaries applied" message="No MI summaries are applied yet. Apply a finalized summary below to get started." />
                 ) : miSummaryItems.map((summary) => (
                   <article key={summary.id} className="entity-card">
                     <div className="entity-card-header">
@@ -2936,57 +2935,54 @@ export function AiDeliveryPage({
                     ) : null}
                   </article>
                 ))}
-                <div className="form-field">
-                  <label htmlFor="mi-apply-summary-select">Finalized summary</label>
-                  <select
-                    id="mi-apply-summary-select"
-                    disabled={miContextLoading}
-                    onChange={(e) => setMiApplySummaryId(e.target.value)}
-                    value={miApplySummaryId}
-                  >
-                    <option value="">Select finalized summary</option>
-                    {finalizedSummaryOptions.map((summary) => (
-                      <option key={summary.id} value={summary.id}>
-                        {summary.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="form-field">
-                  <label htmlFor="mi-apply-summary-id">Or summary ID (fallback)</label>
-                  <input
-                    id="mi-apply-summary-id"
-                    type="text"
-                    value={miApplySummaryId}
-                    onChange={(e) => setMiApplySummaryId(e.target.value)}
-                    placeholder="MI summary UUID"
-                    disabled={miContextLoading}
-                  />
-                </div>
-                <button className="primary-action" disabled={miContextLoading || !miApplySummaryId.trim()} onClick={() => openMiContextId && void applyMiSummary(openMiContextId)} type="button">Apply summary</button>
+                <Select
+                  disabled={miContextLoading}
+                  fullWidth
+                  id="mi-apply-summary-select"
+                  label="Finalized summary"
+                  onChange={(e) => setMiApplySummaryId(e.target.value)}
+                  options={[
+                    { value: "", label: "Select finalized summary" },
+                    ...finalizedSummaryOptions.map((summary) => ({
+                      value: summary.id,
+                      label: summary.title,
+                    })),
+                  ]}
+                  value={miApplySummaryId}
+                />
+                <Input
+                  disabled={miContextLoading}
+                  fullWidth
+                  id="mi-apply-summary-id"
+                  label="Or summary ID (fallback)"
+                  onChange={(e) => setMiApplySummaryId(e.target.value)}
+                  placeholder="MI summary UUID"
+                  type="text"
+                  value={miApplySummaryId}
+                />
+                <Button disabled={miContextLoading || !miApplySummaryId.trim()} onClick={() => openMiContextId && void applyMiSummary(openMiContextId)} type="button" variant="primary">Apply summary</Button>
               </section>
               {typeof onApplyMiHandoff === "function" ? (
                 <section className="field-panel ai-delivery-section-compact">
                   <h3>Apply a handoff</h3>
                   <p className="muted-text">Enter the ID of an approved Market Intelligence handoff (READY status).</p>
-                  <div className="form-field">
-                    <label htmlFor="mi-apply-handoff-id">Handoff ID</label>
-                    <input
-                      id="mi-apply-handoff-id"
-                      type="text"
-                      value={miApplyHandoffId}
-                      onChange={(e) => setMiApplyHandoffId(e.target.value)}
-                      placeholder="Handoff UUID"
-                      disabled={miContextLoading}
-                    />
-                  </div>
+                  <Input
+                    disabled={miContextLoading}
+                    fullWidth
+                    id="mi-apply-handoff-id"
+                    label="Handoff ID"
+                    onChange={(e) => setMiApplyHandoffId(e.target.value)}
+                    placeholder="Handoff UUID"
+                    type="text"
+                    value={miApplyHandoffId}
+                  />
                   <div className="modal-footer ai-delivery-modal-footer">
-                    <button className="ghost-action" onClick={closeMiContext} type="button">Close</button>
-                    <button className="primary-action" disabled={miContextLoading || !miApplyHandoffId.trim()} onClick={() => void applyMiHandoff(openMiContextId)} type="button">Apply</button>
+                    <Button onClick={closeMiContext} type="button" variant="tertiary">Close</Button>
+                    <Button disabled={miContextLoading || !miApplyHandoffId.trim()} onClick={() => void applyMiHandoff(openMiContextId)} type="button" variant="primary">Apply</Button>
                   </div>
                 </section>
               ) : (
-                <div className="modal-footer ai-delivery-modal-footer"><button className="ghost-action" onClick={closeMiContext} type="button">Close</button></div>
+                <div className="modal-footer ai-delivery-modal-footer"><Button onClick={closeMiContext} type="button" variant="tertiary">Close</Button></div>
               )}
             </div>
           ) : <div>Project not found.</div>}

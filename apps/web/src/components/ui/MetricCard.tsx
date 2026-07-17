@@ -5,7 +5,6 @@ type MetricCardProps = {
   label: string;
   value: ReactNode;
   helper?: ReactNode;
-  accent?: "cyan" | "violet" | "purple" | "success" | "warning";
   metricKey?: string;
 };
 
@@ -16,27 +15,24 @@ function buildMetricAriaLabel(label: string, value: ReactNode): string {
   return label;
 }
 
-export function MetricCard({ label, value, helper, accent, metricKey }: MetricCardProps) {
-  // `accent` retained for call-site compatibility; visual tint deferred (RingMeter / Phase 3).
-  void accent;
-
+export function MetricCard({ label, value, helper, metricKey }: MetricCardProps) {
   return (
     <div
       aria-label={buildMetricAriaLabel(label, value)}
-      className="card-elevated"
+      className="metric-card"
       data-metric={metricKey}
       style={{
-        ...panelCSS(undefined, true),
+        ...panelCSS(),
         borderRadius: "var(--ds-radius-lg)",
-        padding: "var(--ds-card-padding-admin)",
+        padding: "12px 16px",
       }}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-widest text-text-muted">{label}</p>
-      <div className="flex items-baseline gap-1 mt-2">
-        <span className="text-[26px] font-semibold leading-none text-text-primary font-mono">{value}</span>
+      <p className="text-[12px] font-semibold tracking-wide text-text-muted">{label}</p>
+      <div className="flex items-baseline gap-1 mt-1">
+        <span className="text-[22px] font-semibold leading-none text-text-primary font-mono">{value}</span>
       </div>
       {helper ? (
-        <p className="text-[11px] mt-1.5 text-text-muted">{helper}</p>
+        <p className="text-[12px] mt-1 text-text-muted">{helper}</p>
       ) : null}
     </div>
   );

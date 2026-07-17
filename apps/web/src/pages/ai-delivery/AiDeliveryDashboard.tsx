@@ -70,7 +70,6 @@ export function AiDeliveryDashboard({
             metricKey="active-projects"
           />
           <MetricCard
-            accent="warning"
             label="Pending Reviews"
             value={kpis.pendingReviews}
             helper="Briefs awaiting admin review"

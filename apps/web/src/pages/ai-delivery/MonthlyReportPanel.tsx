@@ -1,5 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Badge, Button, EmptyState, LoadingState, MetricCard, Modal, SectionPanel, StatusBadge } from "../../components/ui";
+import { Alert, Button, EmptyState, Input, LoadingState, MetricCard, Modal, SectionPanel, Select, StatusBadge, Textarea } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 import {
   MONTHLY_REPORT_WORKFLOW_STEPS,
@@ -772,21 +772,18 @@ export function MonthlyReportPanel({
           <>
             <div className="summary-grid metric-grid monthly-report-summary-metrics" aria-label="Monthly report snapshot metrics">
               <MetricCard
-                accent="cyan"
                 helper={summary.project.clientName ?? "Client not set"}
                 label="Project"
                 metricKey="monthly-report-project"
                 value={summary.project.name}
               />
               <MetricCard
-                accent="violet"
                 helper={summary.project.targetMonth}
                 label="Target month"
                 metricKey="monthly-report-month"
                 value={summary.project.targetMonth}
               />
               <MetricCard
-                accent="success"
                 helper={`${summary.totals.deliveredCount} delivered · ${summary.totals.acceptedCount} accepted`}
                 label="Final deliverables"
                 metricKey="monthly-report-deliverables"
@@ -796,11 +793,11 @@ export function MonthlyReportPanel({
             <dl className="brief-grid monthly-report-deferred-metrics">
               <div>
                 <dt>GA/GSC metrics</dt>
-                <dd><Badge variant="neutral">Withdrawn</Badge></dd>
+                <dd><StatusBadge displayLabel="Withdrawn" status="withdrawn" /></dd>
               </div>
               <div>
                 <dt>12-month trends</dt>
-                <dd><Badge variant="neutral">Deferred</Badge></dd>
+                <dd><StatusBadge displayLabel="Deferred" status="deferred" /></dd>
               </div>
             </dl>
 
@@ -1035,52 +1032,52 @@ export function MonthlyReportPanel({
             {/* Edit form */}
             <form onSubmit={(e) => void handleSave(e)}>
               <div className="field-grid">
-                <label className="field-span-2">
-                  Report title — Optional
-                  <input
-                    disabled={!canEdit}
-                    maxLength={255}
-                    value={form.title}
-                    onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
-                  />
-                  <span className="muted-text">Optional working title.</span>
-                </label>
+                <Input
+                  className="field-span-2"
+                  disabled={!canEdit}
+                  fullWidth
+                  helperText="Optional working title."
+                  label="Report title — Optional"
+                  maxLength={255}
+                  onChange={(event) => setForm((current) => ({ ...current, title: event.target.value }))}
+                  value={form.title}
+                />
 
-                <label className="field-span-2">
-                  Admin summary notes — Optional (admin-only)
-                  <textarea
-                    disabled={!canEdit}
-                    maxLength={4000}
-                    rows={4}
-                    value={form.adminSummaryNotes}
-                    onChange={(event) => setForm((current) => ({ ...current, adminSummaryNotes: event.target.value }))}
-                  />
-                  <span className="muted-text">Admin-only.</span>
-                </label>
+                <Textarea
+                  className="field-span-2"
+                  disabled={!canEdit}
+                  fullWidth
+                  helperText="Admin-only."
+                  label="Admin summary notes — Optional (admin-only)"
+                  maxLength={4000}
+                  onChange={(event) => setForm((current) => ({ ...current, adminSummaryNotes: event.target.value }))}
+                  rows={4}
+                  value={form.adminSummaryNotes}
+                />
 
-                <label className="field-span-2">
-                  Recommendations — Optional (client-visible when Final)
-                  <textarea
-                    disabled={!canEdit}
-                    maxLength={4000}
-                    rows={4}
-                    value={form.recommendationsText}
-                    onChange={(event) => setForm((current) => ({ ...current, recommendationsText: event.target.value }))}
-                  />
-                  <span className="muted-text">Client-visible when FINAL.</span>
-                </label>
+                <Textarea
+                  className="field-span-2"
+                  disabled={!canEdit}
+                  fullWidth
+                  helperText="Client-visible when FINAL."
+                  label="Recommendations — Optional (client-visible when Final)"
+                  maxLength={4000}
+                  onChange={(event) => setForm((current) => ({ ...current, recommendationsText: event.target.value }))}
+                  rows={4}
+                  value={form.recommendationsText}
+                />
 
-                <label className="field-span-2">
-                  Export / handoff URL — Optional
-                  <input
-                    disabled={!canEdit}
-                    maxLength={2048}
-                    type="url"
-                    value={form.exportUrl}
-                    onChange={(event) => setForm((current) => ({ ...current, exportUrl: event.target.value }))}
-                  />
-                  <span className="muted-text">Safe external handoff link.</span>
-                </label>
+                <Input
+                  className="field-span-2"
+                  disabled={!canEdit}
+                  fullWidth
+                  helperText="Safe external handoff link."
+                  label="Export / handoff URL — Optional"
+                  maxLength={2048}
+                  onChange={(event) => setForm((current) => ({ ...current, exportUrl: event.target.value }))}
+                  type="url"
+                  value={form.exportUrl}
+                />
               </div>
 
               {onUploadDocument || onDownloadDocument ? (
@@ -1130,12 +1127,12 @@ export function MonthlyReportPanel({
                         <span className="ghost-action" style={{ pointerEvents: documentUploading ? "none" : undefined }}>
                           {documentUploading ? "Uploading..." : report.hasDocument ? "Replace document" : "Upload document"}
                         </span>
-                        <input
+                        <Input
                           accept=".pdf,.doc,.docx"
+                          className="sr-only"
                           disabled={documentUploading}
-                          style={{ display: "none" }}
-                          type="file"
                           onChange={(e) => void handleUploadDocument(e)}
+                          type="file"
                         />
                       </label>
                     ) : null}
@@ -1179,11 +1176,12 @@ export function MonthlyReportPanel({
                           ) : null}
                           {miDraftEditing ? (
                             <div style={{ marginTop: "0.5rem" }}>
-                              <textarea
-                                rows={8}
-                                style={{ width: "100%", fontFamily: "monospace", fontSize: "0.8125rem" }}
-                                value={miDraftValue}
+                              <Textarea
+                                fullWidth
                                 onChange={(e) => setMiDraftValue(e.target.value)}
+                                rows={8}
+                                style={{ fontFamily: "monospace", fontSize: "0.8125rem" }}
+                                value={miDraftValue}
                               />
                               <div className="card-actions" style={{ marginTop: "0.5rem" }}>
                                 <Button disabled={miContextLoading} onClick={() => void handleMiDraftSave()} type="button" variant="primary">
@@ -1225,15 +1223,14 @@ export function MonthlyReportPanel({
                           <p className="muted-text">No MI context linked. Apply a READY handoff or finalized MI summary by ID.</p>
                           {onApplyMiHandoff ? (
                             <div className="monthly-report-mi-apply-row">
-                              <label className="sr-only" htmlFor="monthly-report-mi-handoff-id">
-                                Market Intelligence handoff ID
-                              </label>
-                              <input
+                              <Input
+                                fullWidth
                                 id="monthly-report-mi-handoff-id"
+                                label="Market Intelligence handoff ID"
+                                onChange={(e) => setMiApplyHandoffId(e.target.value)}
                                 placeholder="Handoff ID"
                                 type="text"
                                 value={miApplyHandoffId}
-                                onChange={(e) => setMiApplyHandoffId(e.target.value)}
                               />
                               <Button
                                 disabled={miContextLoading || !miApplyHandoffId.trim()}
@@ -1247,30 +1244,28 @@ export function MonthlyReportPanel({
                             </div>
                           ) : null}
                           <div className="monthly-report-mi-apply-row">
-                            <label className="sr-only" htmlFor="monthly-report-mi-summary-select">
-                              Finalized Market Intelligence summary
-                            </label>
-                            <select
+                            <Select
+                              fullWidth
                               id="monthly-report-mi-summary-select"
-                              value={miApplySummaryId}
+                              label="Finalized Market Intelligence summary"
                               onChange={(e) => setMiApplySummaryId(e.target.value)}
-                            >
-                              <option value="">Select finalized summary</option>
-                              {finalizedSummaryOptions.map((summary) => (
-                                <option key={summary.id} value={summary.id}>
-                                  {summary.title}
-                                </option>
-                              ))}
-                            </select>
-                            <label className="sr-only" htmlFor="monthly-report-mi-summary-id">
-                              Market Intelligence summary ID fallback
-                            </label>
-                            <input
+                              options={[
+                                { value: "", label: "Select finalized summary" },
+                                ...finalizedSummaryOptions.map((summary) => ({
+                                  value: summary.id,
+                                  label: summary.title,
+                                })),
+                              ]}
+                              value={miApplySummaryId}
+                            />
+                            <Input
+                              fullWidth
                               id="monthly-report-mi-summary-id"
+                              label="Market Intelligence summary ID fallback"
+                              onChange={(e) => setMiApplySummaryId(e.target.value)}
                               placeholder="Or summary ID (fallback)"
                               type="text"
                               value={miApplySummaryId}
-                              onChange={(e) => setMiApplySummaryId(e.target.value)}
                             />
                             <Button
                               disabled={miContextLoading || !miApplySummaryId.trim()}
@@ -1331,7 +1326,6 @@ export function MonthlyReportPanel({
 
                     <div className="summary-grid metric-grid finance-table-wrap-spaced monthly-report-metrics-cards">
                       <MetricCard
-                        accent={metrics.computedTrendSummary.dataStatus === "READY" ? "success" : "warning"}
                         helper={`${metrics.snapshots.length} snapshot${metrics.snapshots.length === 1 ? "" : "s"}`}
                         label="Data status"
                         value={
@@ -1341,7 +1335,6 @@ export function MonthlyReportPanel({
                         }
                       />
                       <MetricCard
-                        accent="cyan"
                         helper="Latest approved month in the trend summary"
                         label="Latest month"
                         value={metrics.computedTrendSummary.latestMonth ?? "N/A"}
@@ -1383,135 +1376,127 @@ export function MonthlyReportPanel({
 
                     <div style={{ marginBottom: "1rem" }}>
                       <div className="field-grid">
-                        <label>
-                          Target month
-                          <input
-                            disabled={metricsSaving}
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, targetMonth: event.target.value }))}
-                            required
-                            type="month"
-                            value={metricsForm.targetMonth}
-                          />
-                        </label>
-                        <label>
-                          Source type
-                          <select
-                            disabled={metricsSaving}
-                            value={metricsForm.sourceType}
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, sourceType: event.target.value as MonthlyMetricSourceType }))}
-                          >
-                            <option value="HYBRID">HYBRID (historical label, not live)</option>
-                            <option value="MANUAL">MANUAL</option>
-                            <option value="CSV_IMPORT">CSV_IMPORT</option>
-                            <option value="GA4">GA4 (historical label, not live)</option>
-                            <option value="GSC">GSC (historical label, not live)</option>
-                          </select>
-                        </label>
-                        <label>
-                          Status
-                          <select
-                            disabled={metricsSaving}
-                            value={metricsForm.status}
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, status: event.target.value as MonthlyMetricSnapshotFormValues["status"] }))}
-                          >
-                            <option value="IMPORTED">IMPORTED</option>
-                            <option value="DRAFT">DRAFT</option>
-                          </select>
-                        </label>
-                        <label>
-                          GSC clicks
-                          <input
-                            disabled={metricsSaving}
-                            min={0}
-                            inputMode="numeric"
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, gscClicks: event.target.value }))}
-                            step="1"
-                            type="number"
-                            value={metricsForm.gscClicks}
-                          />
-                        </label>
-                        <label>
-                          GSC impressions
-                          <input
-                            disabled={metricsSaving}
-                            min={0}
-                            inputMode="numeric"
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, gscImpressions: event.target.value }))}
-                            step="1"
-                            type="number"
-                            value={metricsForm.gscImpressions}
-                          />
-                        </label>
-                        <label>
-                          GSC average CTR
-                          <input
-                            disabled={metricsSaving}
-                            min={0}
-                            inputMode="decimal"
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, gscAverageCtr: event.target.value }))}
-                            step="0.01"
-                            type="number"
-                            value={metricsForm.gscAverageCtr}
-                          />
-                        </label>
-                        <label>
-                          GSC average position
-                          <input
-                            disabled={metricsSaving}
-                            min={0}
-                            inputMode="decimal"
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, gscAveragePosition: event.target.value }))}
-                            step="0.01"
-                            type="number"
-                            value={metricsForm.gscAveragePosition}
-                          />
-                        </label>
-                        <label>
-                          GA4 sessions
-                          <input
-                            disabled={metricsSaving}
-                            min={0}
-                            inputMode="numeric"
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, ga4Sessions: event.target.value }))}
-                            step="1"
-                            type="number"
-                            value={metricsForm.ga4Sessions}
-                          />
-                        </label>
-                        <label>
-                          GA4 users
-                          <input
-                            disabled={metricsSaving}
-                            min={0}
-                            inputMode="numeric"
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, ga4Users: event.target.value }))}
-                            step="1"
-                            type="number"
-                            value={metricsForm.ga4Users}
-                          />
-                        </label>
-                        <label>
-                          GA4 page views
-                          <input
-                            disabled={metricsSaving}
-                            min={0}
-                            inputMode="numeric"
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, ga4PageViews: event.target.value }))}
-                            step="1"
-                            type="number"
-                            value={metricsForm.ga4PageViews}
-                          />
-                        </label>
-                        <label className="field-span-2">
-                          Notes
-                          <textarea
-                            disabled={metricsSaving}
-                            maxLength={4000}
-                            onChange={(event) => setMetricsForm((current) => ({ ...current, notes: event.target.value }))}
-                            rows={3}
-                            value={metricsForm.notes}
-                          />
-                        </label>
+                        <Input
+                          disabled={metricsSaving}
+                          fullWidth
+                          label="Target month"
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, targetMonth: event.target.value }))}
+                          required
+                          type="month"
+                          value={metricsForm.targetMonth}
+                        />
+                        <Select
+                          disabled={metricsSaving}
+                          fullWidth
+                          label="Source type"
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, sourceType: event.target.value as MonthlyMetricSourceType }))}
+                          options={[
+                            { value: "HYBRID", label: "HYBRID (historical label, not live)" },
+                            { value: "MANUAL", label: "MANUAL" },
+                            { value: "CSV_IMPORT", label: "CSV_IMPORT" },
+                            { value: "GA4", label: "GA4 (historical label, not live)" },
+                            { value: "GSC", label: "GSC (historical label, not live)" },
+                          ]}
+                          value={metricsForm.sourceType}
+                        />
+                        <Select
+                          disabled={metricsSaving}
+                          fullWidth
+                          label="Status"
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, status: event.target.value as MonthlyMetricSnapshotFormValues["status"] }))}
+                          options={[
+                            { value: "IMPORTED", label: "IMPORTED" },
+                            { value: "DRAFT", label: "DRAFT" },
+                          ]}
+                          value={metricsForm.status}
+                        />
+                        <Input
+                          disabled={metricsSaving}
+                          fullWidth
+                          inputMode="numeric"
+                          label="GSC clicks"
+                          min={0}
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, gscClicks: event.target.value }))}
+                          step="1"
+                          type="number"
+                          value={metricsForm.gscClicks}
+                        />
+                        <Input
+                          disabled={metricsSaving}
+                          fullWidth
+                          inputMode="numeric"
+                          label="GSC impressions"
+                          min={0}
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, gscImpressions: event.target.value }))}
+                          step="1"
+                          type="number"
+                          value={metricsForm.gscImpressions}
+                        />
+                        <Input
+                          disabled={metricsSaving}
+                          fullWidth
+                          inputMode="decimal"
+                          label="GSC average CTR"
+                          min={0}
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, gscAverageCtr: event.target.value }))}
+                          step="0.01"
+                          type="number"
+                          value={metricsForm.gscAverageCtr}
+                        />
+                        <Input
+                          disabled={metricsSaving}
+                          fullWidth
+                          inputMode="decimal"
+                          label="GSC average position"
+                          min={0}
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, gscAveragePosition: event.target.value }))}
+                          step="0.01"
+                          type="number"
+                          value={metricsForm.gscAveragePosition}
+                        />
+                        <Input
+                          disabled={metricsSaving}
+                          fullWidth
+                          inputMode="numeric"
+                          label="GA4 sessions"
+                          min={0}
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, ga4Sessions: event.target.value }))}
+                          step="1"
+                          type="number"
+                          value={metricsForm.ga4Sessions}
+                        />
+                        <Input
+                          disabled={metricsSaving}
+                          fullWidth
+                          inputMode="numeric"
+                          label="GA4 users"
+                          min={0}
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, ga4Users: event.target.value }))}
+                          step="1"
+                          type="number"
+                          value={metricsForm.ga4Users}
+                        />
+                        <Input
+                          disabled={metricsSaving}
+                          fullWidth
+                          inputMode="numeric"
+                          label="GA4 page views"
+                          min={0}
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, ga4PageViews: event.target.value }))}
+                          step="1"
+                          type="number"
+                          value={metricsForm.ga4PageViews}
+                        />
+                        <Textarea
+                          className="field-span-2"
+                          disabled={metricsSaving}
+                          fullWidth
+                          label="Notes"
+                          maxLength={4000}
+                          onChange={(event) => setMetricsForm((current) => ({ ...current, notes: event.target.value }))}
+                          rows={3}
+                          value={metricsForm.notes}
+                        />
                       </div>
                       <div className="modal-footer modal-footer-spaced">
                         <Button disabled={metricsSaving} onClick={() => void handleImportMetrics()} type="button" variant="primary">

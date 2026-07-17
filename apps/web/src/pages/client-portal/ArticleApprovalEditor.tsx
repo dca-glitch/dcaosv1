@@ -694,7 +694,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
           }
         >
           <p>
-            Confirm you have reviewed this article. Completing the checklist enables Approve.
+            Check each item after reviewing this article. Completing the checklist enables Approve.
             After approval, your team will move this work to the next step.
           </p>
           <ul className="approval-checklist" aria-label="Approval checklist">
@@ -744,7 +744,7 @@ export function ArticleApprovalEditor({ deliverableId }: ArticleApprovalEditorPr
                     : undefined
                 }
               >
-                {submitting ? "Submitting…" : "Request changes"}
+                {submitting ? "Sending request…" : "Request changes"}
               </Button>
             </div>
           }

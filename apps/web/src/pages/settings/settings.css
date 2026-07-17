@@ -19,10 +19,10 @@
   align-items: center;
   gap: 0.35rem;
   padding: 0.45rem 0.85rem;
-  border-radius: var(--ds-radius-md, 10px);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  background: rgba(15, 23, 42, 0.35);
-  color: var(--text-secondary, #94a3b8);
+  border-radius: var(--ds-radius-md, 3px);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  background: var(--ds-surface-panel, #F1F1ED);
+  color: var(--ds-text-secondary, #3D3D38);
   font-size: 0.85rem;
   font-weight: 600;
   text-decoration: none;
@@ -30,15 +30,15 @@
 }
 
 .settings-subnav-link:hover {
-  border-color: rgba(56, 189, 248, 0.35);
-  color: var(--text-primary, #e2e8f0);
-  background: rgba(56, 189, 248, 0.08);
+  border-color: var(--ds-accent-indigo, #3730A3);
+  color: var(--ds-text-primary, #171717);
+  background: var(--ds-surface-hover, #EEF0E9);
 }
 
 .settings-subnav-link.is-active {
-  border-color: rgba(56, 189, 248, 0.45);
-  color: var(--text-primary, #f1f5f9);
-  background: rgba(56, 189, 248, 0.12);
+  border-color: var(--ds-accent-indigo, #3730A3);
+  color: var(--ds-accent-indigo, #3730A3);
+  background: var(--ds-surface-inset, #F0F1EC);
 }
 
 .settings-area-list {
@@ -54,9 +54,9 @@
   justify-content: space-between;
   gap: 0.65rem 1rem;
   padding: 0.75rem 0.9rem;
-  border-radius: var(--ds-radius-md, 10px);
-  border: 1px solid rgba(148, 163, 184, 0.14);
-  background: rgba(15, 23, 42, 0.28);
+  border-radius: var(--ds-radius-md, 3px);
+  border: 1px solid var(--ds-border, #D6D6D1);
+  background: var(--ds-surface-panel, #F1F1ED);
 }
 
 .settings-area-copy {
@@ -69,7 +69,7 @@
 
 .settings-area-copy strong {
   font-size: 0.92rem;
-  color: var(--text-primary, inherit);
+  color: var(--ds-text-primary, inherit);
 }
 
 .settings-area-meta {
@@ -93,16 +93,16 @@
 }
 
 .settings-readonly-grid span {
-  font-size: 0.75rem;
+  font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--text-secondary, #94a3b8);
+  color: var(--ds-text-secondary, #3D3D38);
 }
 
 .settings-readonly-grid strong {
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--text-primary, inherit);
+  color: var(--ds-text-primary, inherit);
   word-break: break-word;
 }
 

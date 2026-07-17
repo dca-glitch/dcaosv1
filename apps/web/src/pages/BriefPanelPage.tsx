@@ -604,7 +604,7 @@ export function BriefPanelPage() {
             >
               <option value="">All Statuses</option>
               <option value="DRAFT">Draft</option>
-              <option value="AWAITING_CLIENT">Sent to Client</option>
+              <option value="AWAITING_CLIENT">Sent to client</option>
               <option value="SUBMITTED">Submitted</option>
             </select>
           </label>

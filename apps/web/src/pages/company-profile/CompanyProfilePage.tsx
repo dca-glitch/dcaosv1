@@ -178,21 +178,18 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
       <SettingsSubNav activeView="company-profile" />
       <div className="summary-grid metric-grid company-profile-shell-metrics" aria-label="Company profile shell metrics">
         <MetricCard
-          accent={companyProfile?.isActive ? "success" : "warning"}
           helper={companyProfile?.name ?? "Create profile to enable finance issuer details"}
           label="Profile status"
           metricKey="company-profile-status"
           value={profileStatusLabel}
         />
         <MetricCard
-          accent="cyan"
           helper={companyProfile?.currency ?? "USD default"}
           label="Default currency"
           metricKey="company-profile-currency"
           value={companyProfile?.currency ?? "—"}
         />
         <MetricCard
-          accent={canEdit ? "success" : "violet"}
           helper={canEdit ? "Admins can update issuer details" : "View-only for this membership"}
           label="Access mode"
           metricKey="company-profile-access-mode"
@@ -289,12 +286,12 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
 
       <SectionPanel
         tone="compact"
-        description="WordPress site URLs and application passwords are configured per client in Client Hub → Publication targets."
+        description="WordPress site URLs and application passwords are configured per client in Client Hub → Websites or channels."
         title="WordPress publication (moved)"
       >
         <p className="muted-text">
           Tenant-level WordPress config is deprecated. Open a client record and use <strong>Open hub</strong> to manage
-          publication targets, encrypted credentials, analytics profile, and publication logs.
+          websites or channels, encrypted credentials, analytics profile, and publication logs.
         </p>
         <a className="secondary-action" href="#/clients">
           Go to Clients

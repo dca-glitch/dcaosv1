@@ -146,7 +146,7 @@ describe("AiDeliveryContentPlanModal", () => {
     expect(within(dialog).getByText("No AI SEO content plan yet")).toBeTruthy();
     expect(
       within(dialog).getByText(
-        "This project does not have an AI SEO content plan yet. Create or generate a plan to continue.",
+        "This project does not have an AI SEO content plan yet. Create or generate a plan to get started.",
       ),
     ).toBeTruthy();
     expect(within(dialog).queryByText(/AI Delivery project was not found/i)).toBeNull();

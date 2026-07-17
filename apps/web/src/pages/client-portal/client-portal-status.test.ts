@@ -77,7 +77,7 @@ describe("toClientBriefStatusLabel", () => {
 describe("toBriefStatusPresentation", () => {
   it("shares admin and client brief semantics", () => {
     expect(toBriefStatusPresentation("AWAITING_CLIENT", "admin")).toEqual({
-      label: "Sent to Client",
+      label: "Sent to client",
       tone: "info",
     });
     expect(toBriefStatusPresentation("AWAITING_CLIENT", "client")).toEqual({

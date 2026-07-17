@@ -17,7 +17,7 @@ import { toClientBriefStatusLabel } from "./client-portal/client-portal-status";
 import "./client-portal/client-portal.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
-const AMBER_TINT = "#C98A42";
+const AMBER_TINT = "#9A6817";
 
 type BriefStatus = "DRAFT" | "AWAITING_CLIENT" | "SUBMITTED";
 
@@ -218,25 +218,21 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
 
       <div className="client-dashboard-kpi-row portal-metric-grid cf-metric-strip" role="group" aria-label="Workspace summary">
         <MetricCard
-          accent="cyan"
           helper="Briefs in your workspace"
           label="Active briefs"
           value={String(kpis.briefCount)}
         />
         <MetricCard
-          accent="warning"
           helper="Articles waiting for you"
           label="Awaiting your approval"
           value={String(kpis.awaitingApprovalCount)}
         />
         <MetricCard
-          accent="violet"
           helper="Briefs needing your input"
           label="Awaiting your input"
           value={String(kpis.awaitingBriefCount)}
         />
         <MetricCard
-          accent="success"
           helper="Briefs already submitted"
           label="Submitted briefs"
           value={String(kpis.submittedBriefCount)}
