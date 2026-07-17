@@ -2,250 +2,87 @@
 
 ## Product
 
-DCA OS Lite is an **internal agency operating system first**; a SaaS-like licensee product is a later track — not the current readiness claim.
+DCA OS Lite is an **internal agency operating system first**. Broader licensed SaaS rollout remains approved direction, not current readiness.
 
-It is a reusable platform foundation for agency operations: client-facing portals, dashboards, automations, finance modules, SEO modules, AI modules, and reporting modules.
+Current canonical baseline is merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55`). Production readiness remains **NO** for new work unless a current runbook explicitly authorizes it.
 
-**Approved product disposition (G52-B, 2026-07-09):** [`docs/architecture/G52_OWNER_DISPOSITION.md`](./architecture/G52_OWNER_DISPOSITION.md).
-**Production readiness:** **NO** — see [`docs/STATUS.md`](./STATUS.md).
+## Platform layout
 
-## Architecture Layers
+| Workspace | Responsibility |
+|---|---|
+| `apps/web` | React + Vite frontend |
+| `apps/api` | Node.js + Express API |
+| `packages/data` | Prisma schema, migrations, and data tooling |
+| `packages/shared` | Shared TypeScript contracts |
 
-### Platform layers (generic)
+## Core architecture principles
 
-1. Core platform
-2. Authentication and session layer
-3. Tenant and company layer
-4. Role and permission layer
-5. Module registry and entitlement layer
-6. Settings layer
-7. Audit and activity layer
-8. Reusable module framework
-9. Business modules (generic)
-10. AI and automation modules (generic)
+- Core platform and modules stay generic.
+- Client-specific behavior belongs in Client Operating Packs, workflow templates, module entitlements, and approved profile/config layers.
+- One internet domain maps to one `Client`.
+- Client access is granted per `Client`, not per project.
+- WordPress is an optional publishing connector, not the core content model.
 
-### Client delivery layers (configuration, not forks)
+## Current application map
 
-Approved stack (G52-B):
+### `apps/api`
 
-```text
-DCA OS Core → Generic Modules → Workflow Templates → Module Entitlements
-  → Compliance / Content / Image Profiles → Client Operating Packs → Client-safe Portal Surfaces
-```
+- Versioned HTTP boundary at `/api/v1`
+- Route → controller → runtime/service organization
+- Central auth, tenant, role, and security middleware
+- Default-safe AI path remains local deterministic unless a separate gate authorizes live provider use
 
-- **Core and modules stay generic.** Client-specific behavior belongs in profiles, workflow templates, entitlements, and Client Operating Packs — not Core forks.
-- **Puriva** (`puriva.id`) is the **first Client Operating Pack** — not a fork and not an architecture mistake.
+Current runtime areas:
 
-Canonical docs: [`docs/architecture/CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md), [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](./architecture/PURIVA_OPERATING_PACK_V1.md).
+- auth/session/RBAC
+- clients, projects, tasks
+- AI Delivery
+- Workflow Briefs
+- Market Intelligence
+- monthly reports
+- Client Portal APIs
+- Finance Lite
+- integrations readiness / operator diagnostics
 
-## Workspace Layout
+### `apps/web`
 
-apps/api contains the backend API.
-apps/web contains the frontend app.
-packages/shared contains shared TypeScript contracts.
-packages/data contains Prisma schema and database-related tooling.
+React + Vite frontend with hash routing.
 
-## Backend Direction
+Current UI baseline after `PR #55`:
 
-The API is organized around a versioned boundary. The current boundary is /api/v1.
+- complex workflows moved to routed pages where that improved clarity
+- short confirmation and single-purpose overlays may remain modals
+- Botanical Light is the active design authority
+- admin/operator surfaces prefer compact density
+- client-facing surfaces prefer comfortable density
 
-Backend modules should follow this pattern:
+### `packages/data`
 
-- route
-- controller
-- service
-- shared contract
-- validation layer later
-- repository/data layer later
+- Owns Prisma schema and migrations
+- Tenant-scoped data model with `ClientUserAccess` for client portal grants
+- Publication targets belong to `Client`, not tenant-global WordPress config
 
-The API should return consistent response shapes and use central error handling.
+### `packages/shared`
 
-## Frontend Direction
-
-The frontend is a React and Vite application.
-
-Frontend modules should follow reusable page patterns:
-
-- module shell
-- list page
-- detail page
-- form page
-- dashboard card
-- loading state
-- empty state
-- error state
-
-## Shared Package Direction
-
-The shared package is the contract boundary between frontend and backend.
-
-It should include:
-
-- API response contracts
-- module contracts
+- Shared API contracts
 - navigation contracts
 - permission keys
-- dashboard card contracts
-- CRUD/list/detail/form contracts
+- reusable frontend/backend type boundary
 
-## Data Package Direction
+## Boundaries that matter now
 
-The data package owns Prisma schema and database tooling.
+| Concern | Current rule |
+|---|---|
+| Client safety | No prompts, provider internals, raw workflow runs, AI cost details, credentials, or `storageKey` in client surfaces |
+| Monthly reports | Client sees FINAL only |
+| WordPress | Current canonical claim is local prepared-draft/admin foundation only |
+| GA4/GSC | Withdrawn from live scope; manual import not implemented |
+| Production | Frozen/owner-gated for new actions |
 
-It should not become a dumping ground for business logic. Business rules belong in API services or dedicated domain modules.
+## Canonical supporting documents
 
-## Module System Direction
-
-Every feature should be treated as a module with metadata.
-
-A module may define:
-
-- key
-- name
-- description
-- routes
-- navigation entries
-- permissions
-- dashboard cards
-- entitlement requirements
-
-## Future Runtime Flow
-
-A request should eventually resolve:
-
-1. user session
-2. tenant context
-3. tenant membership
-4. role assignments
-5. permission grants
-6. module entitlement
-7. requested operation
-
-## Design Principle
-
-Build reusable platform foundations first. Add business modules only after platform gates are stable.
-
-## Client / Domain Operating Model (approved 2026-06-26; G52-B alignment 2026-07-09)
-
-Canonical architecture for how internet domains connect to the platform core:
-
-- **Each domain = one `Client` record** (no separate `DomainProperty` entity).
-- **Tenant** = workspace / licensee (e.g. Digital Cube Agency LLC today; independent companies as future licensee tenants).
-- **`clientKind`:** `AGENCY_CLIENT` (agency SEO/content clients) \| `OWN_DOMAIN` (own portfolio domains; each maps to an independent legal entity).
-- **Publication:** multiple `PublicationTarget` per Client (WordPress per subdomain); credentials encrypted per target — not per tenant.
-- **Finance:** agency client invoices in DCA LLC tenant only; own-domain finance in licensee tenants.
-- **Client Portal:** `client` role + `ClientUserAccess` per Client (not per project).
-
-Full specification: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
-
-**Client Operating Packs** configure delivery behavior per client (profiles, templates, entitlements) — see [`docs/architecture/CLIENT_OPERATING_PACKS.md`](./architecture/CLIENT_OPERATING_PACKS.md). Puriva is the first pack.
-
-**Gate separation:** DCA OS Production v1 Gate (platform deploy safety) is separate from Puriva Client-Service Launch Gate (client delivery live proofs). See [`docs/architecture/G52_OWNER_DISPOSITION.md`](./architecture/G52_OWNER_DISPOSITION.md).
-
-Approved implementation blocks 1–6 are listed in [`docs/ROADMAP.md`](./ROADMAP.md).
-
-## Current application map (2026-07-04)
-
-**Status reference:** [`docs/STATUS.md`](./STATUS.md). **Operator procedures:** [`docs/operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md).
-
-### apps/api
-
-Node.js + Express backend. Versioned boundary: `/api/v1`.
-
-| Layer | Responsibility |
-|-------|----------------|
-| Routes | HTTP entry; auth/tenant/module middleware |
-| Controllers | Request/response wiring |
-| Services / runtime | Business logic (`*.runtime.ts`, `*.service.ts`) |
-| Config | Env-driven feature gates (`auth.config`, `ai-provider.config`, `wordpress-integration.config`) |
-| Middlewares | Auth, authorization, tenant, rate limit, security headers |
-
-Key runtime areas:
-
-- **Auth/session** — login, logout, tenant switch, RBAC
-- **AI Delivery** — projects, briefs, workflow runs, deliverables, reviews, export
-- **Workflow Briefs** — MI/SEO runs, production plan, drafts, release package (writes into shared AI Delivery tables)
-- **Market Intelligence** — findings, summaries, handoffs, delivery integration
-- **Monthly Reports** — admin CRUD, PDF, metrics snapshots, MI context
-- **Client Portal** — read-only client-safe archive APIs; approval editor session
-- **Finance** — ledger, invoices, attribution (Finance Lite)
-- **External integrations readiness** (Block 1) — `external-integrations-readiness.service.ts`; config shape only; `GET /integrations/readiness`
-- **Admin operations** (Block 2) — `admin-operations-summary.service.ts`; `GET /admin/operations/summary`; DB probe + recovery hints
-
-Default AI execution: **local deterministic**. OpenRouter is opt-in via env; not production-proven by default.
-
-### apps/web
-
-React + Vite frontend. Hash-based routing (`#/…`). Botanical Light product UI direction — see [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md).
-
-| Area | Routes / surfaces |
-|------|-------------------|
-| Admin shell | Dashboard, Clients, Projects, AI Delivery, Workflow Briefs, Market Intelligence, Monthly Reports, Finance, Settings |
-| Client shell | `#/client-portal`, `#/monthly-reports` (alias), pending approvals, legacy briefs intake |
-| Block 2 | Dashboard → Operational readiness panel |
-| Block 3 | Compact density pass in `styles.css` — admin and client surfaces |
-
-**Boundary:** Client-only users blocked from admin routes. Client APIs sanitized (no `storageKey`, workflow internals, MI drafts, provider metadata).
-
-### packages/data (Prisma)
-
-PostgreSQL via Prisma. Schema in `packages/data/prisma/schema.prisma`. Migrations in `packages/data/prisma/migrations/`.
-
-- Owns database schema and `prisma:generate`
-- API accesses data through controlled boundaries — not direct Prisma in routes
-- Tenant-scoped models; `ClientUserAccess` for client-level portal grants
-
-### packages/shared
-
-Shared TypeScript contracts between frontend and backend: API response shapes, permission keys, module contracts, navigation contracts.
-
-### Admin / client boundaries
-
-| Concern | Admin | Client |
-|---------|-------|--------|
-| AI workflow runs, prompts, costs | Yes | No |
-| MI findings, drafts, handoffs | Yes | No (final summaries only where explicitly client-safe) |
-| Content plans / drafts (phased review) | Yes | Approval editor for sent deliverables; plan/draft review routes return `CLIENT_REVIEW_DEFERRED` |
-| Monthly reports | Full CRUD | FINAL status only in portal |
-| WordPress | Draft prep, publish gate (disabled default) | No handoff controls |
-| Integrations readiness | `GET /integrations/readiness` | Forbidden |
-| Operations summary | `GET /admin/operations/summary` | Forbidden |
-
-Canonical model: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
-
-### AI Delivery workflow
-
-Deterministic local-first chain: project → brief → workflow run → content plan → drafts → images → deliverables → review → export / WordPress draft prep.
-
-- AI Gateway v1: guarded provider config, knowledge context, execution metadata
-- AI Operations Console: admin read-only workflow run review
-- Workflow Briefs: parallel intake/automation layer writing into shared production tables
-- Knowledge layer: `AiKnowledgeItem` / `AiContextSnapshot`; approved items only; prompt-injection sanitization
-
-### Market Intelligence
-
-Admin-only MVP: research inputs → findings → deterministic summaries (`MI_SUMMARY_V1`) → handoffs → apply to AI Delivery / monthly reports. No client portal MI exposure. Live AI, scraping, autonomous agents deferred.
-
-### Monthly Reports
-
-Admin lifecycle: create/edit → metrics snapshot → MI context (internal) → PDF generation → FINAL status → client portal archive (FINAL only). Live GA4/GSC sync **WITHDRAWN**; MANUAL/snapshot metrics remain.
-
-### Private storage / R2
-
-Cloudflare R2 for private assets (PDFs, deliverables). Guarded when `R2_*` env absent (`R2_STORAGE_NOT_CONFIGURED`). Admin upload/download; clients receive signed/reference URLs without raw `storageKey`. Strict real-bucket proof deferred without explicit env.
-
-### WordPress draft safety
-
-- `WORDPRESS_PUBLISH_ENABLED` default false
-- Draft preparation validates slug/title/target; publish gate metadata on prepared drafts
-- `CREDENTIAL_ENCRYPTION_MASTER_KEY` required before encrypted publication targets
-- No auto-publish; no client-triggered publish
-- Live publish proof deferred
-
-### External integrations readiness layer (Block 1)
-
-Read-only config inspection for: AI provider (OpenRouter shape), WordPress publish gate, R2 env presence. GA4/GSC readiness category **withdrawn** 2026-07-13. No live HTTP, OAuth, publish, sync, or bucket IO.
-
-### Admin operations / recovery surface (Block 2)
-
-Read-only aggregate: DB connectivity, integration readiness categories, recent operational audit events, static recovery hints, manual closeout command list. No durable smoke PASS store.
+- [`CURRENT_SYSTEM_SNAPSHOT.md`](./CURRENT_SYSTEM_SNAPSHOT.md)
+- [`STATUS.md`](./STATUS.md)
+- [`architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md)
+- [`project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
+- [`ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md)

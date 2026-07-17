@@ -3,7 +3,7 @@
 **Status:** Extended audit (2026-07-10, G429–G448 UI lane)
 **Scope:** Operator/admin UX across AI Delivery, Monthly Reports, Client Portal archive (docs review only), Finance Lite, Market Intelligence, AI Operations, empty/error/loading states, copy clarity, proof-state vocabulary, and Puriva operator flow.
 **Constraint:** High-impact **small polish blocks** only — no broad UI redesign, no backend/API/schema/auth changes, no design-system migration.
-**Related:** [`docs/ui-ux/V0_UI_UX_AUDIT_PACK.md`](../ui-ux/V0_UI_UX_AUDIT_PACK.md) · [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) · [`docs/ui/ADMIN_SURFACE_INVENTORY.md`](../ui/ADMIN_SURFACE_INVENTORY.md) · [`docs/ui/ai-delivery-hotspot-file-review.md`](../ui/ai-delivery-hotspot-file-review.md) · [`docs/operator/first-client-next-actions.md`](../operator/first-client-next-actions.md)
+**Related:** [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) · [`docs/audits/BOTANICAL_LIGHT_PART_I_CLOSEOUT_2026-07-17.md`](../audits/BOTANICAL_LIGHT_PART_I_CLOSEOUT_2026-07-17.md) · [`docs/ui/ADMIN_SURFACE_INVENTORY.md`](../ui/ADMIN_SURFACE_INVENTORY.md) · [`docs/ui/ai-delivery-hotspot-file-review.md`](../ui/ai-delivery-hotspot-file-review.md) · [`docs/operator/first-client-next-actions.md`](../operator/first-client-next-actions.md)
 
 ---
 
@@ -35,7 +35,7 @@ Local/admin workflows remain **functionally complete** and smoke-proven for Puri
 | Monthly / portal UI testability | Smoke + unit gaps | [`docs/ux/monthly-report-ui-testability.md`](./monthly-report-ui-testability.md), [`docs/ux/client-portal-ui-testability.md`](./client-portal-ui-testability.md) |
 | Badge designs | Proof-state, integration truth, launch-blocker board | [`docs/ui/admin-proof-state-badge-design.md`](../ui/admin-proof-state-badge-design.md), [`docs/ui/INTEGRATION_TRUTH_BADGE_DESIGN.md`](../ui/INTEGRATION_TRUTH_BADGE_DESIGN.md), [`docs/ui/LAUNCH_BLOCKER_BOARD_DESIGN.md`](../ui/LAUNCH_BLOCKER_BOARD_DESIGN.md) |
 | Proof-state vocabulary | Labels + overclaim helper | [`docs/ux/proof-state-vocabulary.md`](./proof-state-vocabulary.md), `apps/web/src/lib/proof-state-labels.ts` |
-| UI docs closeout / blockers / next gate | Lane closeout | [`docs/ux/ui-docs-closeout-g429-g448.md`](./ui-docs-closeout-g429-g448.md), [`docs/ux/remaining-ui-blockers.md`](./remaining-ui-blockers.md), [`docs/ux/next-gate-proposal-ui.md`](./next-gate-proposal-ui.md) |
+| UI blockers / retained notes | Supporting follow-up only | [`docs/ux/remaining-ui-blockers.md`](./remaining-ui-blockers.md) |
 
 **Tiny code (copy-safety only):** `MonthlyReportPanel.tsx` FINAL/metrics empty copy now states Client Portal visibility timing and deferred live GA/GSC. No routing, shell, or design-system changes.
 
