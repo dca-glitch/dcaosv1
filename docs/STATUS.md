@@ -1,4 +1,4 @@
-# DCA OS Lite — Current Status
+# DCA OS v2 — Current Status
 
 **Last updated:** 2026-07-17
 **Canonical baseline:** merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55` — “Complete responsive modal-to-page migration”)
@@ -9,8 +9,8 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 
 | Item | Current status |
 |---|---|
-| Product stance | **Internal agency operating system first** |
-| First client operating pack | **Puriva** |
+| Product stance | **Private Agency Operations System for one Digital Cube Agency organization; not a public/self-service SaaS** |
+| First External Client Workspace / pilot | **Puriva** (approved direction; Workspace implementation not yet started) |
 | Production readiness | **NO** for new work unless a current runbook explicitly authorizes it |
 | UI baseline | **Botanical Light** with routed page flows from `PR #55` |
 | Client session restoration | Fixed in the `PR #55` baseline for local rate-limited client sessions |
@@ -45,6 +45,8 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Direct-to-Draft live HTTP | APPROVED_DIRECTION_NOT_IMPLEMENTED | Do not claim from current canonical docs |
 | Live GA4/GSC integration | WITHDRAWN | No live OAuth/sync/manual import claim |
 | Production execution | FROZEN | Requires separate current gate and approval |
+| Phase 0 canonical prerequisite package | IMPLEMENTED | Current authority reconciled to the private-agency charter; implementation remains separate |
+| Phase 1 Workspace foundation | APPROVED_DIRECTION_NOT_IMPLEMENTED | Legacy Tenant/Client foundations are reusable evidence, not completion |
 
 ## 4. Current boundaries that must not be overclaimed
 

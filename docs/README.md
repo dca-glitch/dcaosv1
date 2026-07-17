@@ -14,6 +14,10 @@ Use documents in this exact order when you need current truth:
 6. [`project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 7. [`operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 8. [`ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md)
+9. [`project-control/DCA_OS_V2_DECISION_REGISTER.md`](./project-control/DCA_OS_V2_DECISION_REGISTER.md)
+10. [`project-control/DCA_OS_V2_PHASE_0_12_EXECUTION_PLAN.md`](./project-control/DCA_OS_V2_PHASE_0_12_EXECUTION_PLAN.md)
+11. [`security/PHASE_1_WORKSPACE_AUTHORIZATION_MATRIX.md`](./security/PHASE_1_WORKSPACE_AUTHORIZATION_MATRIX.md)
+12. [`architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md`](./architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md)
 
 Apply [`../AGENTS.md`](../AGENTS.md) only after the authority chain above.
 
@@ -28,6 +32,10 @@ Apply [`../AGENTS.md`](../AGENTS.md) only after the authority chain above.
 | [`project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) | Current status vocabulary and capability labels |
 | [`operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md) | Current validation and operator guardrails |
 | [`ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) | Complete current UI authority |
+| [`project-control/DCA_OS_V2_DECISION_REGISTER.md`](./project-control/DCA_OS_V2_DECISION_REGISTER.md) | Binding owner-approved DCA OS v2 decisions |
+| [`project-control/DCA_OS_V2_PHASE_0_12_EXECUTION_PLAN.md`](./project-control/DCA_OS_V2_PHASE_0_12_EXECUTION_PLAN.md) | Binding execution status and sequencing |
+| [`security/PHASE_1_WORKSPACE_AUTHORIZATION_MATRIX.md`](./security/PHASE_1_WORKSPACE_AUTHORIZATION_MATRIX.md) | Phase 1 target authorization model |
+| [`architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md`](./architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md) | Compatibility and safe migration contract |
 
 ## Supporting indexes
 
