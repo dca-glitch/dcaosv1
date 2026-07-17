@@ -1,13 +1,13 @@
-# Current System Snapshot
+# Current System Snapshot — DCA OS v2
 
 **Purpose:** concise current-system truth for maintainers and external agents.
 
 ## 1. Product identity
 
-DCA OS Lite is the internal agency operating system for Digital Cube Agency.
+DCA OS v2 is the private Agency Operations System for one organization: Digital Cube Agency.
 
-- It is **not** currently documented as a generally ready live SaaS product.
-- Puriva is the first **Client Operating Pack** on the shared platform.
+- It is not a public, self-service, subscription, marketplace, or independently licensed SaaS product.
+- Puriva is the first External Client Workspace and only initial production pilot; it remains a shared-platform operating pack, never a fork.
 - Current canonical baseline is merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55`).
 - Production exists, but readiness for new production work remains **NO** unless a current runbook explicitly authorizes it.
 
@@ -19,7 +19,8 @@ DCA OS Lite is the internal agency operating system for Digital Cube Agency.
 - Prisma + PostgreSQL data layer
 - Shared TypeScript contracts between frontend and backend
 - One internet domain = one `Client`
-- Tenant = workspace/licensee layer; client access is granted per `Client`, not per project
+- `Tenant`, `TenantMembership`, `Role`, `Permission`, `Client`, and `ClientUserAccess` are current legacy compatibility foundations, not proof of Phase 1 completion.
+- `Workspace` is the approved future primary boundary for data, authorization, reporting, costs, integrations, materials, and search. Phase 1 has not started at this baseline.
 
 ## 3. Roles and access boundaries
 
@@ -76,12 +77,14 @@ These results come from `PR #55` and remain the canonical UI proof baseline for 
 
 Treat the following as `APPROVED_DIRECTION_NOT_IMPLEMENTED` unless a higher-authority current doc says otherwise:
 
-- broader licensed SaaS rollout
+- the Phase 1 Workspace model, memberships, five-role authorization, scoped API/query/search, feature flags, audit context, and isolation proofs
 - advanced public/client collaboration features
 - default live AI/provider execution across workflows
 - live WordPress HTTP draft or publish from the current local prepared-draft baseline
 - GA4/GSC automation or manual import flow
 - broad autonomous background agents that can spend money
+
+The previous broader licensed-SaaS direction is superseded; it must not be revived as future product direction.
 
 ## 9. Historical evidence boundary
 

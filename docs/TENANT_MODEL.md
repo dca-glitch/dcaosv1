@@ -1,10 +1,8 @@
-# Tenant Model
+# Legacy Tenant Compatibility Model
 
 ## Purpose
 
-DCA OS v1 is intended to be multi-tenant.
-
-A tenant represents a **SaaS workspace / licensee instance** — not a single internet domain.
+DCA OS v2 is a private Agency Operations System for Digital Cube Agency. This document describes the current `Tenant` implementation as a compatibility boundary; it does not define future SaaS direction.
 
 Canonical operating model: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md).
 
@@ -12,8 +10,8 @@ Canonical operating model: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`
 
 | Tenant type | Example | Role |
 |-------------|---------|------|
-| **Operator / licensor** | Digital Cube Agency LLC | Runs DCA OS for agency clients; licenses OS to other companies |
-| **Licensee** (future) | Independent company owning own-domain brands | Separate tenant; Finance and modules per license agreement |
+| **Current legacy Tenant** | Digital Cube Agency | Current organizational compatibility boundary used by runtime and data |
+| **Target Workspace** | Internal Brand or External Client | Future primary boundary, introduced by Phase 1 expand-only work |
 
 **Internet domains are not tenants.** Each domain is a **`Client`** record inside a tenant.
 
@@ -23,19 +21,16 @@ Canonical operating model: [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`
 
 - **Digital Cube Agency LLC** — one tenant for agency operations and system operation
 
-**Future:**
-
-- **Spółka A Sp. z o.o.** — licensee tenant (one independent company per own domain or grouped per legal entity after migration)
-- Each licensee uses modules licensed from Digital Cube Agency LLC via `TenantModule`
+There are no future independent licensee tenants. Existing names, fields, modules, and migrations that use Tenant/licensee wording are legacy implementation context until safely retired.
 
 ## Client vs tenant
 
 | Concept | Represents |
 |---------|------------|
-| `Tenant` | Company/workspace using DCA OS (DCA LLC or licensee) |
+| `Tenant` | Current organizational compatibility boundary |
 | `Client` | One operational domain or agency client unit (`clientKind`: `AGENCY_CLIENT` \| `OWN_DOMAIN`) |
 
-Do not confuse CRM `Client` with “client company as tenant.” External companies served by DCA are `Client` records with `clientKind = AGENCY_CLIENT` inside the DCA LLC tenant unless they later become OS licensees themselves.
+Do not confuse CRM `Client` with the target `Workspace`. External companies served by DCA are current `Client` records and will reconcile to `EXTERNAL_CLIENT` Workspaces; no public tenant creation or licensee conversion is planned.
 
 ## Finance boundary
 
@@ -130,8 +125,4 @@ A feature is not complete until tenant ownership and tenant access rules are cle
 
 Tenant access rules should be derived from membership and `ClientUserAccess`, not from arbitrary client-supplied IDs.
 
-## Changelog
-
-| Date | Change |
-|------|--------|
-| 2026-06-26 | Aligned with CLIENT_DOMAIN_OPERATING_MODEL: tenant = licensee workspace; Client = domain; finance separation; role set |
+The binding transition rules are in [`architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md`](./architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md).

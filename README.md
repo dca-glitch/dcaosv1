@@ -1,14 +1,15 @@
-# DCA OS Lite
+# DCA OS v2
 
-DCA OS Lite is the internal agency operating system for Digital Cube Agency.
+DCA OS v2 is the private Agency Operations System for Digital Cube Agency.
 
 ## Current baseline
 
-- **Product stance:** internal agency OS first; broader SaaS/productization remains approved direction, not current readiness.
+- **Product stance:** one private agency organization, not a public or self-service SaaS. Public signup, self-service tenant creation, tenant-admin provisioning, subscriptions, marketplace, sale/licensing of access, and independent licensee tenants are not product direction.
 - **Canonical baseline:** merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55`, “Complete responsive modal-to-page migration”).
 - **UI baseline:** Botanical Light with complex workflow migration from modal stacks to routed pages, while short confirmation and single-purpose overlays remain modals.
 - **Client session fix:** `PR #55` is the current baseline for client session restoration under local rate limiting.
-- **Client model:** one internet domain = one `Client`; Puriva is the first Client Operating Pack.
+- **Workspace direction:** `Workspace` is the approved primary data, authorization, reporting, cost, integration, material, and search boundary. The existing `Tenant`/`Client` model remains legacy compatibility context until the governed expand/backfill/reconciliation/switch/cleanup migration is completed.
+- **Pilot:** Puriva is the first External Client Workspace and production pilot, not a fork or separate product.
 - **Delivery model:** AI Delivery remains admin/operator-primary; Client Portal MVP is client-safe visibility, approvals, archive, and FINAL monthly reports only.
 - **Production posture:** production exists, but current readiness for new production work remains **NO** unless a current runbook explicitly authorizes it.
 

@@ -2,7 +2,7 @@
 
 ## Product
 
-DCA OS Lite is an **internal agency operating system first**. Broader licensed SaaS rollout remains approved direction, not current readiness.
+DCA OS v2 is a private Agency Operations System for one organization: Digital Cube Agency. Public signup, self-service tenant creation, tenant-admin provisioning, subscriptions, marketplace, public sale/licensing, and future independent licensee tenants are not product direction.
 
 Current canonical baseline is merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55`). Production readiness remains **NO** for new work unless a current runbook explicitly authorizes it.
 
@@ -19,6 +19,8 @@ Current canonical baseline is merge commit `998c294e4c125d3ce9210ab0bd9a3e561584
 
 - Core platform and modules stay generic.
 - Client-specific behavior belongs in Client Operating Packs, workflow templates, module entitlements, and approved profile/config layers.
+- `Workspace` is the approved primary boundary for data, authorization, reporting, costs, integrations, materials, and search. It supports `INTERNAL_BRAND` and `EXTERNAL_CLIENT` types.
+- Current `Tenant`/`Client` code is legacy compatibility context during the phased, non-destructive migration; it is not the future product model.
 - One internet domain maps to one `Client`.
 - Client access is granted per `Client`, not per project.
 - WordPress is an optional publishing connector, not the core content model.
@@ -59,7 +61,7 @@ Current UI baseline after `PR #55`:
 ### `packages/data`
 
 - Owns Prisma schema and migrations
-- Tenant-scoped data model with `ClientUserAccess` for client portal grants
+- Current Tenant-scoped data model with `ClientUserAccess` for client portal grants; Phase 1 will add an expand-only Workspace foundation before any data backfill or endpoint switch
 - Publication targets belong to `Client`, not tenant-global WordPress config
 
 ### `packages/shared`
@@ -87,3 +89,4 @@ Current UI baseline after `PR #55`:
 - [`architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md)
 - [`project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
 - [`ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md)
+- [`architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md`](./architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md)

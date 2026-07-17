@@ -6,6 +6,7 @@
 
 - Read current product state in [`../STATUS.md`](../STATUS.md) before running scoped work.
 - Production remains **frozen/owner-gated** for new actions unless a current runbook explicitly authorizes them.
+- The product is a private Digital Cube Agency system, not a public/self-service SaaS. Do not create public signup, independent tenant/licensee, subscription, marketplace, or provider-live work under Phase 1.
 - Historical deploy/proof docs remain evidence only; they are not standing approval.
 
 ## 2. Validation order
@@ -23,6 +24,7 @@ Run in this exact order and stop on first failure:
 - Use Graphify-first navigation when `graphify-out/graph.json` exists; the verified local baseline is Graphify `0.9.17` and Codex/Graphify configuration at commit `5ad4eeb`.
 - For a Windows Prisma `EPERM` on `query_engine-windows.dll.node`, identify the process holding the DLL, inspect its command line and parent, and stop only the confirmed DCA OS process tree. The verified incident was the DCA OS API Node process; after one retry, `npm.cmd run validate` passed and `npm.cmd run smoke:local` passed with API/database ready.
 - Never stop all Node processes. After an equivalent repeated failure, change the hypothesis and escalate for Critical review rather than retrying unchanged.
+- Workspace work uses expand → backfill → reconciliation → switch → cleanup. Package 1 is expand-only: no destructive change, backfill, endpoint switch, or cleanup. See [`../architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md`](../architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md).
 - OpenClaw `2026.7.1` plus the official Codex plugin may orchestrate local development through OpenAI OAuth; no API key is required. Gateway remains loopback-only with token authentication, `tools.elevated` and heartbeat are disabled, and no Scheduled Task or autonomous recurring monitoring is approved.
 - OpenClaw is temporary development/deployment orchestration only, not a DCA OS runtime component. Do not install it in the product runtime or on the production VPS.
 

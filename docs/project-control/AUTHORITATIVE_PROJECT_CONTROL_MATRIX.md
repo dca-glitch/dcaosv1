@@ -7,7 +7,7 @@ This file is no longer a running next-gate ledger. Use it to understand what eac
 ## 1. Baseline
 
 - **Canonical baseline:** merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55`)
-- **Current product posture:** internal agency OS first
+- **Current product posture:** private Agency Operations System for one Digital Cube Agency organization; never public/self-service SaaS or independent-licensee product
 - **Current production posture:** frozen/owner-gated; readiness remains **NO** for new work unless a current runbook authorizes it
 
 ## 2. Status labels
@@ -40,6 +40,8 @@ This file is no longer a running next-gate ledger. Use it to understand what eac
 | Direct-to-Draft live HTTP capability | APPROVED_DIRECTION_NOT_IMPLEMENTED | Do not claim as current |
 | Live GA4/GSC integration | WITHDRAWN | Removed from current/planned scope |
 | Production execution | FROZEN | Requires separate current gate and approval |
+| Phase 0 charter/authority package | IMPLEMENTED | Private-agency direction and Phase 1 governing contracts are canonical |
+| Phase 1 Workspace foundation | APPROVED_DIRECTION_NOT_IMPLEMENTED | Existing Tenant/Client code is assessed legacy context; no completion claim |
 
 ## 4. Current proof baseline
 
