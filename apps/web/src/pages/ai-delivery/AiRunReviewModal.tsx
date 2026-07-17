@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Alert, Button, LoadingState, Modal, Select, StatusBadge, Tabs, Textarea } from "../../components/ui";
+import { Alert, Button, LoadingState, Select, StatusBadge, Tabs, Textarea, WorkflowPageShell } from "../../components/ui";
 import { AiDeliveryWorkflowHistoryPanel } from "./AiDeliveryWorkflowHistoryPanel";
 import "./ai-delivery-modals.css";
 import type {
@@ -112,7 +112,7 @@ export function AiRunReviewModal({
   );
 
   return (
-    <Modal isOpen={isOpen} footer={footer} onClose={onClose} size="lg" title="Workflow Runs">
+    <WorkflowPageShell footer={footer} onClose={onClose} title="Workflow Runs" titleId="ai-delivery-workflow-runs-title">
       <div className="ai-run-review-modal ai-delivery-lane-modal stack gap-md">
         <div className="ai-run-review-modal__header-meta">
           <p className="ai-run-review-modal__eyebrow muted-text m-0">Review generated content</p>
@@ -365,6 +365,6 @@ export function AiRunReviewModal({
           </>
         )}
       </div>
-    </Modal>
+    </WorkflowPageShell>
   );
 }

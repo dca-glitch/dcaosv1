@@ -4,7 +4,7 @@ import type {
   AiKnowledgeItemInputRequest,
   AiKnowledgeItemSummary
 } from "@dca-os-v1/shared";
-import { Alert, Button, Checkbox, Input, LoadingState, Modal, SectionPanel, Select, StatusBadge, Textarea } from "../../components/ui";
+import { Alert, Button, Checkbox, Input, LoadingState, SectionPanel, Select, StatusBadge, Textarea, WorkflowPageShell } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 
 type AiKnowledgeContextPanelProps = {
@@ -146,7 +146,7 @@ export function AiKnowledgeContextPanel({
   }
 
   return (
-    <Modal isOpen onClose={onClose} title="AI Knowledge & Context Preview">
+    <WorkflowPageShell onClose={onClose} title="AI Knowledge & Context Preview" titleId="ai-delivery-knowledge-title">
       <div className="ai-knowledge-context-panel stack gap-md">
         {error ? <KnowledgeInlineError message={error} /> : null}
         {loading ? <KnowledgeInlineLoading label="Loading knowledge items" /> : null}
@@ -327,6 +327,6 @@ export function AiKnowledgeContextPanel({
           </>
         ) : null}
       </div>
-    </Modal>
+    </WorkflowPageShell>
   );
 }

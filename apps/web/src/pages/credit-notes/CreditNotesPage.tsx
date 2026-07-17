@@ -1,5 +1,4 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -14,7 +13,9 @@ import {
   StatusSummaryBar,
   Table,
   Textarea,
+  WorkflowPageShell,
 } from "../../components/ui";
+import { useEntityEditorHash } from "../../lib/use-entity-editor-hash";
 import {
   buildCreditNoteStatusSummary,
   formatFinanceDateLabel,
@@ -23,6 +24,7 @@ import {
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { InvoiceSummary } from "../invoices/InvoicesPage";
 import "../finance/finance.css";
+import "../ai-delivery/ai-delivery-workflow.css";
 
 type CreditNoteLineItemFormValues = {
   description: string;
@@ -261,7 +263,7 @@ export function CreditNotesPage({
     });
   }
 
-  function resetEditor() {
+  function closeEditorState() {
     setEditorId(null);
     setInvoiceId("");
     setDraft(emptyCreditNoteForm());
@@ -290,7 +292,7 @@ export function CreditNotesPage({
     );
   }
 
-  function openCreateModal() {
+  function applyCreateDraft() {
     setEditorId(null);
     const invoice = firstAvailableInvoice(invoices);
     if (invoice) {
@@ -301,7 +303,7 @@ export function CreditNotesPage({
     setIsEditorOpen(true);
   }
 
-  function openEditModal(creditNote: CreditNoteWithInvoice) {
+  function applyEditDraft(creditNote: CreditNoteWithInvoice) {
     const lineItems = creditNote.lineItems.length > 0 ? creditNote.lineItems : [emptyLineItem()];
     const subtotalCents = lineItems.reduce((sum, lineItem) => sum + lineItem.totalCents, 0);
     const taxPercent = percentFromCents(creditNote.taxCents, subtotalCents);
@@ -337,6 +339,34 @@ export function CreditNotesPage({
     setIsEditorOpen(true);
   }
 
+  const { navigateEditor } = useEntityEditorHash({
+    base: "credit-notes",
+    listRevision: creditNotes,
+    openCreateFromHash: applyCreateDraft,
+    openEditFromHash: (id) => {
+      const creditNote = creditNotes.find((entry) => entry.id === id);
+      if (!creditNote) return false;
+      applyEditDraft(creditNote);
+      return true;
+    },
+    closeFromHash: closeEditorState
+  });
+
+  function closeEditor() {
+    closeEditorState();
+    navigateEditor({ kind: "hub" });
+  }
+
+  function openCreateModal() {
+    applyCreateDraft();
+    navigateEditor({ kind: "new" });
+  }
+
+  function openEditModal(creditNote: CreditNoteWithInvoice) {
+    applyEditDraft(creditNote);
+    navigateEditor({ kind: "edit", id: creditNote.id });
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const fallbackReason = draft.reason.trim() || "Credit note";
@@ -352,7 +382,7 @@ export function CreditNotesPage({
         reason: fallbackReason
       });
       if (ok) {
-        resetEditor();
+        closeEditor();
       }
     } finally {
       setSaving(false);
@@ -368,51 +398,21 @@ export function CreditNotesPage({
   }
 
   return (
-    <section className="view-section finance-lite" aria-labelledby="credit-notes-title" data-density="compact">
-      <PageHeader
-        eyebrow="Finance"
-        title="Credit Notes"
-        titleId="credit-notes-title"
-        description="Invoice corrections and billing adjustments."
-        actions={
-          canEdit ? (
-            <Button disabled={invoices.length === 0} onClick={openCreateModal} type="button">
-              New credit note
-            </Button>
-          ) : null
-        }
-      />
-
-      <StatusSummaryBar ariaLabel="Credit note status summary" items={creditNoteStatusSummary} />
-
-      <div className="summary-grid finance-summary-strip" aria-label="Credit note totals from loaded records">
-        <MetricCard
-          helper={`${totals.totalCount} notes · ${totals.draftCount} draft · ${totals.voidedCount} voided`}
-          label="Issued value"
-          value={formatMoney(totals.issuedCents, "USD")}
-        />
-      </div>
-
-      {canEdit && invoices.length === 0 ? (
-        <EmptyState title="Create an invoice first" message="Credit notes must be attached to an existing invoice." />
-      ) : null}
-
-      <CreditNoteCards
-        canEdit={canEdit}
-        creditNotes={creditNotes}
-        onEditCreditNote={openEditModal}
-        onIssueCreditNote={onIssueCreditNote}
-        onVoidCreditNote={onVoidCreditNote}
-      />
-
+    <section className="view-section finance-lite entity-editor-page" aria-labelledby="credit-notes-title" data-density="compact">
       {isEditorOpen ? (
-        <Modal isOpen eyebrow={editorId ? "Edit" : "Create"} onClose={resetEditor} size="lg" title={editorId ? "Edit Credit Note" : "New Credit Note"}>
-          <form className="entity-form" onSubmit={handleSubmit}>
+        <WorkflowPageShell
+          backLabel="Back to Credit Notes"
+          eyebrow={editorId ? "Edit" : "Create"}
+          onClose={closeEditor}
+          title={editorId ? "Edit Credit Note" : "New Credit Note"}
+          titleId="credit-notes-editor-title"
+        >
+          <form className="entity-form entity-editor-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used to document a refund, correction, or billing adjustment. This does not register a payment by itself.</p>
             <ModalActions
               disabled={saving || !invoiceId || draft.totalCents <= 0}
               label={submitLabel}
-              onCancel={resetEditor}
+              onCancel={closeEditor}
               saving={saving}
             />
             <div className="field-grid">
@@ -554,11 +554,51 @@ export function CreditNotesPage({
             <ModalActions
               disabled={saving || !invoiceId || draft.totalCents <= 0}
               label={submitLabel}
-              onCancel={resetEditor}
+              onCancel={closeEditor}
               saving={saving}
             />
           </form>
-        </Modal>
+        </WorkflowPageShell>
+      ) : null}
+
+      {!isEditorOpen ? (
+        <>
+      <PageHeader
+        eyebrow="Finance"
+        title="Credit Notes"
+        titleId="credit-notes-title"
+        description="Invoice corrections and billing adjustments."
+        actions={
+          canEdit ? (
+            <Button disabled={invoices.length === 0} onClick={openCreateModal} type="button">
+              New credit note
+            </Button>
+          ) : null
+        }
+      />
+
+      <StatusSummaryBar ariaLabel="Credit note status summary" items={creditNoteStatusSummary} />
+
+      <div className="summary-grid finance-summary-strip" aria-label="Credit note totals from loaded records">
+        <MetricCard
+          helper={`${totals.totalCount} notes · ${totals.draftCount} draft · ${totals.voidedCount} voided`}
+          label="Issued value"
+          value={formatMoney(totals.issuedCents, "USD")}
+        />
+      </div>
+
+      {canEdit && invoices.length === 0 ? (
+        <EmptyState title="Create an invoice first" message="Credit notes must be attached to an existing invoice." />
+      ) : null}
+
+      <CreditNoteCards
+        canEdit={canEdit}
+        creditNotes={creditNotes}
+        onEditCreditNote={openEditModal}
+        onIssueCreditNote={onIssueCreditNote}
+        onVoidCreditNote={onVoidCreditNote}
+      />
+        </>
       ) : null}
     </section>
   );

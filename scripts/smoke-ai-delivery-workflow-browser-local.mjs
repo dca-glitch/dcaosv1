@@ -160,17 +160,17 @@ async function main() {
     record("ai delivery workspace workflow navigation renders", true, "workspace buttons");
 
     await workspaceSection.getByRole("button", { name: "Workflow runs" }).click();
-    const workflowRunsDialog = page.getByRole("dialog", { name: "Workflow Runs" });
-    await workflowRunsDialog.waitFor({ state: "visible", timeout: 15000 });
-    await workflowRunsDialog.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
-    await workflowRunsDialog.locator("dt", { hasText: "Execution log" }).first().waitFor({ state: "visible", timeout: 15000 });
-    record("workflow runs modal renders execution details", true, "Workflow Runs");
+    const workflowRunsPage = page.locator("section.workflow-page").filter({ has: page.getByRole("heading", { name: "Workflow Runs" }) });
+    await workflowRunsPage.waitFor({ state: "visible", timeout: 15000 });
+    await workflowRunsPage.getByRole("heading", { name: "Existing workflow runs" }).waitFor({ state: "visible", timeout: 15000 });
+    await workflowRunsPage.locator("dt", { hasText: "Execution log" }).first().waitFor({ state: "visible", timeout: 15000 });
+    record("workflow runs page renders execution details", true, "Workflow Runs");
 
-    const dialogText = await workflowRunsDialog.innerText();
-    const gatewayValue = await workflowRunsDialog.locator("dt", { hasText: "Gateway" }).first().locator("xpath=following-sibling::dd[1]").innerText();
-    const executionLogValue = await workflowRunsDialog.locator("dt", { hasText: "Execution log" }).first().locator("xpath=following-sibling::dd[1]").innerText();
+    const dialogText = await workflowRunsPage.innerText();
+    const gatewayValue = await workflowRunsPage.locator("dt", { hasText: "Gateway" }).first().locator("xpath=following-sibling::dd[1]").innerText();
+    const executionLogValue = await workflowRunsPage.locator("dt", { hasText: "Execution log" }).first().locator("xpath=following-sibling::dd[1]").innerText();
     record(
-      "workflow runs modal shows local gateway execution context",
+      "workflow runs page shows local gateway execution context",
       gatewayValue.toLowerCase().includes("local") ||
         executionLogValue.toLowerCase().includes("local") ||
         executionLogValue.toLowerCase().includes("deterministic") ||
@@ -178,23 +178,27 @@ async function main() {
       `${gatewayValue} / log=${executionLogValue.slice(0, 60)}`
     );
     record(
-      "workflow runs modal includes execution log section",
+      "workflow runs page includes execution log section",
       dialogText.includes("Execution log"),
       "execution log"
     );
 
-    await page.getByRole("button", { name: "Close" }).first().click();
+    await page.getByRole("button", { name: "Back to AI Delivery" }).first().click();
+    await page.getByRole("heading", { name: "AI Delivery Projects" }).waitFor({ state: "visible", timeout: 15000 });
 
+    await projectListItem.click();
+    await workspaceSection.getByRole("button", { name: "SEO / content plan" }).waitFor({ state: "visible", timeout: 15000 });
     await workspaceSection.getByRole("button", { name: "SEO / content plan" }).click();
-    const contentPlanDialog = page.getByRole("dialog", { name: "Monthly SEO / Content Plan" });
-    await contentPlanDialog.waitFor({ state: "visible", timeout: 15000 });
-    await contentPlanDialog.getByRole("heading", { name: "Workflow readiness" }).waitFor({ state: "visible", timeout: 15000 });
-    await contentPlanDialog.getByText(/AI SEO readiness:/i).waitFor({ state: "visible", timeout: 15000 });
-    await contentPlanDialog.getByText(/No AI SEO content plan yet/i).waitFor({ state: "visible", timeout: 15000 });
-    record("content plan modal renders approval shell", true, "Workflow readiness");
+    const contentPlanPage = page.locator("section.workflow-page").filter({ has: page.getByRole("heading", { name: "Monthly SEO / Content Plan" }) });
+    await contentPlanPage.waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanPage.getByRole("heading", { name: "Workflow readiness" }).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanPage.getByText(/AI SEO readiness:/i).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanPage.getByText(/No AI SEO content plan yet/i).waitFor({ state: "visible", timeout: 15000 });
+    record("content plan page renders approval shell", true, "Workflow readiness");
 
-    await contentPlanDialog.getByRole("button", { name: "Close" }).first().click();
-    await contentPlanDialog.waitFor({ state: "hidden", timeout: 10000 });
+    await page.getByRole("button", { name: "Back to AI Delivery" }).first().click();
+    await page.getByRole("heading", { name: "AI Delivery Projects" }).waitFor({ state: "visible", timeout: 15000 });
+    await contentPlanPage.waitFor({ state: "hidden", timeout: 10000 }).catch(() => {});
 
     const failed = results.filter((entry) => !entry.ok);
     console.log(`${smokeMarker} finished - ${results.length - failed.length}/${results.length} passed`);

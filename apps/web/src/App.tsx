@@ -634,13 +634,29 @@ function replaceHash(hash: string): void {
 
 const deferredClientReviewViews = new Set<ViewKey>(["content-plan-review", "content-draft-review"]);
 
+/** ViewKeys that own nested editor/workflow hashes (prefix collapse). */
+const NESTED_HASH_VIEW_PREFIXES: ViewKey[] = [
+  "client-portal",
+  "ai-delivery",
+  "clients",
+  "projects",
+  "tasks",
+  "invoices",
+  "credit-notes",
+  "bills",
+  "invoice-items",
+  "company-profile",
+  "ai-market-intelligence",
+  "ai-operations",
+  "modules"
+];
+
 function normalizeHash(hash: string): ViewKey {
-  const value = hash.replace(/^#\/?/, "");
-  if (value === "client-portal" || value.startsWith("client-portal/")) {
-    return "client-portal";
-  }
-  if (value.startsWith("modules/") || value === "modules") {
-    return "modules";
+  const value = hash.replace(/^#\/?/, "").split("?")[0] ?? "";
+  for (const prefix of NESTED_HASH_VIEW_PREFIXES) {
+    if (value === prefix || value.startsWith(`${prefix}/`)) {
+      return prefix;
+    }
   }
   if (value === "admin/design-system" || value === "design-system") {
     return "design-system";
@@ -748,6 +764,31 @@ function getErrorMessage(response: ApiFailure): string {
 
 function isUnauthorized(response: ApiResponse<unknown>): response is ApiFailure {
   return !response.ok && response.error.code === "AUTH_UNAUTHORIZED";
+}
+
+function isRateLimited(response: ApiResponse<unknown>): response is ApiFailure {
+  return !response.ok && response.error.code === "RATE_LIMITED";
+}
+
+async function wait(ms: number): Promise<void> {
+  await new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function apiRequestWithRateLimitRetry<T>(
+  path: string,
+  options: RequestOptions = {},
+  attempts = 5
+): Promise<ApiResponse<T>> {
+  let response = await apiRequest<T>(path, options);
+
+  for (let attempt = 1; attempt < attempts && isRateLimited(response); attempt += 1) {
+    await wait(750 * attempt);
+    response = await apiRequest<T>(path, options);
+  }
+
+  return response;
 }
 
 function hasModuleAdminAccess(context: AuthContextResponse | null): boolean {
@@ -2036,9 +2077,78 @@ export function App() {
       setAppMessage(null);
 
       try {
+        // Phase 1: identity only. Client sessions must not fan out to admin APIs
+        // (those return AUTH_FORBIDDEN and burn the global rate-limit budget).
+        const [meResponse, contextResponse] = await Promise.all([
+          apiRequestWithRateLimitRetry<AuthCurrentUserResponse>("/auth/me", { token: nextToken }),
+          apiRequestWithRateLimitRetry<AuthContextResponse>("/auth/context", { token: nextToken })
+        ]);
+
+        // Only true auth expiry logs the user out. Transient failures (e.g. RATE_LIMITED)
+        // must keep the session token and avoid pretending the user is logged out.
+        if (!meResponse.ok) {
+          if (isUnauthorized(meResponse)) {
+            clearSession();
+            redirectToLogin();
+            setLoginError(getErrorMessage(meResponse));
+            return;
+          }
+          setAppMessage({
+            tone: "error",
+            text: getErrorMessage(meResponse)
+          });
+          return;
+        }
+
+        if (!contextResponse.ok) {
+          if (isUnauthorized(contextResponse)) {
+            clearSession();
+            redirectToLogin();
+            setLoginError("Your session expired. Please sign in again.");
+            return;
+          }
+          setAppMessage({
+            tone: "error",
+            text: getErrorMessage(contextResponse)
+          });
+          return;
+        }
+
+        if (tokenRef.current !== nextToken) {
+          return;
+        }
+
+        const loadedRoles = contextResponse.data.tenantContext.roles;
+        const clientOnlyViewer = isClientOnlyRole(loadedRoles);
+
+        setCurrentUser(meResponse.data);
+        setAuthContext(contextResponse.data);
+
+        if (clientOnlyViewer) {
+          setTenantContext(null);
+          setCompanyProfile(null);
+          setClients(null);
+          setProjects(null);
+          setAiDeliveryProjects(null);
+          setTasks(null);
+          setInvoices(null);
+          setRecurringInvoices(null);
+          setInvoiceItems(null);
+          setArchivedInvoiceItems(null);
+          setVendors(null);
+          setBills(null);
+          setAvailableModules([]);
+          setActivityAuditLogs(null);
+          setActivityAuditLogsError(null);
+          setTenantModules([]);
+          setTeamMembers(null);
+          setTenantSettings(null);
+          setAppMessage(null);
+          return;
+        }
+
+        // Phase 2: admin/operator bootstrap payloads.
         const [
-          meResponse,
-          contextResponse,
           tenantsResponse,
           companyProfileResponse,
           clientsResponse,
@@ -2056,65 +2166,30 @@ export function App() {
           tenantModulesResponse,
           teamMembersResponse,
           tenantSettingsResponse
-        ] =
-          await Promise.all([
-            apiRequest<AuthCurrentUserResponse>("/auth/me", { token: nextToken }),
-            apiRequest<AuthContextResponse>("/auth/context", { token: nextToken }),
-            apiRequest<TenantListResponse>("/tenants", { token: nextToken }),
-            apiRequest<CompanyProfileResponse>("/company-profile", { token: nextToken }),
-            apiRequest<ClientsResponse>("/clients", { token: nextToken }),
-            apiRequest<ProjectsResponse>("/projects", { token: nextToken }),
-            apiRequest<AiDeliveryProjectsResponse>("/ai-delivery-projects", { token: nextToken }),
-            apiRequest<TasksResponse>("/tasks", { token: nextToken }),
-            apiRequest<InvoicesResponse>("/invoices", { token: nextToken }),
-            apiRequest<RecurringInvoicesResponse>("/recurring-invoices", { token: nextToken }),
-            apiRequest<InvoiceItemsResponse>("/invoice-items", { token: nextToken }),
-            apiRequest<InvoiceItemsResponse>("/invoice-items?archived=true", { token: nextToken }),
-            apiRequest<VendorsResponse>("/vendors", { token: nextToken }),
-            apiRequest<BillsResponse>("/bills", { token: nextToken }),
-            apiRequest<ModuleRegistryResponse>("/modules"),
-            apiRequest<ActivityAuditLogsResponse>("/activity/audit-logs?limit=5", { token: nextToken }),
-            apiRequest<TenantModulesResponse>("/modules/current", { token: nextToken }),
-            apiRequest<TenantMembersResponse>("/tenants/current/members", { token: nextToken }),
-            apiRequest<TenantSettingsResponse>("/tenants/current/settings", { token: nextToken })
-          ]);
-
-        if (!meResponse.ok) {
-          clearSession();
-          redirectToLogin();
-          setLoginError(getErrorMessage(meResponse));
-          return;
-        }
-
-        if (
-          isUnauthorized(contextResponse) ||
-          isUnauthorized(tenantsResponse) ||
-          isUnauthorized(companyProfileResponse) ||
-          isUnauthorized(clientsResponse) ||
-          isUnauthorized(projectsResponse) ||
-          isUnauthorized(aiDeliveryResponse) ||
-          isUnauthorized(tasksResponse) ||
-          isUnauthorized(invoicesResponse) ||
-          isUnauthorized(recurringInvoicesResponse) ||
-          isUnauthorized(invoiceItemsResponse) ||
-          isUnauthorized(archivedInvoiceItemsResponse) ||
-          isUnauthorized(vendorsResponse) ||
-          isUnauthorized(billsResponse) ||
-          isUnauthorized(activityAuditLogsResponse) ||
-          isUnauthorized(tenantModulesResponse)
-        ) {
-          clearSession();
-          redirectToLogin();
-          setLoginError("Your session expired. Please sign in again.");
-          return;
-        }
+        ] = await Promise.all([
+          apiRequest<TenantListResponse>("/tenants", { token: nextToken }),
+          apiRequest<CompanyProfileResponse>("/company-profile", { token: nextToken }),
+          apiRequest<ClientsResponse>("/clients", { token: nextToken }),
+          apiRequest<ProjectsResponse>("/projects", { token: nextToken }),
+          apiRequest<AiDeliveryProjectsResponse>("/ai-delivery-projects", { token: nextToken }),
+          apiRequest<TasksResponse>("/tasks", { token: nextToken }),
+          apiRequest<InvoicesResponse>("/invoices", { token: nextToken }),
+          apiRequest<RecurringInvoicesResponse>("/recurring-invoices", { token: nextToken }),
+          apiRequest<InvoiceItemsResponse>("/invoice-items", { token: nextToken }),
+          apiRequest<InvoiceItemsResponse>("/invoice-items?archived=true", { token: nextToken }),
+          apiRequest<VendorsResponse>("/vendors", { token: nextToken }),
+          apiRequest<BillsResponse>("/bills", { token: nextToken }),
+          apiRequest<ModuleRegistryResponse>("/modules"),
+          apiRequest<ActivityAuditLogsResponse>("/activity/audit-logs?limit=5", { token: nextToken }),
+          apiRequest<TenantModulesResponse>("/modules/current", { token: nextToken }),
+          apiRequest<TenantMembersResponse>("/tenants/current/members", { token: nextToken }),
+          apiRequest<TenantSettingsResponse>("/tenants/current/settings", { token: nextToken })
+        ]);
 
         if (tokenRef.current !== nextToken) {
           return;
         }
 
-        setCurrentUser(meResponse.data);
-        setAuthContext(contextResponse.ok ? contextResponse.data : null);
         setTenantContext(tenantsResponse.ok ? tenantsResponse.data : null);
         setCompanyProfile(companyProfileResponse.ok ? companyProfileResponse.data : null);
         setClients(clientsResponse.ok ? clientsResponse.data : null);
@@ -2136,33 +2211,43 @@ export function App() {
         setTeamMembers(teamMembersResponse.ok ? teamMembersResponse.data : null);
         setTenantSettings(tenantSettingsResponse.ok ? tenantSettingsResponse.data : null);
 
-        const loadedRoles = contextResponse.ok ? contextResponse.data.tenantContext.roles : [];
-        const clientOnlyViewer = isClientOnlyRole(loadedRoles);
-
-        // Client-only sessions are not expected to load admin finance/delivery/module payloads.
-        // Do not surface a global error for those expected permission boundaries.
         if (
-          !clientOnlyViewer &&
-          (!contextResponse.ok ||
-            !tenantsResponse.ok ||
-            !companyProfileResponse.ok ||
-            !clientsResponse.ok ||
-            !projectsResponse.ok ||
-            !aiDeliveryResponse.ok ||
-            !tasksResponse.ok ||
-            !invoicesResponse.ok ||
-            !recurringInvoicesResponse.ok ||
-            !invoiceItemsResponse.ok ||
-            !archivedInvoiceItemsResponse.ok ||
-            !vendorsResponse.ok ||
-            !billsResponse.ok ||
-            !tenantModulesResponse.ok)
+          isUnauthorized(tenantsResponse) ||
+          isUnauthorized(companyProfileResponse) ||
+          isUnauthorized(clientsResponse) ||
+          isUnauthorized(projectsResponse) ||
+          isUnauthorized(aiDeliveryResponse) ||
+          isUnauthorized(tasksResponse) ||
+          isUnauthorized(invoicesResponse) ||
+          isUnauthorized(recurringInvoicesResponse) ||
+          isUnauthorized(invoiceItemsResponse) ||
+          isUnauthorized(archivedInvoiceItemsResponse) ||
+          isUnauthorized(vendorsResponse) ||
+          isUnauthorized(billsResponse) ||
+          isUnauthorized(activityAuditLogsResponse) ||
+          isUnauthorized(tenantModulesResponse)
         ) {
-          setAppMessage({
-            tone: "error",
-            text: "Some protected context could not be loaded."
-          });
-        } else if (clientOnlyViewer && !contextResponse.ok) {
+          clearSession();
+          redirectToLogin();
+          setLoginError("Your session expired. Please sign in again.");
+          return;
+        }
+
+        if (
+          !tenantsResponse.ok ||
+          !companyProfileResponse.ok ||
+          !clientsResponse.ok ||
+          !projectsResponse.ok ||
+          !aiDeliveryResponse.ok ||
+          !tasksResponse.ok ||
+          !invoicesResponse.ok ||
+          !recurringInvoicesResponse.ok ||
+          !invoiceItemsResponse.ok ||
+          !archivedInvoiceItemsResponse.ok ||
+          !vendorsResponse.ok ||
+          !billsResponse.ok ||
+          !tenantModulesResponse.ok
+        ) {
           setAppMessage({
             tone: "error",
             text: "Some protected context could not be loaded."
@@ -4661,8 +4746,12 @@ export function App() {
     activeView === "client-portal" || (isClientOnlyViewer && CLIENT_PORTAL_SHELL_VIEWS.has(activeView));
   const shellActiveView = resolveShellActiveView(activeView, window.location.hash);
 
-  if (!token || !currentUser) {
-    if (token && forcePasswordChangeContext) {
+  if (!token) {
+    return <LoginScreen error={loginError} loading={loginLoading || loading} onLogin={handleLogin} />;
+  }
+
+  if (!currentUser) {
+    if (forcePasswordChangeContext) {
       return (
         <ForcePasswordChangeModal
           error={forcePasswordChangeError}
@@ -4671,7 +4760,27 @@ export function App() {
         />
       );
     }
-    return <LoginScreen error={loginError} loading={loginLoading || loading} onLogin={handleLogin} />;
+
+    // Token is present but bootstrap has not restored the user yet (or hit a
+    // transient failure). Do not render the Sign-in form — that falsely looks
+    // like a logged-out session and clears the hash UX for refresh/back.
+    return (
+      <main className="app-shell-loading" data-testid="session-restore">
+        <p className="eyebrow">DCA OS Lite</p>
+        {loading ? <LoadingState label="Loading" /> : null}
+        {!loading ? (
+          <>
+            <StatusNotice
+              message={appMessage?.text ?? "Unable to restore your session. Retry without signing in again."}
+              tone="error"
+            />
+            <button className="primary-action" type="button" onClick={() => void loadProtectedState(token)}>
+              Retry
+            </button>
+          </>
+        ) : null}
+      </main>
+    );
   }
 
   return (

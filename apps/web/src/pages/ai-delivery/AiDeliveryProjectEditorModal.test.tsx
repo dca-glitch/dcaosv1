@@ -81,7 +81,7 @@ function baseProps(
 }
 
 function getDialog(name: string) {
-  const dialogs = screen.getAllByRole("dialog", { name });
+  const dialogs = screen.getAllByRole("region", { name });
   return dialogs[dialogs.length - 1]!;
 }
 
@@ -111,7 +111,7 @@ describe("AiDeliveryProjectEditorModal", () => {
 
   it("returns null when closed", () => {
     const { container } = render(<AiDeliveryProjectEditorModal {...baseProps({ isOpen: false })} />);
-    expect(container.querySelector('[role="dialog"]')).toBeNull();
+    expect(container.querySelector('[aria-labelledby]')).toBeNull();
   });
 
   it("shows archived project status when selected project is archived", () => {

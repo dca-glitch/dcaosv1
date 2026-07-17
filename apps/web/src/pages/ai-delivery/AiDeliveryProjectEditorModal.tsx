@@ -1,5 +1,5 @@
 import React, { FormEvent } from "react";
-import { Button, Input, Modal, Select, Textarea } from "../../components/ui";
+import { Button, Input, Select, Textarea, WorkflowPageShell } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type {
   AiDeliveryProjectFormValues,
@@ -27,8 +27,8 @@ export type AiDeliveryProjectEditorModalProps = {
 };
 
 /**
- * Create / edit AI Delivery project modal.
- * Titles preserved for smoke compatibility: "Add AI Delivery" / "Edit AI Delivery".
+ * Create / edit AI Delivery project workflow page.
+ * Titles preserved: "Add AI Delivery" / "Edit AI Delivery".
  */
 export function AiDeliveryProjectEditorModal({
   isOpen,
@@ -47,8 +47,10 @@ export function AiDeliveryProjectEditorModal({
     return null;
   }
 
+  const title = isEdit ? "Edit AI Delivery" : "Add AI Delivery";
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEdit ? "Edit AI Delivery" : "Add AI Delivery"}>
+    <WorkflowPageShell onClose={onClose} title={title} titleId="ai-delivery-project-editor-title">
       <form className="entity-form ai-delivery-modal-panel" onSubmit={onSubmit}>
         <div className="field-grid">
           <Select
@@ -141,6 +143,6 @@ export function AiDeliveryProjectEditorModal({
           </Button>
         </div>
       </form>
-    </Modal>
+    </WorkflowPageShell>
   );
 }

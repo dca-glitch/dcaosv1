@@ -20,6 +20,7 @@ import {
   StatusBadge,
   StatusNotice,
   Table,
+  WorkflowPageShell,
 } from "../../components/ui";
 import {
   MI_PROJECT_FILTER_OPTIONS,
@@ -31,6 +32,15 @@ import {
   type MiProjectFilter
 } from "./aiMarketIntelligenceModel";
 import "./ai-market-intelligence.css";
+import "../ai-delivery/ai-delivery-workflow.css";
+
+const MI_PROJECT_CREATE_HASH = "#/ai-market-intelligence/projects/new";
+const MI_HUB_HASH = "#/ai-market-intelligence";
+
+function isMiProjectCreateHash(hash: string): boolean {
+  const value = hash.replace(/^#\/?/, "").replace(/\/+$/, "").split("?")[0] ?? "";
+  return value === "ai-market-intelligence/projects/new";
+}
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -352,6 +362,9 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       await apiData<{ project: MarketIntelligenceProjectSummary }>("POST", "/market-intelligence-projects", projectForm);
       setProjectForm(EMPTY_PROJECT_FORM);
       setShowProjectModal(false);
+      if (window.location.hash !== MI_HUB_HASH) {
+        window.location.hash = MI_HUB_HASH;
+      }
       await loadProjects();
     } catch (error) {
       setActionError(error instanceof Error ? error.message : "Project could not be created.");
@@ -359,6 +372,34 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
       setSavingProject(false);
     }
   }, [loadProjects, projectForm]);
+
+  const openCreateProjectPage = useCallback(() => {
+    setShowProjectModal(true);
+    if (window.location.hash !== MI_PROJECT_CREATE_HASH) {
+      window.location.hash = MI_PROJECT_CREATE_HASH;
+    }
+  }, []);
+
+  const closeCreateProjectPage = useCallback(() => {
+    setShowProjectModal(false);
+    setProjectForm(EMPTY_PROJECT_FORM);
+    if (isMiProjectCreateHash(window.location.hash)) {
+      window.location.hash = MI_HUB_HASH;
+    }
+  }, []);
+
+  useEffect(() => {
+    const applyHash = () => {
+      if (isMiProjectCreateHash(window.location.hash)) {
+        setShowProjectModal(true);
+        return;
+      }
+      setShowProjectModal(false);
+    };
+    applyHash();
+    window.addEventListener("hashchange", applyHash);
+    return () => window.removeEventListener("hashchange", applyHash);
+  }, []);
 
   const handleCreateSource = useCallback(async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -691,10 +732,106 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
   }
 
   return (
-    <section className="view-section mi-page" aria-labelledby="market-intelligence-title">
+    <section className="view-section mi-page entity-editor-page" aria-labelledby="market-intelligence-title">
+      {showProjectModal ? (
+        <WorkflowPageShell
+          backLabel="Back to Market Intelligence"
+          onClose={closeCreateProjectPage}
+          title="Create research project"
+          titleId="mi-create-project-title"
+        >
+          <form className="entity-form entity-editor-form" onSubmit={handleCreateProject}>
+            <p className="muted-text">Optional client/month fields help group research with AI Delivery and monthly reports.</p>
+            {actionError ? <StatusNotice tone="error" message={actionError} /> : null}
+            <div className="field-grid">
+              <label className="field-span-2">
+                Project name — required
+                <input
+                  onChange={(event) => setProjectForm((current) => ({ ...current, title: event.target.value }))}
+                  required
+                  value={projectForm.title}
+                />
+              </label>
+              <label className="field-span-2">
+                Description
+                <textarea
+                  onChange={(event) => setProjectForm((current) => ({ ...current, description: event.target.value }))}
+                  rows={3}
+                  value={projectForm.description}
+                />
+              </label>
+              <label>
+                Keywords
+                <input
+                  onChange={(event) => setProjectForm((current) => ({ ...current, keywords: event.target.value }))}
+                  placeholder="AI tools, SaaS pricing"
+                  value={projectForm.keywords}
+                />
+              </label>
+              <label>
+                Competitors
+                <input
+                  onChange={(event) => setProjectForm((current) => ({ ...current, competitors: event.target.value }))}
+                  placeholder="Acme Corp, Rival Co"
+                  value={projectForm.competitors}
+                />
+              </label>
+              <label>
+                Market niche
+                <input
+                  onChange={(event) => setProjectForm((current) => ({ ...current, niche: event.target.value }))}
+                  value={projectForm.niche}
+                />
+              </label>
+              <label>
+                Product / service focus
+                <input
+                  onChange={(event) => setProjectForm((current) => ({ ...current, productServiceFocus: event.target.value }))}
+                  value={projectForm.productServiceFocus}
+                />
+              </label>
+              <label>
+                Client — required
+                <select
+                  onChange={(event) => setProjectForm((current) => ({ ...current, clientId: event.target.value }))}
+                  required
+                  value={projectForm.clientId}
+                >
+                  <option value="">Select client</option>
+                  {activeClients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.name}
+                      {client.website ? ` (${client.website})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Target month
+                <input
+                  onChange={(event) => setProjectForm((current) => ({ ...current, targetMonth: event.target.value }))}
+                  placeholder="2026-07"
+                  value={projectForm.targetMonth}
+                />
+              </label>
+            </div>
+            <div className="modal-footer">
+              <button className="secondary-action" onClick={closeCreateProjectPage} type="button">
+                Cancel
+              </button>
+              <button className="primary-action" disabled={savingProject} type="submit">
+                {savingProject ? "Creating…" : "Create project"}
+              </button>
+            </div>
+          </form>
+        </WorkflowPageShell>
+      ) : null}
+
+      {!showProjectModal ? (
+      <>
       <PageHeader
         actions={
-          <button className="primary-action" onClick={() => setShowProjectModal(true)} type="button">
+          <button className="primary-action" onClick={openCreateProjectPage} type="button">
             New project
           </button>
         }
@@ -1285,92 +1422,7 @@ export function AiMarketIntelligencePage({ clients }: AiMarketIntelligencePagePr
         </div>
       </div>
 
-      {showProjectModal ? (
-        <Modal isOpen onClose={() => setShowProjectModal(false)} title="Create research project">
-          <form className="entity-form" onSubmit={handleCreateProject}>
-            <p className="muted-text">Optional client/month fields help group research with AI Delivery and monthly reports.</p>
-            <div className="field-grid">
-              <label className="field-span-2">
-                Project name — required
-                <input
-                  onChange={(event) => setProjectForm((current) => ({ ...current, title: event.target.value }))}
-                  required
-                  value={projectForm.title}
-                />
-              </label>
-              <label className="field-span-2">
-                Description
-                <textarea
-                  onChange={(event) => setProjectForm((current) => ({ ...current, description: event.target.value }))}
-                  rows={3}
-                  value={projectForm.description}
-                />
-              </label>
-              <label>
-                Keywords
-                <input
-                  onChange={(event) => setProjectForm((current) => ({ ...current, keywords: event.target.value }))}
-                  placeholder="AI tools, SaaS pricing"
-                  value={projectForm.keywords}
-                />
-              </label>
-              <label>
-                Competitors
-                <input
-                  onChange={(event) => setProjectForm((current) => ({ ...current, competitors: event.target.value }))}
-                  placeholder="Acme Corp, Rival Co"
-                  value={projectForm.competitors}
-                />
-              </label>
-              <label>
-                Market niche
-                <input
-                  onChange={(event) => setProjectForm((current) => ({ ...current, niche: event.target.value }))}
-                  value={projectForm.niche}
-                />
-              </label>
-              <label>
-                Product / service focus
-                <input
-                  onChange={(event) => setProjectForm((current) => ({ ...current, productServiceFocus: event.target.value }))}
-                  value={projectForm.productServiceFocus}
-                />
-              </label>
-              <label>
-                Client — required
-                <select
-                  onChange={(event) => setProjectForm((current) => ({ ...current, clientId: event.target.value }))}
-                  required
-                  value={projectForm.clientId}
-                >
-                  <option value="">Select client</option>
-                  {activeClients.map((client) => (
-                    <option key={client.id} value={client.id}>
-                      {client.name}
-                      {client.website ? ` (${client.website})` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Target month
-                <input
-                  onChange={(event) => setProjectForm((current) => ({ ...current, targetMonth: event.target.value }))}
-                  placeholder="2026-07"
-                  value={projectForm.targetMonth}
-                />
-              </label>
-            </div>
-            <div className="modal-footer">
-              <button className="secondary-action" onClick={() => setShowProjectModal(false)} type="button">
-                Cancel
-              </button>
-              <button className="primary-action" disabled={savingProject} type="submit">
-                {savingProject ? "Creating…" : "Create project"}
-              </button>
-            </div>
-          </form>
-        </Modal>
+      </>
       ) : null}
 
       {showSourceModal ? (

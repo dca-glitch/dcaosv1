@@ -16,6 +16,7 @@ export { MetricCard } from "./MetricCard";
 export { Modal, type ModalProps, type ModalSize } from "./Modal";
 export { ModalActions } from "./ModalActions";
 export { PageHeader } from "./PageHeader";
+export { WorkflowPageShell, type WorkflowPageShellProps } from "./WorkflowPageShell";
 export { RingMeter, type RingMeterProps, type RingMeterSize } from "./RingMeter";
 export { RingMetricTile, type RingMetricTileProps } from "./RingMetricTile";
 export { SectionPanel } from "./SectionPanel";

@@ -131,12 +131,12 @@ function baseProps(overrides: Partial<AiDeliveryContentDraftModalProps> = {}): A
 }
 
 function getDialog() {
-  const dialogs = screen.getAllByRole("dialog", { name: "AI Content Production" });
+  const dialogs = screen.getAllByRole("region", { name: "AI Content Production" });
   return dialogs[dialogs.length - 1]!;
 }
 
 describe("AiDeliveryContentDraftModal", () => {
-  it("opens with the AI Content Production accessible dialog name", () => {
+  it("opens with the AI Content Production accessible page heading", () => {
     render(<AiDeliveryContentDraftModal {...baseProps()} />);
     expect(getDialog()).toBeTruthy();
   });
@@ -370,7 +370,7 @@ describe("AiDeliveryContentDraftModal", () => {
     expect(within(dialog).queryByText(/sk-|Bearer |OPENAI|prompt:/i)).toBeNull();
   });
 
-  it("invokes close and new draft; Escape closes via modal foundation", () => {
+  it("invokes close and new draft; Back to AI Delivery closes the page", () => {
     const onClose = vi.fn();
     const onNewDraft = vi.fn();
     render(<AiDeliveryContentDraftModal {...baseProps({ onClose, onNewDraft })} />);
@@ -380,7 +380,7 @@ describe("AiDeliveryContentDraftModal", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "New draft" }));
     expect(onNewDraft).toHaveBeenCalled();
 
-    fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Back to AI Delivery" }).at(-1)!);
     expect(onClose).toHaveBeenCalled();
   });
 

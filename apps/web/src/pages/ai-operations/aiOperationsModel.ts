@@ -216,17 +216,33 @@ export function buildStatusSummaryItems(
     .map(([status, count]) => ({ key: status, label: status, count }));
 }
 
-/** Deep-link helper for Daily Cockpit → `#/ai-operations?runId=…`. */
+/** Deep-link helper: `#/ai-operations/runs/{id}` or legacy `#/ai-operations?runId=…`. */
 export function parseAiOperationsRunIdFromHash(hash: string): string | null {
   const trimmed = hash.trim();
   if (!trimmed) {
     return null;
   }
-  const queryIndex = trimmed.indexOf("?");
+  const withoutHash = trimmed.replace(/^#\/?/, "");
+  const pathOnly = withoutHash.split("?")[0] ?? "";
+  const pathMatch = /^ai-operations\/runs\/([^/]+)$/.exec(pathOnly);
+  if (pathMatch?.[1]) {
+    const fromPath = decodeURIComponent(pathMatch[1]).trim();
+    if (fromPath.length > 0) {
+      return fromPath;
+    }
+  }
+  const queryIndex = withoutHash.indexOf("?");
   if (queryIndex < 0) {
     return null;
   }
-  const params = new URLSearchParams(trimmed.slice(queryIndex + 1));
+  const params = new URLSearchParams(withoutHash.slice(queryIndex + 1));
   const runId = params.get("runId")?.trim();
   return runId && runId.length > 0 ? runId : null;
+}
+
+export function buildAiOperationsRunHash(runId: string | null): string {
+  if (!runId) {
+    return "#/ai-operations";
+  }
+  return `#/ai-operations/runs/${encodeURIComponent(runId)}`;
 }

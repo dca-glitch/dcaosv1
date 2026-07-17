@@ -125,12 +125,12 @@ function baseProps(overrides: Partial<AiDeliveryContentPlanModalProps> = {}): Ai
 }
 
 function getDialog() {
-  const dialogs = screen.getAllByRole("dialog", { name: "Monthly SEO / Content Plan" });
+  const dialogs = screen.getAllByRole("region", { name: "Monthly SEO / Content Plan" });
   return dialogs[dialogs.length - 1]!;
 }
 
 describe("AiDeliveryContentPlanModal", () => {
-  it("opens with the Monthly SEO / Content Plan accessible dialog name", () => {
+  it("opens with the Monthly SEO / Content Plan accessible page heading", () => {
     render(<AiDeliveryContentPlanModal {...baseProps()} />);
     expect(getDialog()).toBeTruthy();
   });
@@ -314,10 +314,10 @@ describe("AiDeliveryContentPlanModal", () => {
     expect(within(dialog).getByText("No PDF generated yet")).toBeTruthy();
   });
 
-  it("closes via Escape when the modal foundation supports it", () => {
+  it("closes via Back to AI Delivery on the workflow page shell", () => {
     const onClose = vi.fn();
     render(<AiDeliveryContentPlanModal {...baseProps({ onClose })} />);
-    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Back to AI Delivery" }).at(-1)!);
     expect(onClose).toHaveBeenCalled();
   });
 

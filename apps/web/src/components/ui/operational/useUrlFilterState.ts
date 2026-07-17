@@ -49,8 +49,7 @@ function writeParam(key: string, value: string | null, defaultValue: string): vo
   if (window.location.hash === nextHash) {
     return;
   }
-  // replaceState avoids hashchange when only the query changes, so App.tsx
-  // normalizeHash (which does not strip `?…`) will not remount the wrong view.
+  // replaceState avoids hashchange when only the query changes (view stays put).
   window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${nextHash}`);
 }
 

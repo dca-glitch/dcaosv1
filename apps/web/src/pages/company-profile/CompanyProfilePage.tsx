@@ -1,5 +1,4 @@
 import { type FormEvent, useState } from "react";
-import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -10,10 +9,13 @@ import {
   PageHeader,
   SectionPanel,
   StatusBadge,
+  WorkflowPageShell,
 } from "../../components/ui";
+import { useEntityEditorHash } from "../../lib/use-entity-editor-hash";
 import { SettingsSubNav } from "../settings/SettingsSubNav";
 import { settingsAccessModeLabel } from "../settings/settings-display";
 import "../settings/settings.css";
+import "../ai-delivery/ai-delivery-workflow.css";
 
 export type CompanyProfileSummary = {
   id: string;
@@ -81,60 +83,71 @@ const emptyForm = (): CompanyProfileFormValues => ({
   creditNotePrefix: "DCA-CN"
 });
 
+function formFromProfile(companyProfile: CompanyProfileSummary): CompanyProfileFormValues {
+  return {
+    name: companyProfile.name,
+    legalName: companyProfile.legalName ?? "",
+    email: companyProfile.email ?? "",
+    phone: companyProfile.phone ?? "",
+    website: companyProfile.website ?? "",
+    taxId: companyProfile.taxId ?? "",
+    country: companyProfile.country ?? "",
+    registrationNumber: companyProfile.registrationNumber ?? "",
+    billingAddress: companyProfile.billingAddress ?? "",
+    paymentInstructions: companyProfile.paymentInstructions ?? "",
+    logoUrl: companyProfile.logoUrl ?? "",
+    currency: companyProfile.currency ?? "USD",
+    invoiceTemplateKey: companyProfile.invoiceTemplateKey ?? "classic",
+    invoicePrefix: companyProfile.invoicePrefix ?? "DCA-INV",
+    creditNotePrefix: companyProfile.creditNotePrefix ?? "DCA-CN"
+  };
+}
+
 export function CompanyProfilePage({ companyProfile, canEdit, error, loading, onSave }: CompanyProfilePageProps) {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [draft, setDraft] = useState<CompanyProfileFormValues>(
-    companyProfile
-      ? {
-          name: companyProfile.name,
-          legalName: companyProfile.legalName ?? "",
-          email: companyProfile.email ?? "",
-          phone: companyProfile.phone ?? "",
-          website: companyProfile.website ?? "",
-          taxId: companyProfile.taxId ?? "",
-          country: companyProfile.country ?? "",
-          registrationNumber: companyProfile.registrationNumber ?? "",
-          billingAddress: companyProfile.billingAddress ?? "",
-          paymentInstructions: companyProfile.paymentInstructions ?? "",
-          logoUrl: companyProfile.logoUrl ?? "",
-          currency: companyProfile.currency ?? "USD",
-          invoiceTemplateKey: companyProfile.invoiceTemplateKey ?? "classic",
-          invoicePrefix: companyProfile.invoicePrefix ?? "DCA-INV",
-          creditNotePrefix: companyProfile.creditNotePrefix ?? "DCA-CN"
-        }
-      : emptyForm()
+    companyProfile ? formFromProfile(companyProfile) : emptyForm()
   );
 
   const submitLabel = companyProfile ? "Update company profile" : "Create company profile";
+  const editorTitle = companyProfile ? "Edit Company Profile" : "Create Company Profile";
+
+  function closeEditorState() {
+    setIsEditorOpen(false);
+  }
+
+  function applyProfileDraft(profile: CompanyProfileSummary | null) {
+    setDraft(profile ? formFromProfile(profile) : emptyForm());
+    setIsEditorOpen(true);
+  }
+
+  const { navigateEditor } = useEntityEditorHash({
+    base: "company-profile",
+    listRevision: companyProfile,
+    openCreateFromHash: () => {
+      applyProfileDraft(null);
+    },
+    openEditFromHash: (id) => {
+      if (!companyProfile || companyProfile.id !== id) return false;
+      applyProfileDraft(companyProfile);
+      return true;
+    },
+    closeFromHash: closeEditorState
+  });
 
   function closeEditor() {
-    setIsEditing(false);
+    closeEditorState();
+    navigateEditor({ kind: "hub" });
   }
 
   function openEditor() {
-    setDraft(
-      companyProfile
-        ? {
-            name: companyProfile.name,
-            legalName: companyProfile.legalName ?? "",
-            email: companyProfile.email ?? "",
-            phone: companyProfile.phone ?? "",
-            website: companyProfile.website ?? "",
-            taxId: companyProfile.taxId ?? "",
-            country: companyProfile.country ?? "",
-            registrationNumber: companyProfile.registrationNumber ?? "",
-            billingAddress: companyProfile.billingAddress ?? "",
-            paymentInstructions: companyProfile.paymentInstructions ?? "",
-            logoUrl: companyProfile.logoUrl ?? "",
-            currency: companyProfile.currency ?? "USD",
-            invoiceTemplateKey: companyProfile.invoiceTemplateKey ?? "classic",
-            invoicePrefix: companyProfile.invoicePrefix ?? "DCA-INV",
-            creditNotePrefix: companyProfile.creditNotePrefix ?? "DCA-CN"
-          }
-        : emptyForm()
-    );
-    setIsEditing(true);
+    applyProfileDraft(companyProfile);
+    if (companyProfile) {
+      navigateEditor({ kind: "edit", id: companyProfile.id });
+    } else {
+      navigateEditor({ kind: "new" });
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -161,146 +174,16 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
   const profileStatusLabel = companyProfile ? (companyProfile.isActive ? "Active" : "Inactive") : "Not set";
 
   return (
-    <section className="view-section settings-admin" aria-labelledby="company-profile-title" data-density="compact">
-      <PageHeader
-        actions={
-          canEdit ? (
-            <Button onClick={openEditor} type="button">
-              {companyProfile ? "Edit Profile" : "Create Profile"}
-            </Button>
-          ) : undefined
-        }
-        description="Issuer details for finance documents. Invite and password reset remain deferred."
-        eyebrow="Settings"
-        title="Company Profile"
-        titleId="company-profile-title"
-      />
-      <SettingsSubNav activeView="company-profile" />
-      <div className="summary-grid metric-grid company-profile-shell-metrics" aria-label="Company profile shell metrics">
-        <MetricCard
-          helper={companyProfile?.name ?? "Create profile to enable finance issuer details"}
-          label="Profile status"
-          metricKey="company-profile-status"
-          value={profileStatusLabel}
-        />
-        <MetricCard
-          helper={companyProfile?.currency ?? "USD default"}
-          label="Default currency"
-          metricKey="company-profile-currency"
-          value={companyProfile?.currency ?? "—"}
-        />
-        <MetricCard
-          helper={canEdit ? "Admins can update issuer details" : "View-only for this membership"}
-          label="Access mode"
-          metricKey="company-profile-access-mode"
-          value={settingsAccessModeLabel(canEdit)}
-        />
-      </div>
-      {!canEdit ? (
-        <p className="muted-text">Read-only view. Company profile edits require an owner or admin tenant role.</p>
-      ) : null}
-      {!companyProfile ? (
-        <EmptyState
-          message="No company profile exists yet. Create the single active profile when you're ready."
-          title="Profile not set"
-        />
-      ) : (
-        <SectionPanel
-          tone="compact"
-          description="Single active company profile used as issuer on invoices and credit notes. API keys are never shown on this page."
-          title="Profile details"
+    <section className="view-section settings-admin entity-editor-page" aria-labelledby="company-profile-title" data-density="compact">
+      {isEditorOpen ? (
+        <WorkflowPageShell
+          backLabel="Back to Company profile"
+          eyebrow={companyProfile ? "Edit" : "Create"}
+          onClose={closeEditor}
+          title={editorTitle}
+          titleId="company-profile-editor-title"
         >
-        <article className="entity-card entity-card-wide">
-          <div className="entity-card-header">
-            <div>
-              <StatusBadge status={companyProfile.isActive ? "Active" : "Inactive"} />
-              <h2>{companyProfile.name}</h2>
-            </div>
-            {canEdit ? (
-              <Button onClick={openEditor} type="button" variant="secondary">
-                Edit
-              </Button>
-            ) : null}
-          </div>
-          <div className="entity-field-grid">
-            <div>
-              <span>Legal name</span>
-              <strong>{companyProfile.legalName || "Not set"}</strong>
-            </div>
-            <div>
-              <span>Email</span>
-              <strong>{companyProfile.email || "Not set"}</strong>
-            </div>
-            <div>
-              <span>Phone</span>
-              <strong>{companyProfile.phone || "Not set"}</strong>
-            </div>
-            <div>
-              <span>Website</span>
-              <strong>{companyProfile.website || "Not set"}</strong>
-            </div>
-            <div>
-              <span>Tax ID</span>
-              <strong>{companyProfile.taxId || "Not set"}</strong>
-            </div>
-            <div>
-              <span>Country</span>
-              <strong>{companyProfile.country || "Not set"}</strong>
-            </div>
-            <div>
-              <span>Registration number</span>
-              <strong>{companyProfile.registrationNumber || "Not set"}</strong>
-            </div>
-            <div>
-              <span>Currency</span>
-              <strong>{companyProfile.currency || "USD"}</strong>
-            </div>
-            <div>
-              <span>Invoice template</span>
-              <strong>{companyProfile.invoiceTemplateKey || "classic"}</strong>
-            </div>
-            <div>
-              <span>Invoice prefix</span>
-              <strong>{companyProfile.invoicePrefix || "DCA-INV"}</strong>
-            </div>
-            <div>
-              <span>Credit note prefix</span>
-              <strong>{companyProfile.creditNotePrefix || "DCA-CN"}</strong>
-            </div>
-            <div className="entity-span-2">
-              <span>Billing address</span>
-              <strong>{companyProfile.billingAddress || "Not set"}</strong>
-            </div>
-            <div className="entity-span-2">
-              <span>Payment instructions</span>
-              <strong>{companyProfile.paymentInstructions || "Not set"}</strong>
-            </div>
-            <div className="entity-span-2">
-              <span>Logo URL</span>
-              <strong>{companyProfile.logoUrl || "Not set"}</strong>
-            </div>
-          </div>
-        </article>
-        </SectionPanel>
-      )}
-
-      <SectionPanel
-        tone="compact"
-        description="WordPress site URLs and application passwords are configured per client in Client Hub → Websites or channels."
-        title="WordPress publication (moved)"
-      >
-        <p className="muted-text">
-          Tenant-level WordPress config is deprecated. Open a client record and use <strong>Open hub</strong> to manage
-          websites or channels, encrypted credentials, analytics profile, and publication logs.
-        </p>
-        <a className="secondary-action" href="#/clients">
-          Go to Clients
-        </a>
-      </SectionPanel>
-
-      {isEditing ? (
-        <Modal isOpen onClose={closeEditor} title={companyProfile ? "Edit Company Profile" : "Create Company Profile"}>
-          <form className="entity-form" onSubmit={handleSubmit}>
+          <form className="entity-form entity-editor-form" onSubmit={handleSubmit}>
             <p className="muted-text">Used as issuer details on finance documents. Visible only to admin team unless used on generated documents.</p>
             <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
             <div className="field-grid">
@@ -477,7 +360,147 @@ export function CompanyProfilePage({ companyProfile, canEdit, error, loading, on
             </div>
             <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
           </form>
-        </Modal>
+        </WorkflowPageShell>
+      ) : null}
+
+      {!isEditorOpen ? (
+        <>
+      <PageHeader
+        actions={
+          canEdit ? (
+            <Button onClick={openEditor} type="button">
+              {companyProfile ? "Edit Profile" : "Create Profile"}
+            </Button>
+          ) : undefined
+        }
+        description="Issuer details for finance documents. Invite and password reset remain deferred."
+        eyebrow="Settings"
+        title="Company Profile"
+        titleId="company-profile-title"
+      />
+      <SettingsSubNav activeView="company-profile" />
+      <div className="summary-grid metric-grid company-profile-shell-metrics" aria-label="Company profile shell metrics">
+        <MetricCard
+          helper={companyProfile?.name ?? "Create profile to enable finance issuer details"}
+          label="Profile status"
+          metricKey="company-profile-status"
+          value={profileStatusLabel}
+        />
+        <MetricCard
+          helper={companyProfile?.currency ?? "USD default"}
+          label="Default currency"
+          metricKey="company-profile-currency"
+          value={companyProfile?.currency ?? "—"}
+        />
+        <MetricCard
+          helper={canEdit ? "Admins can update issuer details" : "View-only for this membership"}
+          label="Access mode"
+          metricKey="company-profile-access-mode"
+          value={settingsAccessModeLabel(canEdit)}
+        />
+      </div>
+      {!canEdit ? (
+        <p className="muted-text">Read-only view. Company profile edits require an owner or admin tenant role.</p>
+      ) : null}
+      {!companyProfile ? (
+        <EmptyState
+          message="No company profile exists yet. Create the single active profile when you're ready."
+          title="Profile not set"
+        />
+      ) : (
+        <SectionPanel
+          tone="compact"
+          description="Single active company profile used as issuer on invoices and credit notes. API keys are never shown on this page."
+          title="Profile details"
+        >
+        <article className="entity-card entity-card-wide">
+          <div className="entity-card-header">
+            <div>
+              <StatusBadge status={companyProfile.isActive ? "Active" : "Inactive"} />
+              <h2>{companyProfile.name}</h2>
+            </div>
+            {canEdit ? (
+              <Button onClick={openEditor} type="button" variant="secondary">
+                Edit
+              </Button>
+            ) : null}
+          </div>
+          <div className="entity-field-grid">
+            <div>
+              <span>Legal name</span>
+              <strong>{companyProfile.legalName || "Not set"}</strong>
+            </div>
+            <div>
+              <span>Email</span>
+              <strong>{companyProfile.email || "Not set"}</strong>
+            </div>
+            <div>
+              <span>Phone</span>
+              <strong>{companyProfile.phone || "Not set"}</strong>
+            </div>
+            <div>
+              <span>Website</span>
+              <strong>{companyProfile.website || "Not set"}</strong>
+            </div>
+            <div>
+              <span>Tax ID</span>
+              <strong>{companyProfile.taxId || "Not set"}</strong>
+            </div>
+            <div>
+              <span>Country</span>
+              <strong>{companyProfile.country || "Not set"}</strong>
+            </div>
+            <div>
+              <span>Registration number</span>
+              <strong>{companyProfile.registrationNumber || "Not set"}</strong>
+            </div>
+            <div>
+              <span>Currency</span>
+              <strong>{companyProfile.currency || "USD"}</strong>
+            </div>
+            <div>
+              <span>Invoice template</span>
+              <strong>{companyProfile.invoiceTemplateKey || "classic"}</strong>
+            </div>
+            <div>
+              <span>Invoice prefix</span>
+              <strong>{companyProfile.invoicePrefix || "DCA-INV"}</strong>
+            </div>
+            <div>
+              <span>Credit note prefix</span>
+              <strong>{companyProfile.creditNotePrefix || "DCA-CN"}</strong>
+            </div>
+            <div className="entity-span-2">
+              <span>Billing address</span>
+              <strong>{companyProfile.billingAddress || "Not set"}</strong>
+            </div>
+            <div className="entity-span-2">
+              <span>Payment instructions</span>
+              <strong>{companyProfile.paymentInstructions || "Not set"}</strong>
+            </div>
+            <div className="entity-span-2">
+              <span>Logo URL</span>
+              <strong>{companyProfile.logoUrl || "Not set"}</strong>
+            </div>
+          </div>
+        </article>
+        </SectionPanel>
+      )}
+
+      <SectionPanel
+        tone="compact"
+        description="WordPress site URLs and application passwords are configured per client in Client Hub → Websites or channels."
+        title="WordPress publication (moved)"
+      >
+        <p className="muted-text">
+          Tenant-level WordPress config is deprecated. Open a client record and use <strong>Open hub</strong> to manage
+          websites or channels, encrypted credentials, analytics profile, and publication logs.
+        </p>
+        <a className="secondary-action" href="#/clients">
+          Go to Clients
+        </a>
+      </SectionPanel>
+        </>
       ) : null}
     </section>
   );

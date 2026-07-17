@@ -197,12 +197,12 @@ function baseProps(overrides: Partial<AiDeliveryResearchModalProps> = {}): AiDel
 }
 
 function getDialog() {
-  const dialogs = screen.getAllByRole("dialog", { name: "Research / Sources" });
+  const dialogs = screen.getAllByRole("region", { name: "Research / Sources" });
   return dialogs[dialogs.length - 1]!;
 }
 
 describe("AiDeliveryResearchModal", () => {
-  it("opens with the Research / Sources accessible dialog name", () => {
+  it("opens with the Research / Sources accessible page heading", () => {
     render(<AiDeliveryResearchModal {...baseProps()} />);
     expect(getDialog()).toBeTruthy();
   });
@@ -363,7 +363,7 @@ describe("AiDeliveryResearchModal", () => {
     expect(onArchiveSource).toHaveBeenCalledWith("p1", source);
   });
 
-  it("invokes close and new-entity actions; Escape closes via modal foundation", () => {
+  it("invokes close and new-entity actions; Back to AI Delivery closes the page", () => {
     const onClose = vi.fn();
     const onNewRequest = vi.fn();
     const onNewSummary = vi.fn();
@@ -381,7 +381,7 @@ describe("AiDeliveryResearchModal", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "New source" }));
     expect(onNewSource).toHaveBeenCalled();
 
-    fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Back to AI Delivery" }).at(-1)!);
     expect(onClose).toHaveBeenCalled();
   });
 

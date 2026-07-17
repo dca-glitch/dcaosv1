@@ -182,15 +182,7 @@ function BriefAiResearchPlaceholder() {
   return (
     <div className="brief-section brief-section--ai-research" style={{ marginTop: "1.5rem" }}>
       <BriefSectionHeading>AI Research & Market Intelligence</BriefSectionHeading>
-      <div
-        className="brief-ai-research-placeholder"
-        style={{
-          border: "1px dashed rgba(148, 163, 184, 0.35)",
-          borderRadius: "8px",
-          background: "rgba(148, 163, 184, 0.06)",
-          padding: "1rem 1.25rem"
-        }}
-      >
+      <div className="brief-ai-research-placeholder">
         <p className="muted-text" style={{ margin: 0 }}>
           AI research will appear here after your brief is reviewed by the DCA team.
         </p>

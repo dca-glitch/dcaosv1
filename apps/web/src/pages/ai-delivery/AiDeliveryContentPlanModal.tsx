@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, EmptyState, Input, MetricCard, Modal, SectionPanel, Select, StatusBadge, Textarea } from "../../components/ui";
+import { Button, EmptyState, Input, MetricCard, SectionPanel, Select, StatusBadge, Textarea, WorkflowPageShell } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -163,7 +163,7 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Monthly SEO / Content Plan">
+    <WorkflowPageShell onClose={onClose} title="Monthly SEO / Content Plan" titleId="ai-delivery-content-plan-title">
         {loading ? (
           <AiDeliveryInlineLoading label="Loading content plan" />
         ) : project ? (
@@ -463,6 +463,6 @@ export function AiDeliveryContentPlanModal(props: AiDeliveryContentPlanModalProp
           <div>Project not found.</div>
         )}
 
-    </Modal>
+    </WorkflowPageShell>
   );
 }

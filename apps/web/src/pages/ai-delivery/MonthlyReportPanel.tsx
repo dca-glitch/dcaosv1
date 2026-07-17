@@ -1,5 +1,5 @@
 import React, { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { Alert, Button, EmptyState, Input, LoadingState, MetricCard, Modal, SectionPanel, Select, StatusBadge, Textarea } from "../../components/ui";
+import { Alert, Button, EmptyState, Input, LoadingState, MetricCard, SectionPanel, Select, StatusBadge, Textarea, WorkflowPageShell } from "../../components/ui";
 import type { AiDeliveryProjectSummary } from "./AiDeliveryPage";
 import {
   MONTHLY_REPORT_WORKFLOW_STEPS,
@@ -751,10 +751,10 @@ export function MonthlyReportPanel({
   const lastUpdatedMeta = formatLastUpdatedMeta(report?.updatedAt);
 
   return (
-    <Modal
-      isOpen
+    <WorkflowPageShell
       onClose={onClose}
       title={`Monthly Report — ${project.name}`}
+      titleId="ai-delivery-monthly-report-title"
     >
       <div className="monthly-report-panel stack gap-md">
       {/* Computed Summary Section */}
@@ -1180,7 +1180,7 @@ export function MonthlyReportPanel({
                                 fullWidth
                                 onChange={(e) => setMiDraftValue(e.target.value)}
                                 rows={8}
-                                style={{ fontFamily: "monospace", fontSize: "0.8125rem" }}
+                                style={{ fontFamily: "var(--ds-font-mono, 'JetBrains Mono', ui-monospace, monospace)", fontSize: "0.8125rem" }}
                                 value={miDraftValue}
                               />
                               <div className="card-actions" style={{ marginTop: "0.5rem" }}>
@@ -1652,6 +1652,6 @@ export function MonthlyReportPanel({
         ) : null}
       </SectionPanel>
       </div>
-    </Modal>
+    </WorkflowPageShell>
   );
 }
