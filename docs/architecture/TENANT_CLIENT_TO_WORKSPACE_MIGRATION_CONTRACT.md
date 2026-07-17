@@ -23,6 +23,12 @@ P1.1 may add Workspace identity, membership, and role relation structures with a
 - switch query, reporting, finance, integration, material, or search scope;
 - access production/VPS, secrets, live Google OAuth/sync, or remote data.
 
+## Preparation versus execution gate
+
+P1.2a–P1.4a may prepare mapping validation, dry-run capability, reconciliation comparison tooling, feature-flagged inactive paths, authorization/isolation proof, rollback plans, and staging-rehearsal evidence. They must not backfill, execute reconciliation, switch an authoritative path, clean up legacy structures, or apply a database migration.
+
+P1.2b–P1.4b are future execution-only packages. They require approved mapping, dry-run and clean reconciliation evidence, backup/restore and rollback proof, security/isolation proof, staging rehearsal, and explicit owner acceptance. `Tenant` and `Client` remain authoritative and no Workspace client-facing authority is activated until that gate passes.
+
 ## Isolation and rollback
 
 - Server-side membership and Workspace scope are required; caller-supplied identifiers are never authority.

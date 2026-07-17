@@ -46,7 +46,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Live GA4/GSC integration | WITHDRAWN | No live OAuth/sync/manual import claim |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 canonical prerequisite package | IMPLEMENTED | Current authority reconciled to the private-agency charter; implementation remains separate |
-| Phase 1 Workspace foundation | IN_PROGRESS (P1.1 expand-only) | Additive Workspace schema foundation is implemented; legacy Tenant/Client behavior remains authoritative pending later backfill, reconciliation, and switch packages |
+| Phase 1 Workspace foundation | IN_PROGRESS (P1.1 complete; P1.2a–P1.4a preparation) | Legacy Tenant/Client behavior remains authoritative; execution-only backfill, reconciliation, and switch require the future owner-critical gate |
 
 ## 4. Current boundaries that must not be overclaimed
 

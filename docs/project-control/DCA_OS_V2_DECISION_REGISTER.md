@@ -10,6 +10,7 @@
 | V2-004 | Canonical Workspace roles are `Admin`, `Workspace Manager`, `Team Member`, `Client Manager`, and `Client User`. | DECIDED | Authorization is deny-by-default and server-side; existing tenant-role enforcement remains current until a later switch. |
 | V2-005 | Migration order is expand -> backfill -> reconciliation -> switch -> cleanup. | DECIDED | P1.1 is expand-only; it cannot backfill, switch callers, clean up legacy structures, or perform destructive change. |
 | V2-006 | Production/VPS, secrets, live Google OAuth/sync, and destructive migration remain outside this package. | DECIDED | Local non-production development and validation only. |
+| V2-007 | P1.2a–P1.4a are preparation-only; P1.2b–P1.4b execute backfill, reconciliation, and switch only after a future owner-critical gate. | DECIDED | Preparation may produce mappings, dry runs, proofs, flags, and rollback plans, but must not mutate data or activate Workspace authority. |
 
 ## Unspecified items
 

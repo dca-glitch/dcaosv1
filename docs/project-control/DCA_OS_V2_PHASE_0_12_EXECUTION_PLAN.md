@@ -20,10 +20,11 @@ Phase 1 is ready only for **P1.1 expand-only** work. The P1.1 schema foundation 
 ## Package order
 
 1. **P1.1 — expand:** **IMPLEMENTED** — independent Workspace identity and membership structures, additive indexes, a Prisma migration, and focused isolation tests. No existing rows, endpoint behavior, sessions, or authorization paths change.
-2. **P1.2 — backfill:** only after a deterministic local tool, reconciliation report, and separate review.
-3. **P1.3 — reconciliation:** prove mapping completeness, uniqueness, membership treatment, and exceptions without switching callers.
-4. **P1.4 — switch:** move one bounded path behind server-side deny-by-default workspace authorization and negative isolation tests.
-5. **P1.5 — cleanup:** retire legacy structures only after stable reconciliation, rollback expiry, and separate review.
+2. **P1.2a — preparation:** mapping validation and dry-run-only backfill tooling; no data mutation.
+3. **P1.3a — preparation:** reconciliation comparison tooling, security/isolation proof, feature-flagged inactive paths, and rollback planning; no authoritative caller switch.
+4. **P1.4a — preparation:** staging-rehearsal evidence and execution-gate packet only; no backfill, reconciliation execution, or switch.
+5. **P1.2b–P1.4b — future execution gate:** actual backfill, reconciliation execution, and bounded authorization/data-path switch require approved mapping, dry-run and reconciliation evidence, backup/restore and rollback proof, security/isolation proof, staging rehearsal, and explicit owner acceptance. They must complete before Phase 2 begins.
+6. **P1.5 — cleanup:** retire legacy structures only after stable reconciliation, rollback expiry, and separate review.
 
 ## P1.1 constraints and rollback
 
