@@ -1,3 +1,5 @@
+> **Historical rulebook.** This file documents an earlier pre-Botanical Light UI rule set. Use [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) and current canonical docs for active guidance.
+
 # DCA OS Lite — UI/UX Rulebook v1
 
 **Version:** 1.0
@@ -37,7 +39,7 @@ Approved Dark Nebula doc emphasizes spacious cards. Rulebook v1 defines a **prac
 - **Shell level:** deep navy, nebula gradients, glass borders (Dark Nebula)
 - **Data surfaces:** compact tables, dense rows, muted buttons (operator-first)
 
-Document this hybrid in implementation PRs referencing both this rulebook and `docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md`.
+Document this hybrid in implementation PRs referencing both this rulebook and `docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`.
 
 ---
 
@@ -708,7 +710,7 @@ Mobile narrow? → DENSE LIST fallback OK
 | `UI_UX_P0_IMPLEMENTATION_PLAN.md` | P0 block breakdown |
 | `UI_UX_RULEBOOK_TRACEABILITY.md` | Rule → evidence mapping |
 | `V0_UI_UX_AUDIT_PACK.md` | External review prompt |
-| `docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md` | Approved visual language |
+| `docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md` | Approved visual language |
 | `AGENTS.md` | Agent safety and gates |
 
 ---

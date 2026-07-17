@@ -76,7 +76,7 @@
 
 ### 2.7 Repository and change control
 
-- [x] G223–G227 lane is docs-only for this subagent; protected main-owned files are proposal-only (see [`_g223_g227_proposed_main_doc_updates.md`](../operator/_g223_g227_proposed_main_doc_updates.md)).
+- [x] G223–G227 lane is docs-only for this subagent; protected main-owned files are proposal-only at the time; the temporary proposal scratch file was later deleted during documentation consolidation.
 - [x] No commit or push performed by this lane.
 - [x] `.cursor/settings.json` observed untracked; do not `git add` it.
 - [ ] Before any future commit: `git diff --check`, review changed docs/source only, explicit commit approval.
@@ -100,7 +100,7 @@
 | [`TEST_SMOKE_INVENTORY.md`](../operator/TEST_SMOKE_INVENTORY.md) | G224 |
 | [`VALIDATION_COMMAND_GUARDS.md`](../operator/VALIDATION_COMMAND_GUARDS.md) | G225 |
 | [`G227_NEXT_30_GATES.md`](../operator/G227_NEXT_30_GATES.md) | G227 |
-| [`_g223_g227_proposed_main_doc_updates.md`](../operator/_g223_g227_proposed_main_doc_updates.md) | G226 + main-doc proposals |
+| `temporary proposal scratch file (deleted during later consolidation)` | G226 + main-doc proposals |
 
 ---
 

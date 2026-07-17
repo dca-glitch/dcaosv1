@@ -1,3 +1,5 @@
+> **Historical audit pack.** This file is retained for audit provenance only. Current UI authority is [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md).
+
 # DCA OS Lite — v0.dev UI/UX Audit Pack
 
 **Status:** Draft for external review (v0.dev)
@@ -25,7 +27,7 @@
 
 - **Routing:** Hash-based SPA (`#/dashboard`, `#/clients`, etc.) in `apps/web/src/App.tsx` — not React Router file routes.
 - **Styling:** Single global `apps/web/src/styles.css` + shared components under `apps/web/src/components/ui/`.
-- **Approved long-term direction:** Dark Nebula product UI (`docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md`).
+- **Approved long-term direction:** Dark Nebula product UI (`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`).
 - **This audit's near-term direction:** Dark Nebula-compatible, but **compact, calm, operator-first** — readability and density over decorative spaciousness.
 
 ### MVP client context
@@ -446,7 +448,7 @@ v0 and any follow-up implementation must **not** assume or design for:
 | Production deploy | Out of scope |
 | Secrets | Never displayed in UI mockups |
 
-Implementation agents must read `AGENTS.md` and `docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md` before any frontend sprint.
+Implementation agents must read `AGENTS.md` and `docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md` before any frontend sprint.
 
 ---
 
@@ -471,7 +473,7 @@ Paste v0 responses into `docs/ui-ux/V0_AUDIT_FINDINGS_TEMPLATE.md` for tracking.
 
 | Doc | Relevance |
 |-----|-----------|
-| `docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md` | Approved visual language |
+| `docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md` | Approved visual language |
 | `docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md` | Client / portal / domain model |
 | `AGENTS.md` | Agent safety and validation rules |
 | `docs/ui-ux/V0_SCREENSHOT_CHECKLIST.md` | Capture checklist |

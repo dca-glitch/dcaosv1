@@ -1,3 +1,5 @@
+> **Superseded historical design spec.** This file preserves earlier redesign details and is not the current implementation authority. Current UI authority is [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md).
+
 # DCA OS Lite — Design System Specification
 
 Version 1.0 · July 2026  

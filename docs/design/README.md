@@ -1,3 +1,5 @@
+> **Superseded design handoff.** This directory preserves earlier redesign material and mockup references. Current UI authority is [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md). Use this directory only as historical context.
+
 # docs/design
 
 Design handoff documentation for the DCA OS Lite redesign.  

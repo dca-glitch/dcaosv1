@@ -14,7 +14,7 @@ npm.cmd run smoke:ai-delivery-reviews
 ```
 
 Use smoke commands only when they are in scope for the task. Stability, regression, smoke, and module workflow work must include repeatable PowerShell/scripted validation as part of the deliverable.
-Current repo baseline after PRs #38–#43 is the compact Dark Nebula UI / client-portal routing state. `#/client-portal` is the archive-oriented portal shell, `#/archive` stays separate, and client-only users remain blocked from admin-only routes.
+Current repo baseline is the Botanical Light UI / responsive modal-to-page migration state. `#/client-portal` is the archive-oriented portal shell, `#/archive` stays separate, client-only users remain blocked from admin-only routes, and confirmation/single-purpose overlays remain where they are still the safest fit.
 
 Recommended sequence:
 

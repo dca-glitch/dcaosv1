@@ -3,7 +3,7 @@
 **Status:** Docs-only inventory refreshed 2026-07-10 (Lane 17 / G661–G672).  
 **Ownership:** Lane 9 owns `client-portal-api*`; portal page edits remain out of Lane 17. This inventory **proposes**; it does not authorize portal code changes.  
 **Wording:** [`docs/operator/client-wording-guide.md`](../operator/client-wording-guide.md)  
-**Prior kebab inventory:** [`client-portal-surface-inventory.md`](./client-portal-surface-inventory.md)
+**Prior kebab inventory:** historical kebab-case duplicate removed during documentation refresh
 
 ## Shell views (client-facing)
 

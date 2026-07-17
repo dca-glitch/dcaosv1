@@ -2,7 +2,7 @@
 
 **Status:** Design only (Lane 17 / G661–G672). No board implementation in this lane.  
 **Canonical blockers:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) · [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md) · [`INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md)  
-**Prior kebab design:** [`launch-blocker-board-ui-design.md`](./launch-blocker-board-ui-design.md)  
+**Prior kebab design:** historical kebab-case duplicate removed during documentation refresh
 **Post-G468 roadmap:** [`docs/operator/G468_NEXT_50_GATES.md`](../operator/G468_NEXT_50_GATES.md) (G469+; main owns G708 roadmap)
 
 ## Purpose

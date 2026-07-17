@@ -1,3 +1,5 @@
+> **Superseded project snapshot.** Use [`CURRENT_SYSTEM_SNAPSHOT.md`](./CURRENT_SYSTEM_SNAPSHOT.md) for the current concise system view.
+
 # DCA OS Lite Project Context
 
 ## Repository

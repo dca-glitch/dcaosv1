@@ -41,6 +41,7 @@
 **Admin UI/workflow polish audit:** [`docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) (read-only; UX-P1Ã¢â‚¬â€œP12 queued blocks)
 **G468 next 50 gates (historical):** [`docs/operator/G468_NEXT_50_GATES.md`](./operator/G468_NEXT_50_GATES.md)
 **G708 next gates:** [`docs/operator/G708_NEXT_GATES.md`](./operator/G708_NEXT_GATES.md)
+**Current UI direction:** [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md)
 **PRE-STAGING closure verdict:** [`docs/operator/PRE_STAGING_CLOSURE_VERDICT.md`](./operator/PRE_STAGING_CLOSURE_VERDICT.md)
 **PRE-STAGING operator closeout:** [`docs/operator/PRE_STAGING_OPERATOR_CLOSEOUT.md`](./operator/PRE_STAGING_OPERATOR_CLOSEOUT.md)
 **PRE-STAGING architecture audit:** [`docs/architecture/PRE_STAGING_ARCHITECTURE_AUDIT.md`](./architecture/PRE_STAGING_ARCHITECTURE_AUDIT.md)
@@ -1130,7 +1131,7 @@ Percentages are **local MVP readiness**, not production-proven. See [`docs/STATU
 | **Finance Lite admin foundation** | **100% local/admin-safe foundation** | Admin finance records are smoke-proven for vendors/services/bills/invoices/credit notes/recurring/ledger boundaries where implemented; finance admin browser and ledger smokes passed for local operator use | Real payment collection, Stripe/payment provider proof, bank feeds, tax/legal/accounting production claims, production invoicing readiness |
 | **Audit/activity feed foundation** | **100% local/operator-safe foundation** | `AuditLog`/event feed/dashboard recent activity/operator visibility are smoke-proven locally through audit activity and dashboard audit feed browser gates | SIEM/security audit, compliance-grade audit log, production monitoring, durable incident observability stack |
 | **Email/outbox disabled-safe foundation** | **100% local-safe foundation** | Read-only tenant-scoped outbox/local notification records are smoke-proven; local provider remains non-sending and reports `SKIPPED` without provider delivery; real-path wiring exists for Puriva taxonomy (2026-07-09); **in-app notification persistence/UI foundation exists** (`InAppNotification` + `NotificationPanel`; staging migration applied with `1b8d00d`) | Live Resend transactional proof **not** STAGING LIVE PROVEN; full notification E2E/launch proof open; background queues, deliverability, production notification readiness remain blocked Ã¢â‚¬â€ see [`notifications-blocker-plan.md`](./operator/notifications-blocker-plan.md) and [`AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) |
-| **UI / UX polish (Dark Nebula / dense admin)** | **100% local/admin-readable baseline** | Compact Dark Nebula admin/client readability and density baseline is closed for current local surfaces; follow-on operator polish blocks UX-P1Ã¢â‚¬â€œP12 queued in [`ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) | Full design-system migration, full redesign, staging/environment proof, production readiness |
+| **UI / UX polish (Botanical Light / responsive system)** | **Current product UI baseline** | Botanical Light is the current UI direction; full-system route coverage, state/overlay matrices, and responsive proof references are recorded in the Botanical Light closeout docs and follow-on operator polish remains queued in [`ADMIN_WORKFLOW_POLISH_AUDIT.md`](./ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) | Further UI polish, additional page conversions, staging/environment proof, production readiness |
 
 ---
 
@@ -1287,7 +1288,7 @@ Client-only users: `#/client-portal` and granted routes only; admin routes block
 
 The following remain true; detail preserved in linked docs and git history.
 
-- Repository/workspace, validation, CI, Dark Nebula UI direction, data-dense admin UI phase 1/2.
+- Repository/workspace, validation, CI, Botanical Light UI direction, and responsive admin/client UI proof.
 - AI Delivery project/brief/workflow/deliverables/reviews/export/handoff foundation.
 - AI Gateway v1 + AI Operations Console v1 (local deterministic default).
 - Market Intelligence Mega Blocks 1Ã¢â‚¬â€œ3; AI Delivery Revenue Engine Layer 1; Delivery Handoff Layer 2.

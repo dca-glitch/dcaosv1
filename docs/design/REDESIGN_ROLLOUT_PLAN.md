@@ -1,3 +1,5 @@
+> **Superseded historical rollout plan.** This plan describes an earlier redesign track. Current UI authority is [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md).
+
 # DCA OS Lite — Redesign Rollout Plan
 
 Version 1.0 · July 2026  

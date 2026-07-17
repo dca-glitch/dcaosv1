@@ -3,7 +3,7 @@
 **Status:** Docs inventory refreshed 2026-07-10 (Lane 17 / G661–G672).  
 **Source:** `apps/web/src/App.tsx` (`navigationItems`, `ViewKey`, page mounts).  
 **Density baseline:** [`admin-data-dense-ui.md`](./admin-data-dense-ui.md)  
-**Prior kebab inventory:** [`admin-surface-inventory.md`](./admin-surface-inventory.md) (G429–G448; keep both until main consolidates)
+**Prior kebab inventory:** historical kebab-case duplicate removed during documentation refresh
 
 ## Role legend
 

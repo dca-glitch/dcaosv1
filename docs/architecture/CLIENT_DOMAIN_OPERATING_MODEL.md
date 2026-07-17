@@ -12,7 +12,7 @@
 - [`CLIENT_OPERATING_PACKS.md`](./CLIENT_OPERATING_PACKS.md) — generic Client Operating Pack model
 - [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md) — Puriva Client-Service Launch requirements
 
-- [`prd.md.txt`](../../prd.md.txt) — product source of truth (updated to match this model)
+- [`docs/CURRENT_SYSTEM_SNAPSHOT.md`](../CURRENT_SYSTEM_SNAPSHOT.md) — concise current system truth
 - [`docs/TENANT_MODEL.md`](../TENANT_MODEL.md) — tenant and licensee boundaries
 - [`docs/security/WORDPRESS_CREDENTIAL_SECURITY_DESIGN.md`](../security/WORDPRESS_CREDENTIAL_SECURITY_DESIGN.md) — WordPress credentials per publication target
 - [`docs/ROADMAP.md`](../ROADMAP.md) — approved implementation blocks
@@ -207,13 +207,15 @@ Client
 
 ## 7. Analytics (GA4 / GSC)
 
-`ClientAnalyticsProfile` (1:1 with Client):
+> **Current state:** live GA4/GSC integration is **WITHDRAWN** from current and planned scope. Manual import is **not implemented**. Existing schema fields and enum values remain historical compatibility surface until a later schema cleanup.
+
+`ClientAnalyticsProfile` remains useful only as historical/model context for existing fields:
 
 - `gscSiteUrl`, `ga4PropertyId`
 - `defaultSourceType` — MANUAL | GA4 | GSC | HYBRID
 - `connectionStatus` — MANUAL | CONFIGURED | LIVE_DEFERRED
 
-`AiDeliveryMonthlyMetricSnapshot` inherits profile from `clientId` when creating monthly report.
+Do not treat this section as live integration approval. `AiDeliveryMonthlyMetricSnapshot` still supports manual/snapshot reporting paths.
 
 ---
 

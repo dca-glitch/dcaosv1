@@ -2,7 +2,7 @@
 
 **Status:** Design only (Lane 17 / G661–G672). No badge component implementation required.  
 **Source of truth for rows:** [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md)  
-**Prior kebab design:** [`integration-truth-badge-design.md`](./integration-truth-badge-design.md)  
+**Prior kebab design:** historical kebab-case duplicate removed during documentation refresh
 **Label helper:** `apps/web/src/lib/proof-state-labels.ts` → `formatIntegrationTruthChip`
 
 ## Purpose

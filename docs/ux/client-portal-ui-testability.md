@@ -1,7 +1,7 @@
 # Client Portal UI Testability (docs review)
 
 **Status:** Docs-only (G429–G448). Lane 6 owns portal page code.  
-**Surfaces:** [`docs/ui/client-portal-surface-inventory.md`](../ui/client-portal-surface-inventory.md)
+**Surfaces:** [`docs/ui/CLIENT_PORTAL_SURFACE_INVENTORY.md`](../ui/CLIENT_PORTAL_SURFACE_INVENTORY.md)
 
 ## What to prove
 

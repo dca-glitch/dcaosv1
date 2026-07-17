@@ -92,8 +92,8 @@ If the page cannot answer these quickly, it needs a data-dense pass.
 - Settings, Team, Company Profile, and modal internals may receive smaller density polish if operator feedback calls for it.
 - Deeper master-detail layouts can be considered later for AI Delivery project execution, but overview screens should stay data-first.
 - AI Delivery hotspot split is **planning-only** until an approved Phase A types extract — [`ai-delivery-hotspot-file-review.md`](./ai-delivery-hotspot-file-review.md).
-- Launch-blocker board remains design-only — [`launch-blocker-board-ui-design.md`](./launch-blocker-board-ui-design.md).
+- Launch-blocker board remains design-only — [`LAUNCH_BLOCKER_BOARD_DESIGN.md`](./LAUNCH_BLOCKER_BOARD_DESIGN.md).
 
 ## Surface inventory pointer
 
-Full admin hash-route inventory: [`admin-surface-inventory.md`](./admin-surface-inventory.md).
+Full admin hash-route inventory: [`ADMIN_SURFACE_INVENTORY.md`](./ADMIN_SURFACE_INVENTORY.md).

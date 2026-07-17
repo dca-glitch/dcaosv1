@@ -16,12 +16,12 @@
 
 | Path | Purpose |
 |------|---------|
-| `docs/ui/admin-surface-inventory.md` | Admin hash/surface inventory |
-| `docs/ui/client-portal-surface-inventory.md` | Portal inventory (docs-only) |
+| `docs/ui/ADMIN_SURFACE_INVENTORY.md` | Admin hash/surface inventory |
+| `docs/ui/CLIENT_PORTAL_SURFACE_INVENTORY.md` | Portal inventory (docs-only) |
 | `docs/ui/ai-delivery-hotspot-file-review.md` | Hotspot split plan |
 | `docs/ui/admin-proof-state-badge-design.md` | Proof-state badge design |
-| `docs/ui/integration-truth-badge-design.md` | Integration truth chips design |
-| `docs/ui/launch-blocker-board-ui-design.md` | Launch-blocker board design |
+| `docs/ui/INTEGRATION_TRUTH_BADGE_DESIGN.md` | Integration truth chips design |
+| `docs/ui/LAUNCH_BLOCKER_BOARD_DESIGN.md` | Launch-blocker board design |
 | `docs/ux/monthly-report-ui-testability.md` | Monthly report testability |
 | `docs/ux/client-portal-ui-testability.md` | Portal testability (review) |
 | `docs/ux/proof-state-vocabulary.md` | Vocabulary |

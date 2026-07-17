@@ -25,10 +25,10 @@ Implementation priority (delivery path first):
 
 Current UI / route stabilization is complete:
 
-- Dark Nebula full-system UI pass
+- Botanical Light full-system UI redesign
 - AI Delivery workspace sectioning
 - Workflow Briefs detail UI cleanup
-- client-facing Dark Nebula polish
+- client-facing Botanical Light polish
 - dashboard audit feed smoke alignment
 - client-only access to `#/client-portal`
 

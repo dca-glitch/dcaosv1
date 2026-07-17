@@ -36,7 +36,7 @@ Three implementation/planning systems plus historical G-gates. **Do not mix or s
 | System | Function | Scope | Source | Mixing rule |
 |--------|----------|-------|--------|-------------|
 | **BLOKI 1–13** | Functional implementation roadmap | Feature/auth/portal/briefs/notifications/WordPress/E2E delivery blocks | Owner-approved BLOK table (this matrix §3) | Never rename Workstreams or UI Fazy as BLOKI |
-| **Fazy UI 1–13** | UI redesign roadmap | Dark Nebula / dense admin / design-system presentation work | UI direction docs (`docs/ui/*`, Dark Nebula product UI direction) | Never treat UI Fazy as functional BLOKI or snapshot Workstreams |
+| **Fazy UI 1–13** | UI redesign roadmap | Botanical Light / responsive design-system presentation work | UI direction docs (`docs/ui/*`, Botanical Light product UI direction) | Never treat UI Fazy as functional BLOKI or snapshot Workstreams |
 | **Workstreamy 1–9** | Pre-next-staging execution plan | Local hardening → staging live proofs → planning go/no-go | Owner-approved Workstream table (this matrix §4) | Never claim a Workstream “completes” a BLOK by number alone |
 | **G-gates** | Historical gate ledger | Past pre-live / foundation / proof planning sequence (G49–G708+) | `docs/STATUS.md`, deferred-scope register, gate runbooks | Historical context only unless an owner gate re-activates a specific G-id |
 

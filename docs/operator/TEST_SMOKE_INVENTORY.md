@@ -4,7 +4,7 @@
 
 **Honesty rule:** Sections 1–2 list **existing** root package scripts. Section 5 lists **local focused tests and helpers** (Present / Expected). Listing a focused test here does **not** mean a live smoke passed. Live smokes and target-environment proofs remain **deferred** until owner-approved execution gates. See also [`NO_LIVE_PROOF_CATALOGUE.md`](./NO_LIVE_PROOF_CATALOGUE.md) and [`LOCAL_ONLY_PROOF_TAXONOMY.md`](./LOCAL_ONLY_PROOF_TAXONOMY.md).
 
-**Command convention:** Run from `C:\dcaosv1` in external Windows PowerShell. Prefer `npm.cmd run <script>` on Windows. **Validate must pass before smoke. Never run smoke after a failed validate.** One command per line (no `&&`). Long runs should log to `$env:TEMP` and open Notepad. Do not track or commit `.cursor/settings.json`.
+**Command convention:** Run from `C:\dcaosv1` in external Windows PowerShell. Prefer `npm.cmd run <script>` on Windows. **Validate must pass before smoke. Never run smoke after a failed validate.** One command per line (no `&&`). Long runs should log to `$env:TEMP` and open Notepad. Do not track or commit `.cursor/settings.json`. Historical proposal scratch files referenced by older closeouts have been removed during later documentation consolidation.
 
 **Truth sweep:** Local foundations expanding; live proofs deferred; staging has historical G46d/G47 PASS evidence only (not standing authorization); production readiness remains **NO** / frozen; G50 is not executed; Puriva Launch remains **BLOCKED**; staging/prod live proofs **NOT proven**. Next stage = owner-approved staging/live proof only. This inventory does not authorize live calls, staging/VPS/prod mutation, commit, push, or deploy. `.cursor/settings.json` stays untracked.
 
@@ -231,4 +231,4 @@ These are **local unit/integration/helper** surfaces other lanes are adding or h
 - Lane closeout: [`G649_G660_OPERATOR_CLOSEOUT.md`](./G649_G660_OPERATOR_CLOSEOUT.md)
 - Lane roadmap notes: [`G409_NEXT_GATES.md`](./G409_NEXT_GATES.md); post-G468: [`G468_NEXT_50_GATES.md`](./G468_NEXT_50_GATES.md)
 - Historical next-30: [`G227_NEXT_30_GATES.md`](./G227_NEXT_30_GATES.md)
-- Proposed main-doc patches (G223 era): [`_g223_g227_proposed_main_doc_updates.md`](./_g223_g227_proposed_main_doc_updates.md)
+- Proposed main-doc patches (G223 era): temporary scratch file later deleted during documentation consolidation; see [`docs/DOCUMENTATION_DISPOSITION.md`](../DOCUMENTATION_DISPOSITION.md) for final disposition.

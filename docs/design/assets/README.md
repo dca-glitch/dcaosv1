@@ -1,3 +1,5 @@
+> **Historical mockup index.** These assets belong to an earlier redesign reference set and are not the current UI authority. Use [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) for the current direction.
+
 # docs/design/assets
 
 This directory is reserved for preview images and visual exports from the approved Figma Make design work.
@@ -51,7 +53,7 @@ Once images are available:
 
 - Reference them in `SCREEN_REFERENCE.md` and `MODAL_PATTERNS.md` using relative paths:
   ```markdown
-  ![Agency Operations Dashboard](./assets/agency-ops-dashboard.png)
+  [Agency Operations Dashboard image path example: `docs/design/assets/agency-ops-dashboard.png`]
   ```
 - Do not commit low-resolution or partial screenshots — full viewport at 1440×900 only
 - Do not commit screenshots of error states in the application — only approved design states

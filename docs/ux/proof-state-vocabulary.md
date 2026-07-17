@@ -46,4 +46,4 @@ Do **not** expose this vocabulary to clients. Use [`client-wording-guide.md`](..
 ## Related designs
 
 - [`admin-proof-state-badge-design.md`](../ui/admin-proof-state-badge-design.md)  
-- [`integration-truth-badge-design.md`](../ui/integration-truth-badge-design.md)
+- [`INTEGRATION_TRUTH_BADGE_DESIGN.md`](../ui/INTEGRATION_TRUTH_BADGE_DESIGN.md)

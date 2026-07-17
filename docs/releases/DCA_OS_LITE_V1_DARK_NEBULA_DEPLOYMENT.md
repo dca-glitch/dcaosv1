@@ -1,3 +1,5 @@
+> **Historical deployment evidence.** This release note records the earlier Dark Nebula deployment and is retained only for provenance. Botanical Light is the current UI direction.
+
 # DCA OS Lite — Version 1 Dark Nebula Deployment
 
 Date: 2026-06-16  

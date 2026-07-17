@@ -606,7 +606,7 @@ Clients must not see:
 
 ## 17. UI/UX Direction
 
-The AI Operating Layer should follow the approved Dark Nebula product UI direction: compact, readable, professional, and workflow-oriented.
+The AI Operating Layer should follow the current Botanical Light product UI direction: readable, professional, workflow-oriented, responsive, and aligned to current shared UI primitives.
 
 Design principles:
 

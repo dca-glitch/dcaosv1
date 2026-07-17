@@ -6,7 +6,7 @@
 **Date:** 2026-07-10  
 **Commit/push/deploy:** none  
 
-**Main proposal file:** [`_g673_g684_proposed_main_doc_updates.md`](./_g673_g684_proposed_main_doc_updates.md)
+**Main proposal file:** deleted during later documentation consolidation; see [`docs/DOCUMENTATION_DISPOSITION.md`](../DOCUMENTATION_DISPOSITION.md) for final disposition.
 
 ---
 
@@ -78,7 +78,7 @@ Also scanned related overclaim patterns: `fully connected`, `staging proven` (as
 
 ### Intentional / safe occurrences (do not patch)
 
-- Forbidden-phrase tables: `ENV_SHAPE_VS_LIVE_PROOF_LABELS.md`, `proof-state-vocabulary.md`, `integration-truth-badge-design.md`, `CLIENT_OPERATING_PACK_SAAS_LATER.md`, `G52_OWNER_DISPOSITION.md`
+- Forbidden-phrase tables: `ENV_SHAPE_VS_LIVE_PROOF_LABELS.md`, `proof-state-vocabulary.md`, `INTEGRATION_TRUTH_BADGE_DESIGN.md`, `CLIENT_OPERATING_PACK_SAAS_LATER.md`, `G52_OWNER_DISPOSITION.md`
 - “Not production-ready” / “Production readiness: NO” / “Puriva Launch: BLOCKED”
 - Historical “Staging proven (G46d/G47)” with production frozen — keep as historical evidence, not new live-integration claim
 - Module stage names like “Stage 8 - Production Ready” in promotion path docs (lifecycle vocabulary, not current product claim)
@@ -95,7 +95,7 @@ Also scanned related overclaim patterns: `fully connected`, `staging proven` (as
 
 ### Proposed for main (do not apply from this lane)
 
-See full diffs in [`_g673_g684_proposed_main_doc_updates.md`](./_g673_g684_proposed_main_doc_updates.md):
+The original proposal scratch file was deleted during later documentation consolidation; final outcomes are summarized in [`docs/DOCUMENTATION_DISPOSITION.md`](../DOCUMENTATION_DISPOSITION.md):
 
 - `docs/STATUS.md` — Knowledge local smoke wording
 - `docs/operator/deferred-scope-register.md` — email / Google / R2 “not ready” clarifiers

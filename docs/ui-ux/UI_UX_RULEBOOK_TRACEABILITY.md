@@ -1,3 +1,5 @@
+> **Historical traceability note.** This file maps an earlier rulebook and is not current UI authority. Use [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) for current guidance.
+
 # DCA OS Lite — UI/UX Rulebook Traceability
 
 **Purpose:** Map Rulebook v1 rules to evidence sources and implementation targets.
@@ -78,7 +80,7 @@ Traceable to: `V0_UI_UX_AUDIT_PACK.md` §9, `UI_UX_EVIDENCE_PACK.md` §8, `AGENT
 
 ## Dark Nebula → rulebook reconciliation
 
-| Dark Nebula doc | Rulebook v1 |
+| Historical direction doc | Rulebook v1 |
 |-----------------|-------------|
 | Spacious cards | Overridden at data surfaces — §A hybrid note |
 | Glass panels | KEEP at shell |

@@ -176,7 +176,7 @@ Default AI execution: **local deterministic**. OpenRouter is opt-in via env; not
 
 ### apps/web
 
-React + Vite frontend. Hash-based routing (`#/…`). Dark Nebula product UI direction.
+React + Vite frontend. Hash-based routing (`#/…`). Botanical Light product UI direction — see [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md).
 
 | Area | Routes / surfaces |
 |------|-------------------|

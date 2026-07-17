@@ -3,7 +3,7 @@
 **Status:** Extended audit (2026-07-10, G429–G448 UI lane)
 **Scope:** Operator/admin UX across AI Delivery, Monthly Reports, Client Portal archive (docs review only), Finance Lite, Market Intelligence, AI Operations, empty/error/loading states, copy clarity, proof-state vocabulary, and Puriva operator flow.
 **Constraint:** High-impact **small polish blocks** only — no broad UI redesign, no backend/API/schema/auth changes, no design-system migration.
-**Related:** [`docs/ui-ux/V0_UI_UX_AUDIT_PACK.md`](../ui-ux/V0_UI_UX_AUDIT_PACK.md) · [`docs/ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md`](../ui/DARK_NEBULA_PRODUCT_UI_DIRECTION.md) · [`docs/ui/admin-surface-inventory.md`](../ui/admin-surface-inventory.md) · [`docs/ui/ai-delivery-hotspot-file-review.md`](../ui/ai-delivery-hotspot-file-review.md) · [`docs/operator/first-client-next-actions.md`](../operator/first-client-next-actions.md)
+**Related:** [`docs/ui-ux/V0_UI_UX_AUDIT_PACK.md`](../ui-ux/V0_UI_UX_AUDIT_PACK.md) · [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) · [`docs/ui/ADMIN_SURFACE_INVENTORY.md`](../ui/ADMIN_SURFACE_INVENTORY.md) · [`docs/ui/ai-delivery-hotspot-file-review.md`](../ui/ai-delivery-hotspot-file-review.md) · [`docs/operator/first-client-next-actions.md`](../operator/first-client-next-actions.md)
 
 ---
 
@@ -29,11 +29,11 @@ Local/admin workflows remain **functionally complete** and smoke-proven for Puri
 
 | Gate theme | Deliverable | Location |
 |------------|-------------|----------|
-| Admin surface inventory | Hash routes, roles, density notes | [`docs/ui/admin-surface-inventory.md`](../ui/admin-surface-inventory.md) |
-| Client portal surface inventory | Docs-only review (Lane 6 owns pages) | [`docs/ui/client-portal-surface-inventory.md`](../ui/client-portal-surface-inventory.md) |
+| Admin surface inventory | Hash routes, roles, density notes | [`docs/ui/ADMIN_SURFACE_INVENTORY.md`](../ui/ADMIN_SURFACE_INVENTORY.md) |
+| Client portal surface inventory | Docs-only review (Lane 6 owns pages) | [`docs/ui/CLIENT_PORTAL_SURFACE_INVENTORY.md`](../ui/CLIENT_PORTAL_SURFACE_INVENTORY.md) |
 | AI Delivery hotspot review | Split plan for `AiDeliveryPage.tsx` | [`docs/ui/ai-delivery-hotspot-file-review.md`](../ui/ai-delivery-hotspot-file-review.md) |
 | Monthly / portal UI testability | Smoke + unit gaps | [`docs/ux/monthly-report-ui-testability.md`](./monthly-report-ui-testability.md), [`docs/ux/client-portal-ui-testability.md`](./client-portal-ui-testability.md) |
-| Badge designs | Proof-state, integration truth, launch-blocker board | [`docs/ui/admin-proof-state-badge-design.md`](../ui/admin-proof-state-badge-design.md), [`docs/ui/integration-truth-badge-design.md`](../ui/integration-truth-badge-design.md), [`docs/ui/launch-blocker-board-ui-design.md`](../ui/launch-blocker-board-ui-design.md) |
+| Badge designs | Proof-state, integration truth, launch-blocker board | [`docs/ui/admin-proof-state-badge-design.md`](../ui/admin-proof-state-badge-design.md), [`docs/ui/INTEGRATION_TRUTH_BADGE_DESIGN.md`](../ui/INTEGRATION_TRUTH_BADGE_DESIGN.md), [`docs/ui/LAUNCH_BLOCKER_BOARD_DESIGN.md`](../ui/LAUNCH_BLOCKER_BOARD_DESIGN.md) |
 | Proof-state vocabulary | Labels + overclaim helper | [`docs/ux/proof-state-vocabulary.md`](./proof-state-vocabulary.md), `apps/web/src/lib/proof-state-labels.ts` |
 | UI docs closeout / blockers / next gate | Lane closeout | [`docs/ux/ui-docs-closeout-g429-g448.md`](./ui-docs-closeout-g429-g448.md), [`docs/ux/remaining-ui-blockers.md`](./remaining-ui-blockers.md), [`docs/ux/next-gate-proposal-ui.md`](./next-gate-proposal-ui.md) |
 

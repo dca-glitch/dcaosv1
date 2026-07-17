@@ -1,3 +1,5 @@
+> **Historical extraction notes.** This file records earlier Dark Nebula-era UI analysis and is not current implementation authority.
+
 # DCA OS Lite — UI/UX Rule Extraction Notes (DRAFT ONLY)
 
 **Status:** Draft — not approved for implementation
@@ -165,7 +167,7 @@ Reference implementation: `TeamView` table in `App.tsx`.
 1. Review evidence pack + matrix + JSON
 2. Approve or edit draft global rules (GR-01 … GR-10)
 3. Prioritize P0 implementation block (likely: header standardization, metric budget, portal shell split, filter chips)
-4. Cross-check against `DARK_NEBULA_PRODUCT_UI_DIRECTION.md` for intentional compact hybrid wording update
+4. Cross-check against `BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md` for intentional compact hybrid wording update
 
 ---
 

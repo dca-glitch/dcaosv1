@@ -1,10 +1,12 @@
+> **Historical evidence pack.** This file is retained for provenance and earlier UI analysis only. Current UI authority is [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md).
+
 # DCA OS Lite — UI/UX Evidence Pack
 
 **Status:** Evidence collection (draft rules not approved)
 **Branch:** `feature/uiux-evidence-pack`
 **Purpose:** Repo-wide inventory of current UI components, CSS, patterns, and pain points so the owner can later derive system-wide design rules for every element.
 
-**Related:** `V0_UI_UX_AUDIT_PACK.md`, `DARK_NEBULA_PRODUCT_UI_DIRECTION.md`, `AGENTS.md`
+**Related:** `V0_UI_UX_AUDIT_PACK.md`, `BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`, `AGENTS.md`
 
 ---
 

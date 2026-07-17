@@ -1,10 +1,12 @@
+> **Superseded historical Dark Nebula proposal.** This file preserves an earlier design-system proposal and is not the current UI authority. Use [`BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) for current guidance.
+
 # DCA OS Lite — Design System Specification (BLOK 7-UI)
 
 > **Warning:** This is superseded historical/proposal material. It is not the implemented production design system and must not be used as implementation authority. If this document conflicts with current implementation evidence, the current implementation takes precedence.
 
 **Status:** Superseded historical proposal — no production implementation authority
 **Audience:** Piotr (validation), frontend implementers  
-**Related:** [`DARK_NEBULA_PRODUCT_UI_DIRECTION.md`](./DARK_NEBULA_PRODUCT_UI_DIRECTION.md), [`admin-data-dense-ui.md`](./admin-data-dense-ui.md)
+**Related:** [`BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md), [`admin-data-dense-ui.md`](./admin-data-dense-ui.md)
 
 This document defines the **target** visual language for BLOK 7-UI. It refines the approved Dark Nebula direction toward a **compact, operator-first navy + muted teal** palette. HTML/CSS mockups live in [`mockups/`](./mockups/) for side-by-side review before React implementation.
 

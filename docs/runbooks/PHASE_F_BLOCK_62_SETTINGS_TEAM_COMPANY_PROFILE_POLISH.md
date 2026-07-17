@@ -1,6 +1,6 @@
 # Phase F Block 62 — Settings / Team / Company Profile Polish
 
-**Status:** Dark Nebula compact pass on platform settings shells (92% local scope).
+**Status:** Earlier compact settings-shell pass (92% local scope); current UI direction is Botanical Light.
 
 **Scope:** Frontend polish only. No invite, password reset, or settings backend changes.
 

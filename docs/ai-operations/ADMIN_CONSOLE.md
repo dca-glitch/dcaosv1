@@ -17,7 +17,7 @@ It answers:
 **Related admin surfaces (G429–G448):**
 
 - Daily Cockpit — `#/admin-daily-cockpit` ([`AdminDailyOperationsCockpit.tsx`](../../apps/web/src/pages/ai-operations/AdminDailyOperationsCockpit.tsx))
-- Admin surface inventory — [`docs/ui/admin-surface-inventory.md`](../ui/admin-surface-inventory.md)
+- Admin surface inventory — [`docs/ui/ADMIN_SURFACE_INVENTORY.md`](../ui/ADMIN_SURFACE_INVENTORY.md)
 - Proof-state vocabulary — [`docs/ux/proof-state-vocabulary.md`](../ux/proof-state-vocabulary.md)
 - Integration truth matrix — [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
 
@@ -92,7 +92,7 @@ Supporting panels (embedded elsewhere, not separate nav):
 - Per-tenant spend caps
 - Deeper provider observability (latency, retries, billing)
 - Autonomous agents
-- Launch-blocker board UI (design only — [`launch-blocker-board-ui-design.md`](../ui/launch-blocker-board-ui-design.md))
+- Launch-blocker board UI (design only — [`LAUNCH_BLOCKER_BOARD_DESIGN.md`](../ui/LAUNCH_BLOCKER_BOARD_DESIGN.md))
 
 ## Local validation
 

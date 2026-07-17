@@ -21,7 +21,7 @@ Give admins a **compact chip** that answers: “What evidence maturity does this
 | `production_proven` | Production proven | success | Recorded production proof exists |
 | `blocked` | Blocked | danger | Explicit blocker |
 
-## Visual rules (Dark Nebula / data-dense)
+## Visual rules (Botanical Light / current product density)
 
 - Same size as existing `StatusBadge` / entity pills — not MetricCards.
 - No glow, no “connected” green for `local_only` / `config_shape_ok`.

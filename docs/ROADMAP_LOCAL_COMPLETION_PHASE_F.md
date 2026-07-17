@@ -44,7 +44,7 @@ Percentages in this document measure completion **within each area's approved lo
 
 | Block | Area | Target % | Goal | Layer |
 |-------|------|----------|------|-------|
-| **62** | Platform core | 92% | Settings/Team/Company Profile polish (Dark Nebula); no invite/reset UI | frontend |
+| **62** | Platform core | 92% | Settings/Team/Company Profile polish aligned to the earlier Dark Nebula pass; current UI direction is Botanical Light | frontend |
 | **63** | Monthly Reports | 92% | Compact pass UI + snapshot metrics UX; manual review checklist before archive | frontend + docs |
 | **64** | WordPress handoff (Block 5, local) | 90% | Operator flow: draft prepared → PublicationLog → no auto-publish; smoke without `WORDPRESS_PUBLISH_ENABLED` | docs + smoke |
 | **65** | Clients / Projects / Tasks | 88% | Filter consistency, monthly project flow, AI Delivery links; CRM regression smoke | frontend + smoke |
