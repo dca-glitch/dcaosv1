@@ -58,3 +58,10 @@ These are the current UI proof references for the `998c294` baseline.
 - Old closeouts, next-gate docs, and lane ledgers are not current operating authority.
 - WordPress must stay platform-neutral and optional; current canonical docs do not authorize live HTTP draft/publish claims.
 - GA4/GSC must stay labeled withdrawn unless a future canonical refresh says otherwise.
+
+## 6. Local engineering-orchestration control state
+
+- `AUTONOMY-HIGH` was owner-approved on 2026-07-17. After the applicable task, validation, independent-review, unchanged-diff, and exact-staging gates pass, routine local commits, task-scoped feature-branch pushes, draft PRs, CI repair, and review loops may be autonomous.
+- This does not authorize production or VPS actions, destructive migrations, secret handling, spending, legal/privacy decisions, or unresolved Critical issues; those remain owner-gated.
+- The verified local tool boundary is Graphify `0.9.17`, Codex/Graphify configuration at local commit `5ad4eeb`, and OpenClaw `2026.7.1` with the official Codex plugin using OpenAI OAuth (no API key required).
+- OpenClaw remains temporary development/deployment orchestration only until the live-VPS launch gate closes. It is not a DCA OS runtime dependency. Gateway is loopback-only with token authentication; `tools.elevated`, heartbeat, Scheduled Tasks, and autonomous recurring monitoring are disabled or unapproved.

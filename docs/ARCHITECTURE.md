@@ -78,6 +78,7 @@ Current UI baseline after `PR #55`:
 | WordPress | Current canonical claim is local prepared-draft/admin foundation only |
 | GA4/GSC | Withdrawn from live scope; manual import not implemented |
 | Production | Frozen/owner-gated for new actions |
+| Local development orchestration | OpenClaw/Codex/Graphify are external local development tooling only; they are not DCA OS runtime components and must not be installed on the production VPS |
 
 ## Canonical supporting documents
 
