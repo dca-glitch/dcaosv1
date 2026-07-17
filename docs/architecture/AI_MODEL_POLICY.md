@@ -1,6 +1,6 @@
 # AI Model Policy (Text + Image)
 
-**Status:** Docs-only policy. **Provider decision(s) below are PENDING OWNER APPROVAL.** This document does not authorize any live provider call, does not enable any provider in code or env, and does not close the "AI Model Research" or "AI Model Policy" Puriva Launch blockers by itself — it defines the policy those gates require. See [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) §"Puriva Launch blockers".
+**Status:** Docs-only policy. **Provider decision(s) below are PENDING OWNER APPROVAL.** This document does not authorize any live provider call, does not enable any provider in code or env, and does not close the "AI Model Research" or "AI Model Policy" Puriva Launch blockers by itself — it defines the policy those gates require. See `docs/operator/deferred-scope-register.md` (archived reference; see Git history) §"Puriva Launch blockers".
 
 **Gate lineage:** [`G52_OWNER_DISPOSITION.md`](./G52_OWNER_DISPOSITION.md) §"AI governance" (AI Model Research Gate; AI Model Policy) · [`PURIVA_OPERATING_PACK_V1.md`](./PURIVA_OPERATING_PACK_V1.md)
 

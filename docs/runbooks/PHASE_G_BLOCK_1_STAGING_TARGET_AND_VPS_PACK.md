@@ -18,7 +18,7 @@ Prepare controlled staging execution **without** VPS login, migration, or deploy
 
 - Phase F Blocks 58–77 complete on branch `feature/local-closeout-blocks-58-77` (or merged to `main`).
 - Local gate PASS: `npm run validate` and `npm run smoke:pre-staging:local`.
-- Owner has read [`deferred-scope-register.md`](../operator/deferred-scope-register.md) § Production And Deployment.
+- Owner has read `deferred-scope-register.md` (archived reference; see Git history) § Production And Deployment.
 
 ---
 
@@ -26,9 +26,9 @@ Prepare controlled staging execution **without** VPS login, migration, or deploy
 
 ### Step 1 — Resolve staging vs production host
 
-Legacy draft docs ([`VPS_STAGING_EXECUTION_APPROVAL_PACK.md`](../deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md)) reference `system.digitalcubeagency.net` as a smoke host. [`STATUS_COMPLETION.md`](../STATUS_COMPLETION.md) states that URL is the **live production target**, not a confirmed staging host.
+Legacy draft docs ([`VPS_STAGING_EXECUTION_APPROVAL_PACK.md`](../deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md)) reference `system.digitalcubeagency.net` as a smoke host. `STATUS_COMPLETION.md` (archived reference; see Git history) states that URL is the **live production target**, not a confirmed staging host.
 
-**Action:** Complete [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md) §2 (pick Option A, B, or C).
+**Action:** Complete `staging-target-decision-template.md` (archived reference; see Git history) §2 (pick Option A, B, or C).
 
 ### Step 2 — Review VPS execution pack (read-only)
 
@@ -97,4 +97,4 @@ No `smoke:mvp:staging` in G1 — requires live staging host from Step 1.
 ## Related
 
 - Phase G index: [`PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md`](./PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md)
-- Roadmap: [`ROADMAP_POST_DEFERRED_PHASE_G.md`](../ROADMAP_POST_DEFERRED_PHASE_G.md)
+- Roadmap: `ROADMAP_POST_DEFERRED_PHASE_G.md` (archived reference; see Git history)

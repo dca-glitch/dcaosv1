@@ -11,7 +11,7 @@ DCA OS Lite — AI Delivery Projects MVP.
 
 ## Current state note
 
-AI Delivery is currently admin/operator-primary. The compact Dark Nebula AI Delivery workspace sectioning is complete. The admin foundation covers projects, composable brief / assembled-operating-context foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, and activity/audit read model support where relevant. R2/private storage foundation is also closed for the same admin scope, covering deliverable private document upload/open, article image private final upload/open, monthly report document handoff, admin UI wiring, env/docs coverage, guarded local `R2_STORAGE_NOT_CONFIGURED`, `storageKey` persistence, temporary authenticated download URL behavior, and no client/public asset exposure. This does not mean the full Puriva MVP delivery path is complete. No live AI calls, crawling, or production deployment has been added. **Client Portal now defaults to the archive-oriented shell at `#/client-portal`; `#/archive` remains separate.** Interactive advanced client review routes remain phased.
+AI Delivery is currently admin/operator-primary. Botanical Light is the current UI direction and the AI Delivery workspace sectioning is complete on that baseline. The admin foundation covers projects, composable brief / assembled-operating-context foundation, workflow runs foundation, content plans, content drafts, article image planning, research requests/sources/summaries, deliverables, deliverable reviews, and activity/audit read model support where relevant. R2/private storage foundation is also closed for the same admin scope, covering deliverable private document upload/open, article image private final upload/open, monthly report document handoff, admin UI wiring, env/docs coverage, guarded local `R2_STORAGE_NOT_CONFIGURED`, `storageKey` persistence, temporary authenticated download URL behavior, and no client/public asset exposure. This does not mean the full Puriva MVP delivery path is complete. No live AI calls, crawling, or production deployment has been added. **Client Portal now defaults to the archive-oriented shell at `#/client-portal`; `#/archive` remains separate.** Interactive advanced client review routes remain phased.
 
 Monthly Report Phase 1 is also closed as a schema-free admin summary API. It returns final deliverables only, explicit deferred GA/GSC/trend metadata, and no persisted `MonthlyReport` record. Monthly Report Phase 2 persisted admin CRUD and the admin Monthly Report UI are browser-proven. Client Portal monthly reports are now browser-proven as a FINAL-only archive surface for linked client users.
 
@@ -154,8 +154,8 @@ Current state clarification: Client Access Admin UI foundation is closed; Client
 `AiDeliveryBrief` is the simpler, project-attached brief concept described above. It is
 distinct from the richer, composable intake/context layer owned by WorkflowBriefs
 (`Brief`/`ProductionPlan`). Neither is legacy or scheduled for removal; see
-[`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md)
-for the full relationship.
+[`docs/CURRENT_SYSTEM_SNAPSHOT.md`](./CURRENT_SYSTEM_SNAPSHOT.md) for the current
+capability relationship.
 
 ### Relationship and behavior requirements
 

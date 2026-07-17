@@ -14,11 +14,11 @@ Status: Plain-language documentation set for admins, client delivery, and readin
 - `client-delivery-sop.md` — step-by-step process for monthly client delivery.
 - `first-client-next-actions.md` — short first-client practice run list.
 
-## For Planning And Readiness
+## For Current Status And Readiness
 
-- [`../STATUS_COMPLETION.md`](../STATUS_COMPLETION.md) — percentage completion by area/module (local MVP vs production vs deferred).
-- `pre-production-readiness-checklist.md` — checklist before production or live client access.
-- `deferred-scope-register.md` — list of features intentionally not active yet.
+- [`../STATUS.md`](../STATUS.md) — concise current system and environment status.
+- [`../CURRENT_SYSTEM_SNAPSHOT.md`](../CURRENT_SYSTEM_SNAPSHOT.md) — implemented capability snapshot.
+- [`../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](../project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md) — current control and readiness decisions.
 - `module-completion-matrix.md` — plain-language status of each system area/module.
 - `first-client-dry-run-checklist.md` — controlled admin dry-run checklist.
 

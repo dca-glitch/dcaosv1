@@ -4,7 +4,7 @@
 
 This pack is the final repo-side approval artifact before any controlled VPS staging deployment. It does not approve deployment by itself. It defines what the owner may approve in a future execution step and what remains forbidden.
 
-**Staging host:** Must match the owner-signed [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md) (Phase G Block G1 — **closed**).
+**Staging host:** `https://staging.digitalcubeagency.net`. This pack does not authorize a deployment; current production and staging policy remains governed by [`docs/STATUS.md`](../STATUS.md).
 
 **G1 approved staging:** `https://staging.digitalcubeagency.net`
 

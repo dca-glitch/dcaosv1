@@ -11,7 +11,7 @@ Status after PR #13 merge into `main`.
 - Local pre-staging proof was accepted after the isolated Finance browser smoke rerun passed.
 - No deploy, migration, restart, or production release was performed after the merge.
 - `system.digitalcubeagency.net` is a live VPS/production target, not a confirmed staging target.
-- Canonical percentages aligned with [`docs/STATUS_COMPLETION.md`](../STATUS_COMPLETION.md) as of Phase F Block 58.
+- Canonical percentages aligned with `docs/STATUS_COMPLETION.md` (archived reference; see Git history) as of Phase F Block 58.
 
 ## Percentage summary
 

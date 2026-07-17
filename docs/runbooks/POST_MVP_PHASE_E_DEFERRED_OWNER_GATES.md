@@ -6,7 +6,7 @@
 
 Related:
 
-- [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
+- `docs/operator/deferred-scope-register.md` (archived reference; see Git history)
 - [`docs/deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md`](../deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md)
 
 ---
@@ -39,7 +39,7 @@ Related:
 ## Owner next steps (after local closeout PASS)
 
 1. Review PR #13 / Phase F merge with `npm run smoke:pre-staging:local` evidence.
-2. **Block G1:** Closed — see [`staging-target-decision-template.md`](../operator/staging-target-decision-template.md).
+2. **Block G1:** Closed — see `staging-target-decision-template.md` (archived reference; see Git history).
 3. Approve VPS staging execution pack (Block G4 — **separate decision; not approved**).
 4. Run strict Phase C env proofs on staging when keys are provisioned.
 5. Pick **one** deferred item above for the next approved implementation block — never batch schema + API + UI.

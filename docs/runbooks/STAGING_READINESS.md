@@ -40,7 +40,7 @@ Related:
 - [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md) — full smoke catalog
 - [`STAGING_MIGRATION_PROCEDURE.md`](./STAGING_MIGRATION_PROCEDURE.md) — execute at G4 only
 - [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md) — env names (no values)
-- [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) — intentional non-blockers
+- `../operator/deferred-scope-register.md` (archived reference; see Git history) — intentional non-blockers
 - [`PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md`](./PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md) — client boundary proof
 
 **Run location:** External PowerShell on Windows. Log long runs to `$env:TEMP` and open in Notepad. Stop on first failure.
@@ -103,7 +103,7 @@ Complete **before** smoke or manual QA.
 | 4 | Set smoke password | `$env:AUTH_SEED_TEST_PASSWORD` in shell only | Min 8 chars; **never commit or print** |
 | 5 | Local PostgreSQL | Running; API can reach DB | Required for smokes |
 | 6 | Start services when needed | `npm.cmd run dev:api` + `npm.cmd run dev:web` | Browser smokes need `:5173` |
-| 7 | Review deferred scope | Read [`deferred-scope-register.md`](../operator/deferred-scope-register.md) | Non-blockers listed in §8 |
+| 7 | Review deferred scope | Read `deferred-scope-register.md` (archived reference; see Git history) | Non-blockers listed in §8 |
 | 8 | No secrets in evidence | Review diff/logs | No `.env` values in reports |
 
 **Logging pattern (recommended):**
@@ -288,7 +288,7 @@ Production deploy remains frozen/deferred. **Production readiness: NO.** G49/G50
 8. Run **G49** production deploy dry-run/read-only proof before any production mutation.
 9. **G50** production deploy gate only after G49 PASS and explicit owner approval.
 
-Puriva Launch remains **blocked** until live proof gates pass (see [`deferred-scope-register.md`](../operator/deferred-scope-register.md)).
+Puriva Launch remains **blocked** until live proof gates pass (see `deferred-scope-register.md` (archived reference; see Git history)).
 
 Full plan: [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md).
 
@@ -443,7 +443,7 @@ Confirm absent in client API responses and portal HTML (see [`PURIVA_CLIENT_PORT
 
 ## 8. Deferred items (must NOT block staging prep)
 
-These are intentionally out of scope for Block A GO. See [`deferred-scope-register.md`](../operator/deferred-scope-register.md).
+These are intentionally out of scope for Block A GO. See `deferred-scope-register.md` (archived reference; see Git history).
 
 | Deferred item | Why it does not block local → staging prep |
 |---------------|---------------------------------------------|

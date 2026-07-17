@@ -6,7 +6,7 @@
 
 **Gate separation:** Puriva Client-Service Launch Gate is independent from the DCA OS Production v1 Gate (G49 → G50). Clearing G49/G50 does **not** authorize Puriva Launch, and vice versa.
 
-**Source of truth:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) · [`docs/architecture/CLIENT_OPERATING_PACKS.md`](../architecture/CLIENT_OPERATING_PACKS.md) · [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) · [`docs/STATUS.md`](../STATUS.md) · [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](../security/SECURITY_BOUNDARY_AUDIT.md) · [`docs/runbooks/IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md) · [`docs/runbooks/EMAIL_NOTIFICATIONS_PROOF.md`](./EMAIL_NOTIFICATIONS_PROOF.md)
+**Source of truth:** [`docs/architecture/PURIVA_OPERATING_PACK_V1.md`](../architecture/PURIVA_OPERATING_PACK_V1.md) · [`docs/architecture/CLIENT_OPERATING_PACKS.md`](../architecture/CLIENT_OPERATING_PACKS.md) · `docs/operator/deferred-scope-register.md` (archived reference; see Git history) · [`docs/STATUS.md`](../STATUS.md) · [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](../security/SECURITY_BOUNDARY_AUDIT.md) · [`docs/runbooks/IMAGE_GENERATION_PROOF.md`](./IMAGE_GENERATION_PROOF.md) · [`docs/runbooks/EMAIL_NOTIFICATIONS_PROOF.md`](./EMAIL_NOTIFICATIONS_PROOF.md)
 
 ---
 
@@ -53,7 +53,7 @@
 
 ## 2b. Approval UX smoke evidence detail (areas 11 & 14)
 
-Full coverage matrix and gap list: [`docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md`](../ux/ADMIN_WORKFLOW_POLISH_AUDIT.md) § "Puriva approval UX smoke coverage (detail)".
+Full coverage matrix and gap list: `docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md` (archived reference; see Git history) § "Puriva approval UX smoke coverage (detail)".
 
 Summary for the launch gate (docs-only clarification, added 2026-07-09 — no verdict change):
 

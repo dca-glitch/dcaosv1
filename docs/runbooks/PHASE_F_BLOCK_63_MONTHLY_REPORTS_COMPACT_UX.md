@@ -1,6 +1,6 @@
 # Phase F Block 63 — Monthly Reports Compact UX
 
-**Status:** Compact Dark Nebula pass on monthly report admin modal (92% local scope).
+**Status:** Earlier compact monthly-report modal pass (92% local scope); current UI direction is Botanical Light.
 
 **Scope:** Frontend polish + operator review checklist. No API contract changes.
 

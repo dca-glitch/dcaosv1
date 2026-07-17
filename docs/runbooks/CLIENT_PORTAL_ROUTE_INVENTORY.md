@@ -6,7 +6,7 @@
 Related:
 
 - [`docs/architecture/CLIENT_PORTAL_BOUNDARY.md`](../architecture/CLIENT_PORTAL_BOUNDARY.md)
-- [`docs/modules/CLIENT_PORTAL_PLAN.md`](../modules/CLIENT_PORTAL_PLAN.md)
+- [`docs/CURRENT_SYSTEM_SNAPSHOT.md`](../CURRENT_SYSTEM_SNAPSHOT.md)
 - Router: `apps/api/src/routes/client-portal.ts`
 - Web hash router: `apps/web/src/pages/client-portal/ClientPortalRouter.tsx`
 

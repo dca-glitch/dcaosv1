@@ -6,7 +6,7 @@
 
 **Scope:** Current local/admin MVP, staging-readiness posture, production-readiness posture, and Puriva Launch blockers. This checklist intentionally records evidence status; it does not move any blocker to PASS without recorded proof in the source-of-truth docs.
 
-**Primary sources:** [`docs/STATUS.md`](../STATUS.md), [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md), [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md), [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md), [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md), [`docs/operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md), [`docs/audit/DEPLOYMENT_SECURITY_CHECKLIST.md`](../audit/DEPLOYMENT_SECURITY_CHECKLIST.md), and [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](./SECURITY_BOUNDARY_AUDIT.md).
+**Primary sources:** [`docs/STATUS.md`](../STATUS.md), `docs/operator/deferred-scope-register.md` (archived reference; see Git history), [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md), [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md), [`docs/operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md), [`docs/operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md), [`docs/audit/DEPLOYMENT_SECURITY_CHECKLIST.md`](../audit/DEPLOYMENT_SECURITY_CHECKLIST.md), and [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](./SECURITY_BOUNDARY_AUDIT.md).
 
 ---
 

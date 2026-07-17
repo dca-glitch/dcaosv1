@@ -6,10 +6,10 @@
 
 **Related:**
 
-- [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
+- `docs/operator/deferred-scope-register.md` (archived reference; see Git history)
 - [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./CLIENT_DOMAIN_OPERATING_MODEL.md)
 - [`docs/architecture/G128_G133_MI_RH_POD_CLOSEOUT.md`](./G128_G133_MI_RH_POD_CLOSEOUT.md)
-- [`docs/ROADMAP.md`](../ROADMAP.md)
+- `docs/ROADMAP.md` (archived reference; see Git history)
 
 ---
 

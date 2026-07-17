@@ -2,7 +2,7 @@
 
 **Status:** WordPress disabled/mock publish endpoint, service scaffold, UI action foundation, G111 publish-freeze guard coverage, and G181–G188 local draft/redaction/proof-plan helpers are complete. Live WordPress HTTP remains frozen and **not proven**.
 
-> **Architecture update (2026-06-26):** Tenant-level WordPress config is **legacy**. Approved target model: **PublicationTarget per Client** (domain), multiple subdomains, encrypted credentials per target. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md) and implementation blocks 2–5 in [`docs/ROADMAP.md`](../ROADMAP.md).
+> **Architecture update (2026-06-26):** Tenant-level WordPress config is **legacy**. Approved target model: **PublicationTarget per Client** (domain), multiple subdomains, encrypted credentials per target. See [`docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](../architecture/CLIENT_DOMAIN_OPERATING_MODEL.md). Live Direct-to-Draft remains `APPROVED_DIRECTION_NOT_IMPLEMENTED`.
 
 **Branch:** `feature/ai-delivery-project-brief-foundation`
 
@@ -416,4 +416,3 @@ WordPress mock publication foundation + non-secret config management provides a 
 Real WordPress API integration, credential storage, and external post persistence remain intentionally deferred. All deferred features require separate scope approval, security review, and explicit credential handling design. The mock foundation + non-secret config is sufficient for admin testing of the local publish workflow, config management, and endpoint contract validation.
 
 **No commits performed. No secrets touched. No TenantSetting credential reads implemented. No external WordPress calls made. Non-secret config API plus encrypted PublicationTargetCredential status only — live draft proof and publish require separate future blocks.**
-

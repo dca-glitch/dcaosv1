@@ -85,7 +85,7 @@
 2. Optional STATUS breadcrumb for PRE-STAGING Lanes 14–15 (production **NO**, Puriva **BLOCKED** unchanged).
 3. Deferred-register / Puriva gate: keep BLOCKED; optional PRE-STAGING affirmation lines only.
 
-Full proposed text snippets are in the parent agent return (and historically in [`_g673_g684_proposed_main_doc_updates.md`](./_g673_g684_proposed_main_doc_updates.md) where still applicable).
+Full proposed text snippets are in the parent agent return (the earlier proposal scratch file was later deleted during documentation consolidation).
 
 ---
 

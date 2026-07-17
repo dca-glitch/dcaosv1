@@ -4,7 +4,7 @@
 
 **Purpose:** Single map of Phase F local smokes, runbooks, and validation gates.
 
-**Roadmap:** [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](../ROADMAP_LOCAL_COMPLETION_PHASE_F.md)
+**Roadmap:** `docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md` (archived reference; see Git history)
 
 **Prior closeout:** [`POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md`](./POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md)
 

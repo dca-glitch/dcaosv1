@@ -14,7 +14,7 @@ Related runbooks:
 - [`E2E_CLIENT_DELIVERY_SMOKE.md`](./E2E_CLIENT_DELIVERY_SMOKE.md)
 - [`LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md)
 - [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md)
-- [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
+- `../operator/deferred-scope-register.md` (archived reference; see Git history)
 
 ---
 
@@ -118,7 +118,7 @@ Proof: `smoke:client-portal:local`, `smoke:client-portal:populated-delivery:brow
 
 ## Future modules (not before staging)
 
-Concise boundary — see [`deferred-scope-register.md`](../operator/deferred-scope-register.md) for full list.
+Concise boundary — see `deferred-scope-register.md` (archived reference; see Git history) for full list.
 
 | Module | Status |
 |--------|--------|

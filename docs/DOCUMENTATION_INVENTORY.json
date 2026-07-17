@@ -1,0 +1,1200 @@
+{
+  "generatedOn": "2026-07-17",
+  "authorityOrder": [
+    "README.md",
+    "docs/README.md",
+    "docs/CURRENT_SYSTEM_SNAPSHOT.md",
+    "docs/STATUS.md",
+    "docs/ARCHITECTURE.md",
+    "docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md",
+    "docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md",
+    "docs/operator/OPERATOR_RUNBOOK.md",
+    "docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md"
+  ],
+  "summary": {
+    "totalFiles": 294,
+    "CURRENT_CANONICAL": 10,
+    "CURRENT_SUPPORTING": 159,
+    "SUPERSEDED_PLAN": 0,
+    "HISTORICAL_EVIDENCE": 125,
+    "SUPERSEDED_UI_PACK": 0
+  },
+  "files": {
+    "README.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "repository entry point"
+    },
+    "AGENTS.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "agent overlay after reading canonical docs"
+    },
+    "docs/AI_MODULES.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "active module landscape summary"
+    },
+    "docs/AI_MODULES_PLATFORM_RATIFICATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "platform-level AI scope/ratification reference"
+    },
+    "docs/AI_PROVIDER_DATA_COLLECTION_DECISION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI data-collection decision record"
+    },
+    "docs/ARCHITECTURE.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "current architecture map"
+    },
+    "docs/CURRENT_SYSTEM_SNAPSHOT.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "concise current-system truth"
+    },
+    "docs/DEVELOPMENT_WORKFLOW.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current contributor workflow guidance"
+    },
+    "docs/DOCUMENTATION_DISPOSITION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "refresh summary and delete/retain accounting"
+    },
+    "docs/DOCUMENTATION_INVENTORY.json": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "file-by-file classification index"
+    },
+    "docs/README.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "documentation map and authority order"
+    },
+    "docs/SECURITY_BASELINE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current security baseline summary"
+    },
+    "docs/SEO_AUTOMATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current SEO automation boundary summary"
+    },
+    "docs/STATUS.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "current status baseline"
+    },
+    "docs/TENANT_MODEL.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current tenant boundary reference"
+    },
+    "docs/ai/AI_AGENT_ROLES_AND_TASKS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI-agent role vocabulary"
+    },
+    "docs/ai/AI_MATERIAL_CLASSIFICATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI material classification reference"
+    },
+    "docs/ai/AI_MODEL_POLICY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI model policy reference"
+    },
+    "docs/ai/AI_ORCHESTRATOR_LITE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current orchestrator-lite reference"
+    },
+    "docs/ai/PURIVA_AI_PRELIVE_WORKFLOW_PACK.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "Puriva workflow pack reference"
+    },
+    "docs/ai-delivery/GOOGLE_DRIVE_DOCS_DECISION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current Google Drive decision record"
+    },
+    "docs/ai-delivery/WORDPRESS_CREDENTIAL_POLICY_DECISION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current WordPress credential policy decision"
+    },
+    "docs/ai-delivery/WORDPRESS_MOCK_PUBLICATION_FOUNDATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current disabled/mock WordPress boundary reference"
+    },
+    "docs/ai-delivery/WORDPRESS_PREPARED_DRAFT_FOUNDATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current local prepared-draft handoff boundary"
+    },
+    "docs/ai-delivery/ai-operating-layer-architecture.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI Delivery architecture reference"
+    },
+    "docs/ai-delivery/client-delivery-readiness.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current client delivery readiness reference"
+    },
+    "docs/ai-delivery/client-onboarding-runbook.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current onboarding/operator workflow reference"
+    },
+    "docs/ai-delivery/copilot-cli-permissions.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current Copilot CLI permission guidance"
+    },
+    "docs/ai-delivery/copilot-operating-model.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current Copilot operating-model guidance"
+    },
+    "docs/ai-delivery-api-contract.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "active API contract reference"
+    },
+    "docs/ai-delivery-projects-mvp-prd.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current product-scope reference for AI Delivery MVP"
+    },
+    "docs/ai-market-intelligence/admin-foundation.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current admin-only MI foundation reference"
+    },
+    "docs/ai-operations/ADMIN_CONSOLE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current admin console surface reference"
+    },
+    "docs/architecture/AI_MODEL_POLICY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current architecture-level AI model policy"
+    },
+    "docs/architecture/AI_POLICY_PROVIDER_ROUTING.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current provider-routing authority"
+    },
+    "docs/architecture/CLIENT_DOMAIN_OPERATING_MODEL.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "canonical client/domain model"
+    },
+    "docs/architecture/CLIENT_OPERATING_PACKS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current client operating pack model"
+    },
+    "docs/architecture/CLIENT_OPERATING_PACK_SAAS_LATER.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "approved-later client pack direction"
+    },
+    "docs/architecture/CLIENT_PORTAL_BOUNDARY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current client portal safety boundary"
+    },
+    "docs/architecture/CLIENT_PORTAL_SERIALIZER_NO_LEAK.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current client-safe serialization boundary"
+    },
+    "docs/architecture/G128_G133_MI_RH_POD_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained architecture closeout/provenance only"
+    },
+    "docs/architecture/G217_G222_FUTURE_MODULE_CONTRACTS_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained architecture closeout/provenance only"
+    },
+    "docs/architecture/G52_OWNER_DISPOSITION.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained architecture closeout/provenance only"
+    },
+    "docs/architecture/POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained architecture closeout/provenance only"
+    },
+    "docs/architecture/PRE_STAGING_ARCHITECTURE_AUDIT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained architecture closeout/provenance only"
+    },
+    "docs/architecture/PURIVA_OPERATING_PACK_V1.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current Puriva operating-pack reference"
+    },
+    "docs/architecture/README.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "architecture index beneath the canonical chain"
+    },
+    "docs/architecture/REVENUE_HUB_AI_RH0_OPERATING_MODEL.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained architecture closeout/provenance only"
+    },
+    "docs/audit/AUDIT_EVIDENCE_INDEX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/AUTHORIZATION_MATRIX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/DEPLOYMENT_SECURITY_CHECKLIST.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/EXECUTIVE_SUMMARY_FOR_OWNER.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/EXTERNAL_AUDIT_BRIEF.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/README.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/REMEDIATION_ROADMAP.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/RISK_REGISTER.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/SECURITY_REVIEW.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audit/TENANT_ISOLATION_TEST_PLAN.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/BOTANICAL_LIGHT_PART_I_CLOSEOUT_2026-07-17.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/BOTANICAL_LIGHT_ROUTE_AND_AUDIT_DISPOSITION_2026-07-16.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/CONTROLLED_STAGING_DEPLOY_C5E03EB_RESULT_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/FINAL_LOCAL_QUALITY_AND_RESIDUAL_VERIFICATION_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/FINAL_REAL_USER_UI_UX_POLISH_AUDIT_CURRENT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/FOUNDATION_AUDIT_2026_06_13.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/G50_POST_DEPLOY_PRODUCTION_PROOF_C5E03EB_RESULT_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/G50_PRODUCTION_DEPLOY_C5E03EB_RESULT_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/POST_DEPLOY_STAGING_PROOF_RECHECK_C5E03EB_RESULT_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/POST_WAVE_2_RESIDUAL_BACKLOG_RECONCILIATION_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/PRODUCTION_DEPLOY_GO_NO_GO_REVIEW_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/STAGING_SETUP_COMPLETION_AND_BROWSER_PROOF_C5E03EB_RESULT_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/WAVE_2_ONE_VISUAL_LANGUAGE_IMPLEMENTATION_RESULT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/WAVE_3_VISUAL_SYSTEM_CONVERGENCE_RESULT_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/audits/WAVE_4_STATE_TAXONOMY_TABLE_CONSOLIDATION_RESULT_2026-07-14.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/email-notifications-contract.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current notification contract reference"
+    },
+    "docs/frontend/AUTH_TENANT_MODULE_INTEGRATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current frontend auth/tenant integration notes"
+    },
+    "docs/frontend/PROTECTED_SHELL_PLAN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current protected shell reference"
+    },
+    "docs/implementation/API_RESPONSE_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/CRUD_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/DETAIL_PAGE_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/ERROR_HANDLING_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/FILTERING_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/FORM_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/FRONTEND_STATE_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/LIST_PAGE_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/MODULE_LIFECYCLE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/MODULE_PROMOTION_PATH.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/NAVIGATION_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/PAGINATION_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/REGISTRY_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/REUSABLE_MODULE_BLUEPRINT.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/SORTING_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/STATIC_FIRST_MODULE_STRATEGY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/VALIDATION_PATTERN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/operator/AI_PROVIDER_LOCAL_CONFIG.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current local AI-provider config guardrail"
+    },
+    "docs/operator/ENV_READINESS_INVENTORY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current env-name inventory without secrets"
+    },
+    "docs/operator/G147_NEXT_20_GATES.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/G227_NEXT_30_GATES.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/G409_NEXT_GATES.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/G468_NEXT_50_GATES.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/G649_G660_OPERATOR_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/G673_G684_STALE_CLAIM_SWEEP_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/G708_NEXT_GATES.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/LIVE_PROOF_APPROVAL_CHECKLIST.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current approval checklist for any live proof"
+    },
+    "docs/operator/LOCAL_ONLY_PROOF_TAXONOMY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current local-vs-live proof labeling guide"
+    },
+    "docs/operator/NEXT_GATE_EXECUTION_CHECKLIST.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/NO_LIVE_PROOF_CATALOGUE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current no-live proof catalogue"
+    },
+    "docs/operator/OPERATOR_RUNBOOK.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "current operator guardrails"
+    },
+    "docs/operator/OWNER_GATE_CHECKLIST.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current owner-gate checklist"
+    },
+    "docs/operator/POWERSHELL_SAFETY_CHECKLIST.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current PowerShell safety reference"
+    },
+    "docs/operator/PRE_STAGING_CLOSURE_VERDICT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/PRE_STAGING_OPERATOR_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/PRODUCTION_CLEAN_STATE_RESET_2026-07-13.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/operator/README.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "operator doc index beneath the canonical chain"
+    },
+    "docs/operator/TEST_SMOKE_INVENTORY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current test/smoke command inventory"
+    },
+    "docs/operator/VALIDATION_COMMAND_GUARDS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current validation command guardrail reference"
+    },
+    "docs/operator/admin-decision-log-rules.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current admin decision-log rules"
+    },
+    "docs/operator/admin-operator-manual.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current admin/operator manual"
+    },
+    "docs/operator/ai-daily-workflow-runbook.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI daily workflow runbook"
+    },
+    "docs/operator/chatgpt-github-operating-model.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current GitHub/ChatGPT operating model reference"
+    },
+    "docs/operator/client-delivery-sop.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current client delivery SOP"
+    },
+    "docs/operator/client-wording-guide.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current client wording guide"
+    },
+    "docs/operator/github-first-reporting-standard.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current GitHub-first reporting rules"
+    },
+    "docs/operator/github-first-task-selection.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current GitHub-first task selection guide"
+    },
+    "docs/operator/github-proof-checklist.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current proof checklist"
+    },
+    "docs/operator/post-merge-completion-status-20260627.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/operator/post-merge-completion-status-20260628.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "old operator closeout or next-gate context retained only for provenance"
+    },
+    "docs/ops/DCA_OS_LITE_OPERATING_TARGETS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current operating target reference"
+    },
+    "docs/project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "status vocabulary and capability labels"
+    },
+    "docs/project-control/CANONICAL_COMPONENT_SYSTEM.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current component-system decision reference"
+    },
+    "docs/releases/DCA_OS_LITE_V1_DARK_NEBULA_DEPLOYMENT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof or deployment provenance only"
+    },
+    "docs/runbooks/ADMIN_OPERATIONS_RECOVERY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current admin recovery runbook"
+    },
+    "docs/runbooks/AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/AI_MODEL_ROUTING_POLICY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/AI_ORCHESTRATOR_G625_G636_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/AI_PROVIDER_LIVE_PROOF.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/BACKUP_RESTORE_PROCEDURE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current backup/restore runbook"
+    },
+    "docs/runbooks/CLIENT_APPROVAL_G577_G588_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/CLIENT_PORTAL_G565_G576_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/CLIENT_PORTAL_ROUTE_INVENTORY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/E2E_CLIENT_DELIVERY_SMOKE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/EMAIL_NOTIFICATIONS_PROOF.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/EMAIL_NO_SEND_G505_G516_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/EXTERNAL_INTEGRATIONS_READINESS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/FUTURE_MODULES_G601_G612_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/G49_PRODUCTION_DRY_RUN_READ_ONLY_PROOF.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/G53_PRODUCTION_SAFETY_PLAN.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/G55_PRELIVE_READINESS.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/G56_PRELIVE_READINESS.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/G57_G68_PRELIVE_READINESS.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/GA_GSC_G517_G528_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/GA_GSC_OAUTH_DESIGN_G517_G528.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/IMAGE_COMPLIANCE_G553_G564_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/IMAGE_GENERATION_PROOF.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current integrations truth matrix"
+    },
+    "docs/runbooks/LOCAL_SMOKE_MATRIX.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current smoke matrix"
+    },
+    "docs/runbooks/MAX_LOCAL_COMPLETION_BEFORE_STAGING.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/MONTHLY_REPORT_CSV_IMPORT_PROOF_PLAN.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/MONTHLY_REPORT_G529_G540_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/MONTHLY_REPORT_LIVE_DATA_PROOF.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/NOTIFICATION_TAXONOMY_G493_G504_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_58_DOCS_CONSISTENCY.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_59_MODULE_MIDDLEWARE_LOCAL_ENFORCE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_60_CLIENT_HUB_EDGE_CASES.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_61_ENCRYPTED_CREDENTIALS_LOCAL_CHECKLIST.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_62_SETTINGS_TEAM_COMPANY_PROFILE_POLISH.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_63_MONTHLY_REPORTS_COMPACT_UX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_64_WORDPRESS_HANDOFF_LOCAL_GUARDED.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_65_CLIENT_DOMAIN_REGRESSION_POLISH.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_66_AI_DELIVERY_OPERATOR_UX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_67_MI_COMPACT_PASS.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_68_CLIENT_PORTAL_MVP_POLISH.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_69_FINANCE_SECOND_TENANT_PROOF.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_70_AUDIT_ACTIVITY_READ_UI.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_71_AI_SEO_CONTENT_PRODUCTION_SHELL.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_72_GOOGLE_DRIVE_EXPORT_GUARDED.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_73_R2_LOCAL_GUARD.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_74_AI_PROVIDER_GUARDED_UX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_75_EMAIL_EN2_LITE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_76_FIRST_CLIENT_PRACTICE_RUN.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_BLOCK_77_PHASE_F_LOCAL_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_F_LOCAL_CLOSEOUT_INDEX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_G_BLOCK_1_STAGING_TARGET_AND_VPS_PACK.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PHASE_G_POST_DEFERRED_CLOSEOUT_INDEX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_31_AUDIT_FEED_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_32_DASHBOARD_METRICS_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_33_SETTINGS_TEAM_SHELL_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_34_CONTENT_PLAN_REVIEW_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_35_CONTENT_DRAFT_REVIEW_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_36_FINANCE_ADMIN_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_37_R2_BYTE_ROUNDTRIP_LOCAL_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_38_EMAIL_OUTBOX_READ_ONLY_LOCAL_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_39_TENANT_MODULE_DRY_RUN_LOCAL_PROBE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_40_OPENROUTER_GUARDED_LOCAL_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_41_MI_OPERATOR_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_42_AI_DELIVERY_WORKFLOW_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_43_GOOGLE_DRIVE_EXPORT_LIVE_LOCAL_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_44_CREDENTIAL_MASTER_KEY_LOCAL_PROBE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_45_WORDPRESS_PUBLISH_OPEN_GATE_LOCAL_PROBE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_46_TENANT_MODULE_ENFORCE_LOCAL_PROBE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_47_MONTHLY_METRICS_IMPORT_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_48_ROLES_PERMISSIONS_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_49_MODULE_REGISTRY_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_50_SETTINGS_BACKEND_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_51_AUDIT_ACTIVITY_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_52_DASHBOARD_DATA_BACKED_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_53_AUTH_INVITE_BOUNDARY_BROWSER_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_PHASE_C_D_CLOSEOUT_INDEX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/POST_MVP_PHASE_E_DEFERRED_OWNER_GATES.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PRE_STAGING_CLIENT_DELIVERY_READINESS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PRE_STAGING_VALIDATION_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PRIVATE_DELIVERY_DOWNLOAD_BOUNDARY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current private-delivery boundary reference"
+    },
+    "docs/runbooks/PRODUCTION_DEPLOYMENT.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current deployment procedure reference"
+    },
+    "docs/runbooks/PRODUCTION_DRY_RUN_PURIVA_PREPROD.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PRODUCTION_ROLLBACK.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current rollback procedure reference"
+    },
+    "docs/runbooks/PRODUCTION_SAFETY_CHECKLIST.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current production safety checklist"
+    },
+    "docs/runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_CONTENT_PRODUCTION_V1_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_FINANCE_ATTRIBUTION_V1_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_FULL_DELIVERY_SMOKE_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_IMAGE_PACKAGE_V1_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_LAUNCH_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current Puriva launch evaluation reference"
+    },
+    "docs/runbooks/PURIVA_LOCAL_CLIENT_SETUP_FOUNDATION_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MANUAL_METRICS_V1_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MARKET_INTELLIGENCE_V1_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MEDICAL_COMPLIANCE_V1_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MONTHLY_OPERATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MONTHLY_REPORT_V1_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_10_CLIENT_PORTAL_CATALOG_INQUIRY_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_11_MI_PRE_STAGING_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_12_CLIENT_PORTAL_EDGE_CASES_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_13_CLIENT_PORTAL_SPARSE_DELIVERY_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_14_CLIENT_PORTAL_ACCESS_REVOKE_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_15_GOOGLE_DRIVE_EXPORT_PRE_STAGING_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_16_CLIENT_PORTAL_EMPTY_ARCHIVE_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_17_CLIENT_HUB_CATALOG_INQUIRY_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_18_MONTHLY_REPORT_MI_CONTEXT_PRE_STAGING_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_19_CLIENT_PORTAL_PROJECT_FILTER_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_20_CLIENT_HUB_PUBLICATION_LOG_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_21_MONTHLY_REPORT_PRE_STAGING_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_22_MONTHLY_REPORT_METRICS_PRE_STAGING_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_23_CLIENT_PORTAL_SIGNED_OUT_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_24_MONTHLY_REPORT_ADMIN_BROWSER_PRE_STAGING_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_25_CLIENT_DOMAIN_HUB_CATALOG_PUBLICATION_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_26_CLIENT_ACCESS_ADMIN_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_27_CLIENT_PORTAL_POPULATED_DELIVERY_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_28_LOGIN_SHELL_BROWSER_PRE_STAGING_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_29_ARCHITECTURE_BLOCKS_4_6_LOCAL_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_7_DELIVERY_SUMMARY_LOCAL_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_8_CLIENT_ACCESS_PRE_STAGING_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_MVP_BLOCK_9_CLIENT_PORTAL_BROWSER_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_OPERATING_PACK_V1_GO_NO_GO.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_PACK_G589_G600_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/PURIVA_SEO_PLAN_V1_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/PURIVA_STAGING_PRODUCTION_READINESS_GATE.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/STAGING_LOCAL_EXECUTION_PACK.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/STAGING_MIGRATION_PROCEDURE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/runbooks/STAGING_READINESS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current staging-readiness procedure reference"
+    },
+    "docs/runbooks/STORAGE_R2_G229_G248_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/STORAGE_R2_G469_G480_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/runbooks/STORAGE_R2_PROOF.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current retained R2 proof/recovery reference"
+    },
+    "docs/runbooks/WORDPRESS_DRAFT_PROOF.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained proof-plan or gate evidence rather than canonical current status"
+    },
+    "docs/runbooks/WORDPRESS_G541_G552_CLOSEOUT.md": {
+      "classification": "HISTORICAL_EVIDENCE",
+      "note": "retained closeout or proof-provenance doc rather than current default instruction"
+    },
+    "docs/security/CLIENT_BOUNDARY_INVENTORY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current client-boundary inventory"
+    },
+    "docs/security/CLIENT_PORTAL_STORAGE_BOUNDARY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current client portal storage boundary"
+    },
+    "docs/security/CREDENTIAL_ENCRYPTION_FOUNDATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/ENV_SHAPE_VS_LIVE_PROOF_LABELS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/ERROR_REDACTION_INVENTORY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/LEGACY_WORDPRESS_CONFIG_SUNSET.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/PRODUCTION_FREEZE_SWEEP.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/PROVIDER_METADATA_REDACTION_INVENTORY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/SECRETS_REDACTION_INVENTORY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/SECURITY_BOUNDARY_AUDIT.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current security boundary reference"
+    },
+    "docs/security/SECURITY_CHECKLIST_G138.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/SECURITY_CHECKLIST_G223.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/SECURITY_CHECKLIST_G409.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/SECURITY_CHECKLIST_G637.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/SECURITY_G637_G648_CLOSEOUT.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/STAGING_GUARD_SWEEP.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/STORAGE_KEY_REDACTION_INVENTORY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/TENANT_MODULE_ENFORCEMENT.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/TENANT_MODULE_ENFORCEMENT_LOCAL_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/WORDPRESS_CREDENTIAL_SECURITY_DESIGN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current WordPress credential-security design reference"
+    },
+    "docs/security/WORDPRESS_PUBLISH_LOCAL_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "current UI authority"
+    },
+    "docs/ux/monthly-report-ui-testability.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current monthly-report UI testability notes"
+    },
+    "docs/ux/remaining-ui-blockers.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current retained UI blocker list"
+    }
+  }
+}

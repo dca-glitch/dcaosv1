@@ -18,7 +18,7 @@ Related:
 - [`STAGING_LOCAL_EXECUTION_PACK.md`](./STAGING_LOCAL_EXECUTION_PACK.md)
 - [`BACKUP_RESTORE_PROCEDURE.md`](./BACKUP_RESTORE_PROCEDURE.md)
 - [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md)
-- [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
+- `../operator/deferred-scope-register.md` (archived reference; see Git history)
 - [`scripts/smoke-puriva-readiness-local.ps1`](../../scripts/smoke-puriva-readiness-local.ps1)
 
 ---
@@ -341,7 +341,7 @@ Production host: `system.digitalcubeagency.net` (DCA OS Lite). **Frozen** until 
 
 ### Explicit deferred (unchanged by Block 20)
 
-From [`deferred-scope-register.md`](../operator/deferred-scope-register.md):
+From `deferred-scope-register.md` (archived reference; see Git history):
 
 - Live WordPress publish (draft prep only locally)
 - OpenRouter / live AI provider production proof

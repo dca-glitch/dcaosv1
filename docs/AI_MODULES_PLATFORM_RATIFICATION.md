@@ -10,7 +10,7 @@ The system must not be built as separate isolated workflows for each business us
 
 DCA OS Lite is currently in local-first admin/operator foundation work.
 
-Current UI / route stabilization is complete after PRs #38–#43: Dark Nebula full-system UI pass, AI Delivery workspace sectioning, Workflow Briefs cleanup, client-facing polish, dashboard audit feed smoke alignment, and client-only `#/client-portal` access.
+Current UI / route stabilization is complete on the Botanical Light baseline: full-system UI redesign, AI Delivery workspace sectioning, Workflow Briefs cleanup, client-facing polish, dashboard audit feed smoke alignment, and client-only `#/client-portal` access.
 
 Current AI Delivery admin workflow foundation order:
 
@@ -80,7 +80,7 @@ Vertical modules should be built after these shared layers are stable.
 ## Ratified Near-Term Order
 
 1. EN2 event wiring.
-2. UI/UX cleanup and Dark Nebula design system pass.
+2. UI/UX cleanup and Botanical Light design system pass.
 3. R2 asset and deliverable storage expansion.
 4. Client Portal foundation.
 5. AI Workflow real execution layer.

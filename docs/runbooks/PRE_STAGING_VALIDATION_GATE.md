@@ -23,7 +23,7 @@ Related:
 - [`docs/runbooks/LOCAL_SMOKE_MATRIX.md`](./LOCAL_SMOKE_MATRIX.md) — smoke requirements matrix
 - [`docs/runbooks/MAX_LOCAL_COMPLETION_BEFORE_STAGING.md`](./MAX_LOCAL_COMPLETION_BEFORE_STAGING.md) — area completion and deferred boundaries
 - [`docs/operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md) — env var names (no secrets)
-- [`docs/STATUS_COMPLETION.md`](../STATUS_COMPLETION.md) — completion overview
+- `docs/STATUS_COMPLETION.md` (archived reference; see Git history) — completion overview
 - [`docs/runbooks/PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md`](./PURIVA_MVP_BLOCK_30_LOCAL_CLOSEOUT_INDEX.md) — Puriva MVP Blocks 7–30 map
 - [`docs/runbooks/POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md`](./POST_MVP_PHASE_A_D_CLOSEOUT_INDEX.md) — Post-MVP Blocks 31–53 map
 - [`docs/runbooks/POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md`](./POST_MVP_BLOCK_57_LOCAL_REPO_FINAL_CLOSEOUT.md) — final local closeout

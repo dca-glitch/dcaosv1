@@ -1,0 +1,88 @@
+# Current System Snapshot
+
+**Purpose:** concise current-system truth for maintainers and external agents.
+
+## 1. Product identity
+
+DCA OS Lite is the internal agency operating system for Digital Cube Agency.
+
+- It is **not** currently documented as a generally ready live SaaS product.
+- Puriva is the first **Client Operating Pack** on the shared platform.
+- Current canonical baseline is merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55`).
+- Production exists, but readiness for new production work remains **NO** unless a current runbook explicitly authorizes it.
+
+## 2. Architecture and operating model
+
+- Monorepo with `apps/web`, `apps/api`, `packages/data`, and `packages/shared`
+- React + Vite frontend
+- Node.js + Express API
+- Prisma + PostgreSQL data layer
+- Shared TypeScript contracts between frontend and backend
+- One internet domain = one `Client`
+- Tenant = workspace/licensee layer; client access is granted per `Client`, not per project
+
+## 3. Roles and access boundaries
+
+| Role | Current scope |
+|---|---|
+| `owner` / `admin` | Full operator surfaces |
+| client-only users | Client-safe portal surfaces only |
+
+Clients must not see prompts, raw workflow runs, provider metadata, AI cost internals, credentials, `storageKey`, or admin-only notes.
+
+## 4. Current capability truth
+
+| Area | State now | Notes |
+|---|---|---|
+| Auth/session/RBAC | IMPLEMENTED_LOCAL_PROVEN | `PR #55` is the current baseline for client session restoration under local rate limiting |
+| Clients / projects / tasks | IMPLEMENTED | Core admin surfaces are part of the current app map |
+| Client Portal MVP | IMPLEMENTED_LOCAL_PROVEN | Client-safe visibility, approvals, archive, and FINAL monthly reports only |
+| AI Delivery | IMPLEMENTED_LOCAL_PROVEN | Operator-primary routed workflow pages are the current baseline |
+| AI Operations / Orchestrator Lite | CONFIG_SHAPE_PROVEN | Read-only/planning-oriented; not a blanket live-execution claim |
+| Market Intelligence | LOCAL_FOUNDATION | Admin-only MVP; no live scraping/autonomous agent claim |
+| Monthly reports | IMPLEMENTED_LOCAL_PROVEN | FINAL-only client visibility; live GA4/GSC is withdrawn |
+| R2 private storage | RECORDED_STAGING_PROOF | Retained as historical proof provenance, not blanket live authorization |
+| WordPress draft handoff | IMPLEMENTED_LOCAL_PROVEN | Local prepared-draft/admin foundations only; live HTTP draft/publish is not current capability |
+| Live GA4/GSC integration | WITHDRAWN | Not deferred for automatic resumption |
+
+## 5. Current proof baseline
+
+| Proof | Result |
+|---|---|
+| Web unit tests | **362/362 PASS** |
+| AI Delivery deep-link proof | **85/85 PASS** |
+| System-wide responsive proof | **124/124 PASS** |
+| Genuine Client-role Botanical proof | **98/98 PASS** |
+
+These results come from `PR #55` and remain the canonical UI proof baseline for merge commit `998c294`.
+
+## 6. Integrations and publishing boundary
+
+- AI routing authority lives in [`architecture/AI_POLICY_PROVIDER_ROUTING.md`](./architecture/AI_POLICY_PROVIDER_ROUTING.md).
+- Local deterministic AI execution remains the default-safe path unless a separate gate authorizes live provider use.
+- WordPress is an optional publishing connector, not the core content model.
+- Current WordPress claim boundary is **draft preparation / local handoff only** unless a retained proof document records a narrower historical proof.
+- GA4/GSC live integration is withdrawn. Manual import is not implemented.
+
+## 7. UI truth
+
+- **Current UI authority:** [`ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md)
+- Frontend terminology stays English-only.
+- Current proof references use desktop **1440**, tablet **768**, and mobile **390** viewports.
+- Current UX direction favors routed pages for complex workflows, with only short confirmation and single-purpose overlays retained as modals.
+- Older Dark Nebula design docs are historical only.
+
+## 8. Approved direction not implemented
+
+Treat the following as `APPROVED_DIRECTION_NOT_IMPLEMENTED` unless a higher-authority current doc says otherwise:
+
+- broader licensed SaaS rollout
+- advanced public/client collaboration features
+- default live AI/provider execution across workflows
+- live WordPress HTTP draft or publish from the current local prepared-draft baseline
+- GA4/GSC automation or manual import flow
+- broad autonomous background agents that can spend money
+
+## 9. Historical evidence boundary
+
+Historical staging/production proofs, UI audits, deployment closeouts, and release notes remain evidence only. Use them for provenance, recovery, security, or deployment history — not for current readiness claims.

@@ -19,7 +19,7 @@
 - [`G217_G222_FUTURE_MODULE_CONTRACTS_CLOSEOUT.md`](./G217_G222_FUTURE_MODULE_CONTRACTS_CLOSEOUT.md)
 - [`REVENUE_HUB_AI_RH0_OPERATING_MODEL.md`](./REVENUE_HUB_AI_RH0_OPERATING_MODEL.md)
 - [`POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md`](./POD_AI_TOOLKIT_POD0_OPERATING_MODEL.md)
-- Proof-state vocabulary: [`../ux/proof-state-vocabulary.md`](../ux/proof-state-vocabulary.md)
+- Proof-state vocabulary: `../ux/proof-state-vocabulary.md` (archived reference; see Git history)
 
 ---
 

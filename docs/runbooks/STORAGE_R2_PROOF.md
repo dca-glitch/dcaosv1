@@ -9,7 +9,7 @@ Related:
 - [`POST_MVP_BLOCK_37_R2_BYTE_ROUNDTRIP_LOCAL_GATE.md`](./POST_MVP_BLOCK_37_R2_BYTE_ROUNDTRIP_LOCAL_GATE.md)
 - [`PHASE_F_BLOCK_73_R2_LOCAL_GUARD.md`](./PHASE_F_BLOCK_73_R2_LOCAL_GUARD.md)
 - [`../operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md)
-- [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)
+- `../operator/deferred-scope-register.md` (archived reference; see Git history)
 - [`PURIVA_LAUNCH_GATE.md`](./PURIVA_LAUNCH_GATE.md) (launch dependency tracker — create/approve separately)
 - Code seam: `apps/api/src/storage/private-storage.service.ts`, `apps/api/src/storage/r2.service.ts`, `apps/api/src/storage/r2.config.ts`, `apps/api/src/storage/r2-proof-stage.ts`, `apps/api/src/storage/r2-proof-contracts.ts`, `apps/api/src/storage/r2-target-environment-proof-plan.ts`, `apps/api/src/storage/r2-no-io-readiness-invariant.ts`, `apps/api/src/storage/private-storage-proof-intent.ts`, `apps/api/src/storage/client-safe-storage-url-policy.ts`, `apps/api/src/storage/r2-cleanup-proof-plan.ts`, `apps/api/src/storage/r2-partial-config-diagnostics.ts`, `apps/api/src/storage/storage-key-boundary.ts`, `apps/api/src/storage/admin-vs-client-storage-field-policy.ts`, `apps/api/src/storage/storage-error-redaction.ts`
 - Closeout: [`STORAGE_R2_G229_G248_CLOSEOUT.md`](./STORAGE_R2_G229_G248_CLOSEOUT.md)

@@ -162,7 +162,7 @@ In-memory limit: 300 requests / 15 minutes per IP. Long smoke chains may hit 429
 | `smoke:settings-team:browser` | Settings/Team shell |
 | `smoke:settings-backend:browser` | Settings backend binding |
 | `smoke:audit-activity:browser` | Audit activity |
-| `smoke:dashboard:audit-feed:browser` | Dashboard audit feed (aligned to compact Dark Nebula UI) |
+| `smoke:dashboard:audit-feed:browser` | Dashboard audit feed (aligned to current Botanical Light UI) |
 | `smoke:dashboard-data-backed:browser` | Dashboard metrics |
 | `smoke:auth-invite-boundary:browser` | Invite boundary copy |
 | `smoke:puriva-client-portal-boundary:local` | Puriva client-safe boundary: archive/monthly-report list+detail+download/release-package/deliverable field safety, `performanceSummary` provenance (`sourceType` allowed), legacy `/briefs` compatibility scan, admin-only WorkflowBriefs path denial, MI/SEO reportJson sanitization, Production Plan Review boundary (Blocks 4G/4B) |

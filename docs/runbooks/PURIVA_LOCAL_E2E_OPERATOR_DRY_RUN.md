@@ -11,7 +11,7 @@ Related:
 - [`PURIVA_FULL_DELIVERY_SMOKE_GATE.md`](./PURIVA_FULL_DELIVERY_SMOKE_GATE.md)
 - [`PURIVA_STAGING_PRODUCTION_READINESS_GATE.md`](./PURIVA_STAGING_PRODUCTION_READINESS_GATE.md)
 - [`docs/operator/client-delivery-sop.md`](../operator/client-delivery-sop.md)
-- [`docs/operator/first-client-next-actions.md`](../operator/first-client-next-actions.md)
+- `docs/operator/first-client-next-actions.md` (archived reference; see Git history)
 
 ---
 

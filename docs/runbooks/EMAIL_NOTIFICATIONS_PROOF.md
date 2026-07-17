@@ -76,7 +76,7 @@ Both pathways write to the same `EmailLog` table (`packages/data/prisma/schema.p
 - `buildNotificationAuditMetadata()` (G256) for safe audit metadata, with provider key presence represented as a boolean only.
 - `EMAIL_TEMPLATE_INVENTORY` constrained to the current schema enum values; `TYPED_NOTIFICATION_TEMPLATE_CATALOG` (G166/G261) maps logical keys onto those schema keys. Dedicated DB enum keys remain blocked without schema approval.
 - Correlation/idempotency design only: `apps/api/src/notifications/notification-correlation.ts` (G257) — **no migration**.
-- Persistence + inbox API design only: [`docs/operator/notification-persistence-design.md`](../operator/notification-persistence-design.md) (G167–G168 / G257–G259).
+- Persistence + inbox API design only: `docs/operator/notification-persistence-design.md` (archived reference; see Git history) (G167–G168 / G257–G259).
 
 ---
 

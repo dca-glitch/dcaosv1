@@ -139,4 +139,4 @@ Forbidden in this block (not run): live OpenRouter smoke, `SMOKE_EXPECT_OPENROUT
 - [`INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
 - [`PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md)
 - [`docs/STATUS.md`](../STATUS.md)
-- [`deferred-scope-register.md`](./deferred-scope-register.md)
+- `deferred-scope-register.md` (archived reference; see Git history)

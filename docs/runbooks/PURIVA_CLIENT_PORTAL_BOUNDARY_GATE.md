@@ -44,7 +44,7 @@ Related:
 include client-safe fields such as `sourceType`, `manualSource`, `placeholderOnly`,
 `disclaimer`, `itemCount`, and normalized GSC/GA4 totals when sourced from an approved
 snapshot. This is intentional metric provenance, not a raw provider payload. See
-[`docs/modules/CLIENT_PORTAL_PLAN.md`](../modules/CLIENT_PORTAL_PLAN.md).
+`docs/modules/CLIENT_PORTAL_PLAN.md` (archived reference; see Git history).
 
 ---
 

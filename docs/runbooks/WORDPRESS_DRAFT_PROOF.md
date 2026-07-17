@@ -6,7 +6,7 @@
 
 **Staging live proof (2026-07-12, artifact `bd649d5`):** marker `DCA-WP-DRAFT-20260712T130503Z-8ecfacb2`; target `05ef12aa-662a-4bf7-b1c5-c17d295e5e0b` on `purivastaging.digitalcubeagency.net`; auth identifier length 17 (e-mail); Application Password length 29 (encrypted); create → `wordpress_draft_created` / status `draft` / post ID `6`; exact-ID trash `force=false`; attempt **TRASHED**; retry=0; fallback=false; media=0; dedicated flags restored false; three prior AMBIGUOUS 401 attempts retained unchanged.
 
-**Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md)).
+**Gate:** Puriva requires WordPress **draft/handoff**; WordPress **auto-publish** remains deferred (see `docs/operator/deferred-scope-register.md` (archived reference; see Git history)).
 
 **Three tiers (G86 boundary):**
 

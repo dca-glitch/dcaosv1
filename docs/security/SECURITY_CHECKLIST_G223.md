@@ -8,7 +8,7 @@
 
 **Supersedes for operator use:** Prefer this document over [`SECURITY_CHECKLIST_G138.md`](./SECURITY_CHECKLIST_G138.md) for post-G148 alignment. G138 remains historical.
 
-**Primary sources:** [`docs/STATUS.md`](../STATUS.md), [`docs/operator/deferred-scope-register.md`](../operator/deferred-scope-register.md), [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md), [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md), [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](./SECURITY_BOUNDARY_AUDIT.md), [`docs/operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md), [`docs/operator/TEST_SMOKE_INVENTORY.md`](../operator/TEST_SMOKE_INVENTORY.md), [`docs/operator/VALIDATION_COMMAND_GUARDS.md`](../operator/VALIDATION_COMMAND_GUARDS.md).
+**Primary sources:** [`docs/STATUS.md`](../STATUS.md), `docs/operator/deferred-scope-register.md` (archived reference; see Git history), [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md), [`docs/runbooks/PURIVA_LAUNCH_GATE.md`](../runbooks/PURIVA_LAUNCH_GATE.md), [`docs/security/SECURITY_BOUNDARY_AUDIT.md`](./SECURITY_BOUNDARY_AUDIT.md), [`docs/operator/ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md), [`docs/operator/TEST_SMOKE_INVENTORY.md`](../operator/TEST_SMOKE_INVENTORY.md), [`docs/operator/VALIDATION_COMMAND_GUARDS.md`](../operator/VALIDATION_COMMAND_GUARDS.md).
 
 **Code inspection (light, read-only):** Client Portal FINAL/storage-key shaping in `apps/api/src/core/client-portal.runtime.ts`; SEC-H1 regression in `apps/api/tests/integration/sec-h1-storage-key-leak.integration.test.ts`; staging remote refuse in `scripts/smoke-staging-security-baseline.mjs`; staging host allowlist (production excluded) in `scripts/smoke-mvp-local.mjs`; R2 proof-stage `clientSafe` flags in `apps/api/src/storage/r2-proof-stage.ts`.
 
@@ -76,7 +76,7 @@
 
 ### 2.7 Repository and change control
 
-- [x] G223–G227 lane is docs-only for this subagent; protected main-owned files are proposal-only (see [`_g223_g227_proposed_main_doc_updates.md`](../operator/_g223_g227_proposed_main_doc_updates.md)).
+- [x] G223–G227 lane is docs-only for this subagent; protected main-owned files are proposal-only at the time; the temporary proposal scratch file was later deleted during documentation consolidation.
 - [x] No commit or push performed by this lane.
 - [x] `.cursor/settings.json` observed untracked; do not `git add` it.
 - [ ] Before any future commit: `git diff --check`, review changed docs/source only, explicit commit approval.
@@ -100,7 +100,7 @@
 | [`TEST_SMOKE_INVENTORY.md`](../operator/TEST_SMOKE_INVENTORY.md) | G224 |
 | [`VALIDATION_COMMAND_GUARDS.md`](../operator/VALIDATION_COMMAND_GUARDS.md) | G225 |
 | [`G227_NEXT_30_GATES.md`](../operator/G227_NEXT_30_GATES.md) | G227 |
-| [`_g223_g227_proposed_main_doc_updates.md`](../operator/_g223_g227_proposed_main_doc_updates.md) | G226 + main-doc proposals |
+| `temporary proposal scratch file (deleted during later consolidation)` | G226 + main-doc proposals |
 
 ---
 

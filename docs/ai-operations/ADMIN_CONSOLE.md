@@ -17,8 +17,7 @@ It answers:
 **Related admin surfaces (G429–G448):**
 
 - Daily Cockpit — `#/admin-daily-cockpit` ([`AdminDailyOperationsCockpit.tsx`](../../apps/web/src/pages/ai-operations/AdminDailyOperationsCockpit.tsx))
-- Admin surface inventory — [`docs/ui/admin-surface-inventory.md`](../ui/admin-surface-inventory.md)
-- Proof-state vocabulary — [`docs/ux/proof-state-vocabulary.md`](../ux/proof-state-vocabulary.md)
+- Current UI authority — [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](../ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md)
 - Integration truth matrix — [`docs/runbooks/INTEGRATIONS_TRUTH_MATRIX.md`](../runbooks/INTEGRATIONS_TRUTH_MATRIX.md)
 
 ## Access
@@ -92,7 +91,7 @@ Supporting panels (embedded elsewhere, not separate nav):
 - Per-tenant spend caps
 - Deeper provider observability (latency, retries, billing)
 - Autonomous agents
-- Launch-blocker board UI (design only — [`launch-blocker-board-ui-design.md`](../ui/launch-blocker-board-ui-design.md))
+- Launch-blocker board UI remains out of current implemented scope.
 
 ## Local validation
 

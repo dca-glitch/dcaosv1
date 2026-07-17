@@ -11,7 +11,7 @@
 - [`docs/ai-delivery/WORDPRESS_CREDENTIAL_POLICY_DECISION.md`](../ai-delivery/WORDPRESS_CREDENTIAL_POLICY_DECISION.md) — aktualna decyzja STOP
 - [`docs/ai-delivery/WORDPRESS_PREPARED_DRAFT_FOUNDATION.md`](../ai-delivery/WORDPRESS_PREPARED_DRAFT_FOUNDATION.md) — przygotowanie draftu lokalnie
 - [`docs/ai-delivery/WORDPRESS_MOCK_PUBLICATION_FOUNDATION.md`](../ai-delivery/WORDPRESS_MOCK_PUBLICATION_FOUNDATION.md) — mock publikacji i konfiguracja bez sekretów
-- [`prd.md.txt`](../../prd.md.txt) — PRD produktu (sekcje 4.2, 5.2, 12.2, 13)
+- [`docs/CURRENT_SYSTEM_SNAPSHOT.md`](../CURRENT_SYSTEM_SNAPSHOT.md) — current system snapshot and WordPress boundary
 
 ---
 
@@ -67,7 +67,7 @@ Nie jest to implementacja. To plan bezpieczeństwa do zatwierdzenia przez właś
 
 ### Zgodność z PRD
 
-PRD (`prd.md.txt`) traktuje WordPress jako:
+Current canonical docs treat WordPress as:
 
 > Site config + draft preparation foundation; **no credentials stored in UI**; **full publishing gated**
 
