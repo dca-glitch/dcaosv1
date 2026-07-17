@@ -43,6 +43,33 @@ Apply the rest of this file only after reading that authority chain.
 - Do not treat historical audits, release notes, staging proofs, or production proofs as current implementation authority unless canonical docs explicitly adopt them.
 - Do not treat approved direction as implemented; label it `APPROVED_DIRECTION_NOT_IMPLEMENTED` when relevant.
 
+## Codex orchestration and token economy
+
+- The main agent is the sole orchestrator and owns the plan, decisions, result integration, and final verification.
+- Delegate only independent, bounded tasks when parallelism materially saves time or protects main-context capacity; do not delegate simple sequential work.
+- Use at most three direct subagents. Subagents must not delegate further agents.
+- Only one agent may modify a given file or area at a time.
+- Use the least expensive suitable model for simple analysis and exploration; reserve stronger models for architecture, security, migrations, difficult defects, and final review.
+- Use Graphify `query`, `path`, or `explain` before broad code reading. Do not repeat an identical read, command, or task without changed state or a new hypothesis; after two identical failures, stop retrying and change approach.
+- Record a confirmed repeatable solution in the appropriate runbook only after it has been established.
+- Detect the operating system. On Windows, use PowerShell and do not retry Unix-only commands unchanged.
+- Act autonomously for safe, reversible repository-scoped changes. Ask the user before destructive operations, publishing, production actions, spending, secret disclosure, or material scope expansion.
+- After every material session that changes code, architecture, or approved decisions, update the relevant existing authority-chain documents before the final response. Do not create a competing source of truth, and do not update documentation when no material change occurred.
+- Keep the final response short and include the outcome, validation, changed documents, and actual blockers.
+
 ## Current UI authority
 
 Use [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) for current UI rules and proof references.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- Dirty graphify-out/ files are expected after hooks or incremental updates; dirty graph files are not a reason to skip graphify. Only skip graphify if the task is about stale or incorrect graph output, or the user explicitly says not to use it.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
