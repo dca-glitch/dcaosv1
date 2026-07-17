@@ -1,4 +1,4 @@
-﻿import { Fragment, type FormEvent, useMemo, useState } from "react";
+﻿import { Fragment, type FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Button,
   CompoundTable,
@@ -20,7 +20,13 @@ import {
   TdDouble,
   Textarea,
   Th,
+  WorkflowPageShell,
 } from "../../components/ui";
+import {
+  buildInvoiceEditorHash,
+  parseInvoiceEditorHash,
+  type InvoiceEditorRoute
+} from "../../lib/invoice-editor-hash";
 import type { ClientSummary } from "../clients/ClientsPage";
 import {
   buildInvoiceStatusSummary,
@@ -32,7 +38,23 @@ import {
 } from "../finance/finance-display";
 import type { InvoiceItemSummary } from "../invoice-items/InvoiceItemsPage";
 import type { ProjectSummary } from "../projects/ProjectsPage";
+import "../ai-delivery/ai-delivery-workflow.css";
 import "../finance/finance.css";
+
+function invoiceEditorRouteKey(route: InvoiceEditorRoute): string {
+  switch (route.kind) {
+    case "hub":
+      return "hub:";
+    case "invoice-new":
+      return "invoice-new:";
+    case "invoice-edit":
+      return `invoice-edit:${route.id}`;
+    case "recurring-new":
+      return "recurring-new:";
+    case "recurring-edit":
+      return `recurring-edit:${route.id}`;
+  }
+}
 
 export type InvoiceLineItemFormValues = {
   description: string;
@@ -393,6 +415,8 @@ export function InvoicesPage({
   const [paymentAmountIssuedInput, setPaymentAmountIssuedInput] = useState(centsToMajorInput(0));
   const [paymentAmountReceivedInput, setPaymentAmountReceivedInput] = useState(centsToMajorInput(0));
   const [saving, setSaving] = useState(false);
+  const syncingRef = useRef(false);
+  const appliedRef = useRef<string | null>(null);
 
   const projectByClientId = useMemo(() => {
     const grouped = new Map<string, ProjectSummary[]>();
@@ -478,8 +502,36 @@ export function InvoicesPage({
     });
   }
 
-  function openCreateInvoiceModal() {
+  function navigateInvoiceEditor(route: InvoiceEditorRoute) {
+    if (syncingRef.current) return;
+    const next = buildInvoiceEditorHash(route);
+    appliedRef.current = invoiceEditorRouteKey(route);
+    if (window.location.hash !== next) {
+      window.location.hash = next;
+    }
+  }
+
+  function closeInvoiceEditorState() {
+    setInvoiceEditorId(null);
+    setInvoiceDraft(emptyInvoiceForm(firstClientId(clients)));
+    setInvoiceUnitPriceInputs([centsToMajorInput(0)]);
+    setInvoiceTaxPercentInput("0");
+    setInvoiceDiscountPercentInput("0");
+    setIsInvoiceEditorOpen(false);
+  }
+
+  function closeRecurringEditorState() {
+    setRecurringEditorId(null);
+    setRecurringDraft(emptyRecurringForm(firstClientId(clients)));
+    setRecurringUnitPriceInputs([centsToMajorInput(0)]);
+    setRecurringTaxPercentInput("0");
+    setRecurringDiscountPercentInput("0");
+    setIsRecurringEditorOpen(false);
+  }
+
+  function applyCreateInvoiceDraft() {
     const nextDraft = emptyInvoiceForm(firstClientId(clients));
+    closeRecurringEditorState();
     setInvoiceEditorId(null);
     setInvoiceUnitPriceInputs(nextDraft.lineItems.map((item) => centsToMajorInput(item.unitPriceCents)));
     setInvoiceTaxPercentInput("0");
@@ -488,7 +540,7 @@ export function InvoicesPage({
     setIsInvoiceEditorOpen(true);
   }
 
-  function openEditInvoiceModal(invoice: InvoiceSummary) {
+  function applyEditInvoiceDraft(invoice: InvoiceSummary) {
     const lineItems = invoice.lineItems.length > 0 ? invoice.lineItems : [emptyLineItem()];
     const subtotalCents = lineItems.reduce((sum, item) => sum + item.totalCents, 0);
     const taxPercentInput = percentFromCents(invoice.taxCents, subtotalCents);
@@ -513,6 +565,7 @@ export function InvoicesPage({
       documentStorageKey: invoice.documentStorageKey ?? "",
       lineItems
     };
+    closeRecurringEditorState();
     setInvoiceEditorId(invoice.id);
     setInvoiceUnitPriceInputs(lineItems.map((item) => centsToMajorInput(item.unitPriceCents)));
     setInvoiceTaxPercentInput(taxPercentInput);
@@ -521,8 +574,9 @@ export function InvoicesPage({
     setIsInvoiceEditorOpen(true);
   }
 
-  function openCreateRecurringModal() {
+  function applyCreateRecurringDraft() {
     const nextDraft = emptyRecurringForm(firstClientId(clients));
+    closeInvoiceEditorState();
     setRecurringEditorId(null);
     setRecurringUnitPriceInputs(nextDraft.lineItems.map((item) => centsToMajorInput(item.unitPriceCents)));
     setRecurringTaxPercentInput("0");
@@ -531,12 +585,11 @@ export function InvoicesPage({
     setIsRecurringEditorOpen(true);
   }
 
-  function openEditRecurringModal(recurringInvoice: RecurringInvoiceSummary) {
+  function applyEditRecurringDraft(recurringInvoice: RecurringInvoiceSummary) {
     const lineItems = recurringInvoice.lineItems.length > 0 ? recurringInvoice.lineItems : [emptyLineItem()];
     const subtotalCents = lineItems.reduce((sum, item) => sum + item.totalCents, 0);
     const taxPercentInput = percentFromCents(recurringInvoice.taxCents, subtotalCents);
     const discountPercentInput = percentFromCents(recurringInvoice.discountCents, subtotalCents);
-    setRecurringEditorId(recurringInvoice.id);
     const nextDraft = {
       clientId: recurringInvoice.clientId,
       projectId: recurringInvoice.projectId ?? "",
@@ -558,12 +611,96 @@ export function InvoicesPage({
       isActive: recurringInvoice.isActive,
       lineItems
     };
+    closeInvoiceEditorState();
+    setRecurringEditorId(recurringInvoice.id);
     setRecurringUnitPriceInputs(lineItems.map((item) => centsToMajorInput(item.unitPriceCents)));
     setRecurringTaxPercentInput(taxPercentInput);
     setRecurringDiscountPercentInput(discountPercentInput);
     setRecurringDraftWithCalculatedTotals(nextDraft, taxPercentInput, discountPercentInput);
     setIsRecurringEditorOpen(true);
   }
+
+  function closeInvoiceEditor() {
+    closeInvoiceEditorState();
+    navigateInvoiceEditor({ kind: "hub" });
+  }
+
+  function closeRecurringEditor() {
+    closeRecurringEditorState();
+    navigateInvoiceEditor({ kind: "hub" });
+  }
+
+  function openCreateInvoiceModal() {
+    applyCreateInvoiceDraft();
+    navigateInvoiceEditor({ kind: "invoice-new" });
+  }
+
+  function openEditInvoiceModal(invoice: InvoiceSummary) {
+    applyEditInvoiceDraft(invoice);
+    navigateInvoiceEditor({ kind: "invoice-edit", id: invoice.id });
+  }
+
+  function openCreateRecurringModal() {
+    applyCreateRecurringDraft();
+    navigateInvoiceEditor({ kind: "recurring-new" });
+  }
+
+  function openEditRecurringModal(recurringInvoice: RecurringInvoiceSummary) {
+    applyEditRecurringDraft(recurringInvoice);
+    navigateInvoiceEditor({ kind: "recurring-edit", id: recurringInvoice.id });
+  }
+
+  useEffect(() => {
+    const apply = (source: "bootstrap" | "hashchange") => {
+      const route = parseInvoiceEditorHash(window.location.hash);
+      const routeKey = invoiceEditorRouteKey(route);
+      syncingRef.current = true;
+      try {
+        if (route.kind === "hub") {
+          appliedRef.current = routeKey;
+          closeInvoiceEditorState();
+          closeRecurringEditorState();
+          return;
+        }
+        if (source === "bootstrap" && appliedRef.current === routeKey) {
+          return;
+        }
+        if (route.kind === "invoice-new") {
+          appliedRef.current = routeKey;
+          applyCreateInvoiceDraft();
+          return;
+        }
+        if (route.kind === "invoice-edit") {
+          const invoice = invoices.find((entry) => entry.id === route.id);
+          if (!invoice) return;
+          appliedRef.current = routeKey;
+          applyEditInvoiceDraft(invoice);
+          return;
+        }
+        if (route.kind === "recurring-new") {
+          appliedRef.current = routeKey;
+          applyCreateRecurringDraft();
+          return;
+        }
+        if (route.kind === "recurring-edit") {
+          const recurringInvoice = recurringInvoices.find((entry) => entry.id === route.id);
+          if (!recurringInvoice) return;
+          appliedRef.current = routeKey;
+          applyEditRecurringDraft(recurringInvoice);
+        }
+      } finally {
+        window.setTimeout(() => {
+          syncingRef.current = false;
+        }, 0);
+      }
+    };
+
+    apply("bootstrap");
+    const onHashChange = () => apply("hashchange");
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hash deep-link bootstrap when lists refresh
+  }, [invoices, recurringInvoices]);
 
   function openPaymentModal(invoice: InvoiceSummary) {
     const amountInput = centsToMajorInput(invoice.totalCents);
@@ -599,12 +736,7 @@ export function InvoicesPage({
         totalCents: toNonNegativeInteger(totals.totalCents)
       });
       if (ok) {
-        setInvoiceEditorId(null);
-        setInvoiceDraft(emptyInvoiceForm(firstClientId(clients)));
-        setInvoiceUnitPriceInputs([centsToMajorInput(0)]);
-        setInvoiceTaxPercentInput("0");
-        setInvoiceDiscountPercentInput("0");
-        setIsInvoiceEditorOpen(false);
+        closeInvoiceEditor();
       }
     } finally {
       setSaving(false);
@@ -636,12 +768,7 @@ export function InvoicesPage({
         totalCents: toNonNegativeInteger(totals.totalCents)
       });
       if (ok) {
-        setRecurringEditorId(null);
-        setRecurringDraft(emptyRecurringForm(firstClientId(clients)));
-        setRecurringUnitPriceInputs([centsToMajorInput(0)]);
-        setRecurringTaxPercentInput("0");
-        setRecurringDiscountPercentInput("0");
-        setIsRecurringEditorOpen(false);
+        closeRecurringEditor();
       }
     } finally {
       setSaving(false);
@@ -678,86 +805,20 @@ export function InvoicesPage({
   }
 
   return (
-    <section className="view-section finance-lite" aria-labelledby="invoices-title" data-density="compact">
-      <PageHeader
-        eyebrow="Finance"
-        title="Invoices"
-        titleId="invoices-title"
-        description="Invoices, payments, and recurring schedules."
-        filters={
-          <FilterBar
-            ariaLabel="Invoice view"
-            onChange={(value) => setTab(value as "invoices" | "recurring")}
-            options={[
-              { value: "invoices", label: "Invoices" },
-              { value: "recurring", label: "Recurring" }
-            ]}
-            value={tab}
-          />
-        }
-        actions={
-          canEdit ? (
-            <Button
-              disabled={clients.length === 0}
-              onClick={tab === "invoices" ? openCreateInvoiceModal : openCreateRecurringModal}
-              type="button"
-              variant="primary"
-            >
-              {tab === "invoices" ? "New invoice" : "New recurring"}
-            </Button>
-          ) : null
-        }
-      />
-
-      <StatusSummaryBar
-        ariaLabel={tab === "invoices" ? "Invoice status summary" : "Recurring invoice status summary"}
-        items={tab === "invoices" ? invoiceStatusSummary : recurringStatusSummary}
-      />
-
-      {canEdit && clients.length === 0 ? (
-        <EmptyState title="Add a client first" message="Invoices need a client to attach to before they can be created." />
-      ) : null}
-
-      {tab === "invoices" ? (
-        <InvoiceCards
-          canEdit={canEdit}
-          invoices={invoices}
-          onArchiveInvoice={onArchiveInvoice}
-          onCancelInvoice={onCancelInvoice}
-          onEditInvoice={openEditInvoiceModal}
-          onMarkInvoiceSent={onMarkInvoiceSent}
-          onMarkInvoiceUncollectible={onMarkInvoiceUncollectible}
-          onRegisterInvoicePayment={openPaymentModal}
-        />
-      ) : (
-        <RecurringInvoiceCards
-          canEdit={canEdit}
-          onArchiveRecurringInvoice={onArchiveRecurringInvoice}
-          onEditRecurringInvoice={openEditRecurringModal}
-          onGenerateDueRecurringInvoice={onGenerateDueRecurringInvoice}
-          recurringInvoices={recurringInvoices}
-        />
-      )}
-
+    <section className="view-section finance-lite entity-editor-page" aria-labelledby="invoices-title" data-density="compact">
       {isInvoiceEditorOpen ? (
-        <Modal isOpen
+        <WorkflowPageShell
+          backLabel="Back to Invoices"
           eyebrow={invoiceEditorId ? "Edit" : "Create"}
-          onClose={() => {
-            setInvoiceEditorId(null);
-            setInvoiceDraft(emptyInvoiceForm(firstClientId(clients)));
-            setInvoiceUnitPriceInputs([centsToMajorInput(0)]);
-            setInvoiceTaxPercentInput("0");
-            setInvoiceDiscountPercentInput("0");
-            setIsInvoiceEditorOpen(false);
-          }}
-          size="lg"
+          onClose={closeInvoiceEditor}
           title={invoiceEditorId ? "Edit Invoice" : "Add Invoice"}
+          titleId="invoices-editor-title"
         >
-          <form className="entity-form invoice-form-compact" onSubmit={handleInvoiceSubmit}>
+          <form className="entity-form invoice-form-compact entity-editor-form" onSubmit={handleInvoiceSubmit}>
             <ModalActions
               label={invoiceEditorId ? "Update invoice" : "Create invoice"}
               disabled={saving || clients.length === 0}
-              onCancel={() => setIsInvoiceEditorOpen(false)}
+              onCancel={closeInvoiceEditor}
               saving={saving}
             />
             <div className="field-grid">
@@ -887,32 +948,26 @@ export function InvoicesPage({
             <ModalActions
               label={invoiceEditorId ? "Update invoice" : "Create invoice"}
               disabled={saving || clients.length === 0}
-              onCancel={() => setIsInvoiceEditorOpen(false)}
+              onCancel={closeInvoiceEditor}
               saving={saving}
             />
           </form>
-        </Modal>
+        </WorkflowPageShell>
       ) : null}
 
       {isRecurringEditorOpen ? (
-        <Modal isOpen
+        <WorkflowPageShell
+          backLabel="Back to Invoices"
           eyebrow={recurringEditorId ? "Edit" : "Create"}
-          onClose={() => {
-            setRecurringEditorId(null);
-            setRecurringDraft(emptyRecurringForm(firstClientId(clients)));
-            setRecurringUnitPriceInputs([centsToMajorInput(0)]);
-            setRecurringTaxPercentInput("0");
-            setRecurringDiscountPercentInput("0");
-            setIsRecurringEditorOpen(false);
-          }}
-          size="lg"
+          onClose={closeRecurringEditor}
           title={recurringEditorId ? "Edit Recurring Invoice" : "Add Recurring Invoice"}
+          titleId="recurring-invoices-editor-title"
         >
-          <form className="entity-form" onSubmit={handleRecurringSubmit}>
+          <form className="entity-form entity-editor-form" onSubmit={handleRecurringSubmit}>
             <ModalActions
               label={recurringEditorId ? "Update recurring invoice" : "Create recurring invoice"}
               disabled={saving || clients.length === 0}
-              onCancel={() => setIsRecurringEditorOpen(false)}
+              onCancel={closeRecurringEditor}
               saving={saving}
             />
             <div className="field-grid">
@@ -1051,11 +1106,75 @@ export function InvoicesPage({
             <ModalActions
               label={recurringEditorId ? "Update recurring invoice" : "Create recurring invoice"}
               disabled={saving || clients.length === 0}
-              onCancel={() => setIsRecurringEditorOpen(false)}
+              onCancel={closeRecurringEditor}
               saving={saving}
             />
           </form>
-        </Modal>
+        </WorkflowPageShell>
+      ) : null}
+
+      {!isInvoiceEditorOpen && !isRecurringEditorOpen ? (
+        <>
+          <PageHeader
+            eyebrow="Finance"
+            title="Invoices"
+            titleId="invoices-title"
+            description="Invoices, payments, and recurring schedules."
+            filters={
+              <FilterBar
+                ariaLabel="Invoice view"
+                onChange={(value) => setTab(value as "invoices" | "recurring")}
+                options={[
+                  { value: "invoices", label: "Invoices" },
+                  { value: "recurring", label: "Recurring" }
+                ]}
+                value={tab}
+              />
+            }
+            actions={
+              canEdit ? (
+                <Button
+                  disabled={clients.length === 0}
+                  onClick={tab === "invoices" ? openCreateInvoiceModal : openCreateRecurringModal}
+                  type="button"
+                  variant="primary"
+                >
+                  {tab === "invoices" ? "New invoice" : "New recurring"}
+                </Button>
+              ) : null
+            }
+          />
+
+          <StatusSummaryBar
+            ariaLabel={tab === "invoices" ? "Invoice status summary" : "Recurring invoice status summary"}
+            items={tab === "invoices" ? invoiceStatusSummary : recurringStatusSummary}
+          />
+
+          {canEdit && clients.length === 0 ? (
+            <EmptyState title="Add a client first" message="Invoices need a client to attach to before they can be created." />
+          ) : null}
+
+          {tab === "invoices" ? (
+            <InvoiceCards
+              canEdit={canEdit}
+              invoices={invoices}
+              onArchiveInvoice={onArchiveInvoice}
+              onCancelInvoice={onCancelInvoice}
+              onEditInvoice={openEditInvoiceModal}
+              onMarkInvoiceSent={onMarkInvoiceSent}
+              onMarkInvoiceUncollectible={onMarkInvoiceUncollectible}
+              onRegisterInvoicePayment={openPaymentModal}
+            />
+          ) : (
+            <RecurringInvoiceCards
+              canEdit={canEdit}
+              onArchiveRecurringInvoice={onArchiveRecurringInvoice}
+              onEditRecurringInvoice={openEditRecurringModal}
+              onGenerateDueRecurringInvoice={onGenerateDueRecurringInvoice}
+              recurringInvoices={recurringInvoices}
+            />
+          )}
+        </>
       ) : null}
 
       {isPaymentEditorOpen ? (

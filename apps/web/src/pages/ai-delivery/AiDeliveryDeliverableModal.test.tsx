@@ -175,12 +175,12 @@ function baseProps(overrides: Partial<AiDeliveryDeliverableModalProps> = {}): Ai
 }
 
 function getDeliverablesDialog() {
-  const dialogs = screen.getAllByRole("dialog", { name: "Deliverables" });
+  const dialogs = screen.getAllByRole("region", { name: "Deliverables" });
   return dialogs[dialogs.length - 1]!;
 }
 
 describe("AiDeliveryDeliverableModal", () => {
-  it("opens with the Deliverables accessible dialog name", () => {
+  it("opens with the Deliverables accessible page heading", () => {
     render(<AiDeliveryDeliverableModal {...baseProps()} />);
     expect(getDeliverablesDialog()).toBeTruthy();
   });
@@ -286,10 +286,10 @@ describe("AiDeliveryDeliverableModal", () => {
     expect(onClose).toHaveBeenCalled();
   });
 
-  it("closes via Escape when the modal foundation supports it", () => {
+  it("closes via Back to AI Delivery on the workflow page shell", () => {
     const onClose = vi.fn();
     render(<AiDeliveryDeliverableModal {...baseProps({ onClose })} />);
-    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Back to AI Delivery" }).at(-1)!);
     expect(onClose).toHaveBeenCalled();
   });
 

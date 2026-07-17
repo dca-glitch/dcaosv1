@@ -140,12 +140,12 @@ function baseProps(overrides: Partial<AiDeliveryImageApprovalModalProps> = {}): 
 }
 
 function getDialog() {
-  const dialogs = screen.getAllByRole("dialog", { name: "Image Production Planning" });
+  const dialogs = screen.getAllByRole("region", { name: "Image Production Planning" });
   return dialogs[dialogs.length - 1]!;
 }
 
 describe("AiDeliveryImageApprovalModal", () => {
-  it("opens with the Image Production Planning accessible dialog name", () => {
+  it("opens with the Image Production Planning accessible page heading", () => {
     render(<AiDeliveryImageApprovalModal {...baseProps()} />);
     expect(getDialog()).toBeTruthy();
   });
@@ -343,7 +343,7 @@ describe("AiDeliveryImageApprovalModal", () => {
     expect(within(dialog).queryByText(/rejection reason/i)).toBeNull();
   });
 
-  it("invokes close and new image request; Escape closes via modal foundation", () => {
+  it("invokes close and new image request; Back to AI Delivery closes the page", () => {
     const onClose = vi.fn();
     const onNewImageRequest = vi.fn();
     render(<AiDeliveryImageApprovalModal {...baseProps({ onClose, onNewImageRequest })} />);
@@ -353,7 +353,7 @@ describe("AiDeliveryImageApprovalModal", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: "New image request" }));
     expect(onNewImageRequest).toHaveBeenCalled();
 
-    fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Back to AI Delivery" }).at(-1)!);
     expect(onClose).toHaveBeenCalled();
   });
 

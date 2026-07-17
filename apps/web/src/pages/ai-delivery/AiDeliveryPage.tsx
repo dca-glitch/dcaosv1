@@ -1,5 +1,5 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Button, EmptyState, Input, Modal, PageHeader, Select } from "../../components/ui";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { Button, EmptyState, Input, PageHeader, Select, WorkflowPageShell } from "../../components/ui";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { ProjectSummary as ProjectLinkSummary } from "../projects/ProjectsPage";
 import { MonthlyReportPanel } from "./MonthlyReportPanel";
@@ -19,11 +19,17 @@ import { AiDeliveryResearchModal } from "./AiDeliveryResearchModal";
 import { AiRunReviewModal } from "./AiRunReviewModal";
 import { isMissingContentPlanFailure } from "./ai-delivery-content-plan-load";
 import {
+  buildAiDeliveryWorkspaceHash,
+  parseAiDeliveryWorkspaceHash,
+  type AiDeliveryWorkspacePanel
+} from "./ai-delivery-workspace-hash";
+import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineLoading,
 } from "./ai-delivery-shared-ui";
 import "./ai-delivery-modals.css";
 import "./ai-delivery-dashboard.css";
+import "./ai-delivery-workflow.css";
 import type {
   AiDeliveryMonthlySummaryData,
   AiDeliveryMonthlyReportData,
@@ -908,13 +914,49 @@ export function AiDeliveryPage({
     [draft.clientId, projectsList]
   );
 
+  const syncingWorkspaceHashRef = useRef(false);
+  /** Last workspace route applied from hash (avoids re-open loops when `projects` refreshes). */
+  const appliedWorkspaceRouteRef = useRef<string | null>(null);
+
+  function navigateWorkspace(projectId: string | null, panel: AiDeliveryWorkspacePanel) {
+    if (syncingWorkspaceHashRef.current) return;
+    const next = buildAiDeliveryWorkspaceHash(projectId, panel);
+    if (window.location.hash !== next) {
+      window.location.hash = next;
+    }
+  }
+
+  function exclusiveWorkflowPanel(panel: AiDeliveryWorkspacePanel) {
+    if (panel !== "new" && panel !== "edit") {
+      setIsEditorOpen(false);
+      setEditorProjectId(null);
+    }
+    if (panel !== "brief") {
+      setOpenBriefId(null);
+      setBriefDetail(null);
+      setBriefError(null);
+    }
+    if (panel !== "content-plan") setOpenContentPlanId(null);
+    if (panel !== "research") setOpenResearchSourcesId(null);
+    if (panel !== "content-drafts") setOpenContentDraftsId(null);
+    if (panel !== "deliverables") setOpenDeliverablesId(null);
+    if (panel !== "article-images") setOpenArticleImagesId(null);
+    if (panel !== "workflow-runs") setOpenWorkflowRunsId(null);
+    if (panel !== "monthly-report") setOpenMonthlyReportId(null);
+    if (panel !== "knowledge") setOpenKnowledgePanelId(null);
+    if (panel !== "mi-context") setOpenMiContextId(null);
+  }
+
   function openCreateModal() {
+    exclusiveWorkflowPanel("new");
     setEditorProjectId(null);
     setDraft(emptyForm(clients[0]?.id ?? ""));
     setIsEditorOpen(true);
+    navigateWorkspace(null, "new");
   }
 
   function openEditModal(project: AiDeliveryProjectSummary) {
+    exclusiveWorkflowPanel("edit");
     setEditorProjectId(project.id);
     setDraft({
       clientId: project.clientId ?? "",
@@ -924,12 +966,14 @@ export function AiDeliveryPage({
       plannedContentScopeNotes: project.plannedContentScopeNotes ?? ""
     });
     setIsEditorOpen(true);
+    navigateWorkspace(project.id, "edit");
   }
 
   function closeProjectEditor() {
     setEditorProjectId(null);
     setDraft(emptyForm(clients[0]?.id ?? ""));
     setIsEditorOpen(false);
+    navigateWorkspace(null, "hub");
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -988,7 +1032,10 @@ export function AiDeliveryPage({
   }
 
   async function openBrief(projectId: string) {
+    exclusiveWorkflowPanel("brief");
+    setFocusedProjectId(projectId);
     setOpenBriefId(projectId);
+    navigateWorkspace(projectId, "brief");
     setBriefLoading(true);
     setBriefError(null);
     setBriefDetail(null);
@@ -1386,7 +1433,10 @@ export function AiDeliveryPage({
   }
 
   async function openContentPlan(projectId: string) {
+    exclusiveWorkflowPanel("content-plan");
+    setFocusedProjectId(projectId);
     setOpenContentPlanId(projectId);
+    navigateWorkspace(projectId, "content-plan");
     setContentPlanLoading(true);
     setContentPlanError(null);
     setContentPlanGenerationMessage(null);
@@ -1521,6 +1571,7 @@ export function AiDeliveryPage({
     setContentPlanItems([]);
     setContentPlanPdfMessage(null);
     setContentPlanPdfReady(null);
+    navigateWorkspace(null, "hub");
   }
 
   async function handleGenerateContentPlanPdf(projectId: string) {
@@ -1571,7 +1622,10 @@ export function AiDeliveryPage({
   }
 
   async function openContentDrafts(projectId: string) {
+    exclusiveWorkflowPanel("content-drafts");
+    setFocusedProjectId(projectId);
     setOpenContentDraftsId(projectId);
+    navigateWorkspace(projectId, "content-drafts");
     setContentDraftsLoading(true);
     setContentDraftsError(null);
     setContentDraftHandoffMessage(null);
@@ -1721,6 +1775,7 @@ export function AiDeliveryPage({
   }
 
   function closeContentDrafts() {
+    navigateWorkspace(null, "hub");
     setOpenContentDraftsId(null);
     setContentDraftsError(null);
     setContentDraftHandoffMessage(null);
@@ -1737,7 +1792,10 @@ export function AiDeliveryPage({
   }
 
   async function openArticleImages(projectId: string, options?: { contentDraftId?: string | null; articleImageId?: string | null }) {
+    exclusiveWorkflowPanel("article-images");
+    setFocusedProjectId(projectId);
     setOpenArticleImagesId(projectId);
+    navigateWorkspace(projectId, "article-images");
     setArticleImagesLoading(true);
     setArticleImagesError(null);
     setArticleImages([]);
@@ -1865,6 +1923,7 @@ export function AiDeliveryPage({
   }
 
   function closeArticleImages() {
+    navigateWorkspace(null, "hub");
     setOpenArticleImagesId(null);
     setArticleImagesError(null);
     setArticleImages([]);
@@ -1880,7 +1939,10 @@ export function AiDeliveryPage({
     projectId: string,
     options?: { contentDraftId?: string | null; articleImageId?: string | null; deliverableId?: string | null }
   ) {
+    exclusiveWorkflowPanel("deliverables");
+    setFocusedProjectId(projectId);
     setOpenDeliverablesId(projectId);
+    navigateWorkspace(projectId, "deliverables");
     setDeliverablesLoading(true);
     setDeliverablesError(null);
     setDeliverableReviewsError(null);
@@ -2096,6 +2158,7 @@ export function AiDeliveryPage({
   }
 
   function closeDeliverables() {
+    navigateWorkspace(null, "hub");
     setOpenDeliverablesId(null);
     setDeliverables([]);
     setDeliverablesError(null);
@@ -2130,7 +2193,10 @@ export function AiDeliveryPage({
   }
 
   async function openWorkflowRuns(projectId: string) {
+    exclusiveWorkflowPanel("workflow-runs");
+    setFocusedProjectId(projectId);
     setOpenWorkflowRunsId(projectId);
+    navigateWorkspace(projectId, "workflow-runs");
     setWorkflowRunsLoading(true);
     setWorkflowRunsError(null);
     setWorkflowRuns([]);
@@ -2263,6 +2329,7 @@ export function AiDeliveryPage({
   }
 
   function closeWorkflowRuns() {
+    navigateWorkspace(null, "hub");
     setOpenWorkflowRunsId(null);
     setWorkflowRunsError(null);
     setWorkflowRuns([]);
@@ -2285,7 +2352,10 @@ export function AiDeliveryPage({
   }
 
   async function openResearchSources(projectId: string) {
+    exclusiveWorkflowPanel("research");
+    setFocusedProjectId(projectId);
     setOpenResearchSourcesId(projectId);
+    navigateWorkspace(projectId, "research");
     setResearchLoading(true);
     setResearchError(null);
     setResearchRequests([]);
@@ -2431,6 +2501,7 @@ export function AiDeliveryPage({
   }
 
   function closeResearchSources() {
+    navigateWorkspace(null, "hub");
     setOpenResearchSourcesId(null);
     setResearchError(null);
     setResearchRequests([]);
@@ -2447,6 +2518,7 @@ export function AiDeliveryPage({
 
   function closeMonthlyReport() {
     setOpenMonthlyReportId(null);
+    navigateWorkspace(null, "hub");
   }
 
   async function fetchMiSummaryContext(projectId: string): Promise<AiDeliveryMiSummaryContextSummary[]> {
@@ -2476,7 +2548,10 @@ export function AiDeliveryPage({
   }
 
   async function openMiContext(projectId: string) {
+    exclusiveWorkflowPanel("mi-context");
+    setFocusedProjectId(projectId);
     setOpenMiContextId(projectId);
+    navigateWorkspace(projectId, "mi-context");
     setMiContextLoading(true);
     setMiContextError(null);
     setMiContextItems([]);
@@ -2509,6 +2584,7 @@ export function AiDeliveryPage({
     setFinalizedSummaryOptions([]);
     setMiApplyHandoffId("");
     setMiApplySummaryId("");
+    navigateWorkspace(null, "hub");
   }
 
   async function applyMiHandoff(projectId: string) {
@@ -2632,8 +2708,116 @@ export function AiDeliveryPage({
     ? `Current status mix: ${formatStatusBreakdown(deliverables, "No deliverables in focus yet")} - Active: ${activeDeliverableCount} - Archived: ${archivedDeliverableCount}`
     : "Open Deliverables to review package and final readiness.";
 
+  const isWorkflowPageOpen = Boolean(
+    isEditorOpen ||
+      openBriefId ||
+      openContentPlanId ||
+      openResearchSourcesId ||
+      openContentDraftsId ||
+      openDeliverablesId ||
+      openArticleImagesId ||
+      openWorkflowRunsId ||
+      openMonthlyReportId ||
+      openKnowledgePanelId ||
+      openMiContextId
+  );
+
+  useEffect(() => {
+    const applyWorkspaceHash = (source: "bootstrap" | "hashchange") => {
+      const route = parseAiDeliveryWorkspaceHash(window.location.hash);
+      const routeKey = `${route.panel}:${route.projectId ?? ""}`;
+      syncingWorkspaceHashRef.current = true;
+      try {
+        if (route.panel === "hub") {
+          appliedWorkspaceRouteRef.current = routeKey;
+          setIsEditorOpen(false);
+          setEditorProjectId(null);
+          setOpenBriefId(null);
+          setOpenContentPlanId(null);
+          setOpenResearchSourcesId(null);
+          setOpenContentDraftsId(null);
+          setOpenDeliverablesId(null);
+          setOpenArticleImagesId(null);
+          setOpenWorkflowRunsId(null);
+          setOpenMonthlyReportId(null);
+          setOpenKnowledgePanelId(null);
+          setOpenMiContextId(null);
+          return;
+        }
+        if (route.panel === "new") {
+          if (source === "bootstrap" && appliedWorkspaceRouteRef.current === routeKey) {
+            return;
+          }
+          appliedWorkspaceRouteRef.current = routeKey;
+          exclusiveWorkflowPanel("new");
+          setEditorProjectId(null);
+          setDraft(emptyForm(clients[0]?.id ?? ""));
+          setIsEditorOpen(true);
+          return;
+        }
+        if (!route.projectId) return;
+        setFocusedProjectId(route.projectId);
+        if (route.panel === "edit") {
+          const project = projects.find((entry) => entry.id === route.projectId);
+          if (!project) {
+            return;
+          }
+          if (source === "bootstrap" && appliedWorkspaceRouteRef.current === routeKey) {
+            return;
+          }
+          appliedWorkspaceRouteRef.current = routeKey;
+          openEditModal(project);
+          return;
+        }
+        // hashchange always opens the target (clears siblings via openers/exclusive).
+        // bootstrap skips when this route was already applied so projects refresh does not reset forms.
+        if (source === "bootstrap" && appliedWorkspaceRouteRef.current === routeKey) {
+          return;
+        }
+        appliedWorkspaceRouteRef.current = routeKey;
+        if (route.panel === "brief") {
+          void openBrief(route.projectId);
+        } else if (route.panel === "content-plan") {
+          void openContentPlan(route.projectId);
+        } else if (route.panel === "research") {
+          void openResearchSources(route.projectId);
+        } else if (route.panel === "content-drafts") {
+          void openContentDrafts(route.projectId);
+        } else if (route.panel === "deliverables") {
+          void openDeliverables(route.projectId);
+        } else if (route.panel === "article-images") {
+          void openArticleImages(route.projectId);
+        } else if (route.panel === "workflow-runs") {
+          void openWorkflowRuns(route.projectId);
+        } else if (route.panel === "monthly-report") {
+          exclusiveWorkflowPanel("monthly-report");
+          setOpenMonthlyReportId(route.projectId);
+        } else if (route.panel === "knowledge") {
+          exclusiveWorkflowPanel("knowledge");
+          setOpenKnowledgePanelId(route.projectId);
+        } else if (route.panel === "mi-context") {
+          void openMiContext(route.projectId);
+        }
+      } finally {
+        // Defer so nested navigateWorkspace calls from openers are skipped during sync.
+        window.setTimeout(() => {
+          syncingWorkspaceHashRef.current = false;
+        }, 0);
+      }
+    };
+
+    applyWorkspaceHash("bootstrap");
+    const onHashChange = () => applyWorkspaceHash("hashchange");
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+    // Intentionally only re-bind when project list changes; openers are stable enough for deep links.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- hash deep-link bootstrap
+  }, [projects, clients]);
+
   return (
     <section className="view-section ai-delivery-page" aria-labelledby="ai-delivery-title">
+      {!isWorkflowPageOpen ? (
+      <>
       <PageHeader
         eyebrow="AI Workflow"
         title="AI Delivery Projects"
@@ -2741,9 +2925,21 @@ export function AiDeliveryPage({
               onOpenContentDrafts={() => workspaceProjectId && void openContentDrafts(workspaceProjectId)}
               onOpenContentPlan={() => workspaceProjectId && void openContentPlan(workspaceProjectId)}
               onOpenDeliverables={() => workspaceProjectId && void openDeliverables(workspaceProjectId)}
-              onOpenKnowledgePanel={() => workspaceProjectId && setOpenKnowledgePanelId(workspaceProjectId)}
+              onOpenKnowledgePanel={() => {
+                if (!workspaceProjectId) return;
+                exclusiveWorkflowPanel("knowledge");
+                setFocusedProjectId(workspaceProjectId);
+                setOpenKnowledgePanelId(workspaceProjectId);
+                navigateWorkspace(workspaceProjectId, "knowledge");
+              }}
               onOpenMiContext={() => workspaceProjectId && void openMiContext(workspaceProjectId)}
-              onOpenMonthlyReport={() => workspaceProjectId && setOpenMonthlyReportId(workspaceProjectId)}
+              onOpenMonthlyReport={() => {
+                if (!workspaceProjectId) return;
+                exclusiveWorkflowPanel("monthly-report");
+                setFocusedProjectId(workspaceProjectId);
+                setOpenMonthlyReportId(workspaceProjectId);
+                navigateWorkspace(workspaceProjectId, "monthly-report");
+              }}
               onOpenResearchSources={() => workspaceProjectId && void openResearchSources(workspaceProjectId)}
               onOpenWorkflowRuns={() => workspaceProjectId && void openWorkflowRuns(workspaceProjectId)}
               onRequestClientInput={() => workspaceProjectId && void onRequestClientInput(workspaceProjectId)}
@@ -2761,6 +2957,8 @@ export function AiDeliveryPage({
         </div>
       )}
         </>
+      ) : null}
+      </>
       ) : null}
 
       <AiDeliveryProjectEditorModal
@@ -2783,6 +2981,7 @@ export function AiDeliveryPage({
             setOpenBriefId(null);
             setBriefError(null);
             setBriefDetail(null);
+            navigateWorkspace(null, "hub");
           }}
           project={openProject}
           loading={briefLoading}
@@ -2881,7 +3080,7 @@ export function AiDeliveryPage({
         />
       ) : null}
       {openMiContextId ? (
-        <Modal isOpen onClose={closeMiContext} title="Market Intelligence Context">
+        <WorkflowPageShell onClose={closeMiContext} title="Market Intelligence Context" titleId="ai-delivery-mi-context-title">
           {miContextLoading ? (
             <AiDeliveryInlineLoading label="Loading Market Intelligence context" />
           ) : openMiContextProject ? (
@@ -2986,7 +3185,7 @@ export function AiDeliveryPage({
               )}
             </div>
           ) : <div>Project not found.</div>}
-        </Modal>
+        </WorkflowPageShell>
       ) : null}
       {openWorkflowRunsId ? (
         <AiRunReviewModal
@@ -3245,7 +3444,10 @@ export function AiDeliveryPage({
       {openKnowledgePanelId && openKnowledgePanelProject && typeof onFetchKnowledgeItems === "function" && typeof onCreateKnowledgeItem === "function" && typeof onUpdateKnowledgeItem === "function" && typeof onPreviewAiContext === "function" ? (
         <AiKnowledgeContextPanel
           project={openKnowledgePanelProject}
-          onClose={() => setOpenKnowledgePanelId(null)}
+          onClose={() => {
+            setOpenKnowledgePanelId(null);
+            navigateWorkspace(null, "hub");
+          }}
           onCreateKnowledgeItem={onCreateKnowledgeItem}
           onFetchKnowledgeItems={onFetchKnowledgeItems}
           onPreviewContext={onPreviewAiContext}

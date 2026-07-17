@@ -14,8 +14,10 @@ import {
   StatusBadge,
   Table,
   Textarea,
+  WorkflowPageShell,
   useUrlFilterState,
 } from "../../components/ui";
+import { useEntityEditorHash } from "../../lib/use-entity-editor-hash";
 import {
   persistTableDensityPreference,
   readTableDensityPreference,
@@ -28,6 +30,7 @@ import {
 } from "../clients/archive-confirm-copy";
 import type { ClientSummary } from "../clients/ClientsPage";
 import type { TaskSummary } from "../tasks/TasksPage";
+import "../ai-delivery/ai-delivery-workflow.css";
 
 const PROJECT_FILTERS = ["all", "active", "archived"] as const;
 type ProjectFilter = (typeof PROJECT_FILTERS)[number];
@@ -157,18 +160,13 @@ export function ProjectsPage({
 
   const submitLabel = editorProjectId ? "Update project" : "Create project";
 
-  function closeEditor() {
+  function closeEditorState() {
     setEditorProjectId(null);
     setDraft(emptyForm());
     setIsEditorOpen(false);
   }
 
-  function openCreateModal() {
-    closeEditor();
-    setIsEditorOpen(true);
-  }
-
-  function openEditModal(project: ProjectSummary) {
+  function applyProjectDraft(project: ProjectSummary) {
     setEditorProjectId(project.id);
     setDraft({
       clientId: project.clientId ?? "",
@@ -179,6 +177,40 @@ export function ProjectsPage({
       status: project.status
     });
     setIsEditorOpen(true);
+  }
+
+  const { navigateEditor } = useEntityEditorHash({
+    base: "projects",
+    listRevision: projects,
+    openCreateFromHash: () => {
+      setEditorProjectId(null);
+      setDraft(emptyForm());
+      setIsEditorOpen(true);
+    },
+    openEditFromHash: (id) => {
+      const project = projects.find((entry) => entry.id === id);
+      if (!project) return false;
+      applyProjectDraft(project);
+      return true;
+    },
+    closeFromHash: closeEditorState
+  });
+
+  function closeEditor() {
+    closeEditorState();
+    navigateEditor({ kind: "hub" });
+  }
+
+  function openCreateModal() {
+    setEditorProjectId(null);
+    setDraft(emptyForm());
+    setIsEditorOpen(true);
+    navigateEditor({ kind: "new" });
+  }
+
+  function openEditModal(project: ProjectSummary) {
+    applyProjectDraft(project);
+    navigateEditor({ kind: "edit", id: project.id });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -237,7 +269,101 @@ export function ProjectsPage({
   }
 
   return (
-    <section className="view-section" aria-labelledby="projects-title" data-density={tableDensity}>
+    <section className="view-section entity-editor-page" aria-labelledby="projects-title" data-density={tableDensity}>
+      {isEditorOpen ? (
+        <WorkflowPageShell
+          backLabel="Back to Projects"
+          eyebrow={editorProjectId ? "Edit" : "Create"}
+          onClose={closeEditor}
+          title={editorProjectId ? "Edit Project" : "Add Project"}
+          titleId="projects-editor-title"
+        >
+          <form className="entity-form entity-editor-form" onSubmit={handleSubmit}>
+            <p className="muted-text">
+              Used by admin team to organize work and billing. Archived items are hidden from active work but can be
+              restored.
+            </p>
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <div className="field-grid">
+              <Input
+                fullWidth
+                helperText="Used by admin team to organize work and billing."
+                label="Project name - Required"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                placeholder="Website build, SEO retainer, monthly content, support"
+                required
+                value={draft.name}
+              />
+              <Select
+                fullWidth
+                helperText="Client can be added later if this is internal work."
+                label="Client - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, clientId: event.target.value }))}
+                options={[
+                  { value: "", label: "Client can be added later if this is internal work" },
+                  ...clients.map((client) => ({ value: client.id, label: client.name }))
+                ]}
+                value={draft.clientId}
+              />
+              <Select
+                fullWidth
+                helperText="Used to show whether delivery is active, paused, completed, or archived."
+                label="Project status - Required"
+                onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
+                options={PROJECT_STATUS_OPTIONS.map((status) => ({ value: status, label: status }))}
+                value={draft.status}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Description - Optional"
+                maxLength={4000}
+                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                placeholder="What this project covers, key scope, or delivery notes"
+                rows={4}
+                value={draft.description}
+              />
+              <Input
+                fullWidth
+                helperText="Use when the project has a defined start date."
+                label="Start date - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, startDate: event.target.value }))}
+                type="date"
+                value={draft.startDate}
+              />
+              <Input
+                fullWidth
+                helperText="Use when delivery has a target completion date."
+                label="Due date - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                type="date"
+                value={draft.dueDate}
+              />
+            </div>
+            {selectedProject ? (
+              <section className="field-span-2" aria-labelledby="project-tasks-title">
+                <h3 id="project-tasks-title">Tasks for this project</h3>
+                <p className="muted-text">Related tasks help the admin team track delivery progress for this project.</p>
+                {selectedProjectTasks.length === 0 ? (
+                  <p>No tasks for this project.</p>
+                ) : (
+                  <div>
+                    {selectedProjectTasks.map((task) => (
+                      <p key={task.id}>{task.title}</p>
+                    ))}
+                  </div>
+                )}
+              </section>
+            ) : null}
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+          </form>
+        </WorkflowPageShell>
+      ) : null}
+
+      {!isEditorOpen ? (
+      <>
       <PageHeader
         eyebrow="Delivery"
         title="Projects"
@@ -374,6 +500,8 @@ export function ProjectsPage({
           </div>
         </SectionPanel>
       )}
+      </>
+      ) : null}
 
       {pendingLifecycle ? (
         <Modal isOpen
@@ -407,92 +535,6 @@ export function ProjectsPage({
           }
         >
           <p>{pendingLifecycle.copy.description}</p>
-        </Modal>
-      ) : null}
-
-      {isEditorOpen ? (
-        <Modal isOpen onClose={closeEditor} title={editorProjectId ? "Edit Project" : "Add Project"}>
-          <form className="entity-form" onSubmit={handleSubmit}>
-            <p className="muted-text">
-              Used by admin team to organize work and billing. Archived items are hidden from active work but can be
-              restored.
-            </p>
-            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
-            <div className="field-grid">
-              <Input
-                fullWidth
-                helperText="Used by admin team to organize work and billing."
-                label="Project name - Required"
-                maxLength={255}
-                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                placeholder="Website build, SEO retainer, monthly content, support"
-                required
-                value={draft.name}
-              />
-              <Select
-                fullWidth
-                helperText="Client can be added later if this is internal work."
-                label="Client - Optional"
-                onChange={(event) => setDraft((current) => ({ ...current, clientId: event.target.value }))}
-                options={[
-                  { value: "", label: "Client can be added later if this is internal work" },
-                  ...clients.map((client) => ({ value: client.id, label: client.name }))
-                ]}
-                value={draft.clientId}
-              />
-              <Select
-                fullWidth
-                helperText="Used to show whether delivery is active, paused, completed, or archived."
-                label="Project status - Required"
-                onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
-                options={PROJECT_STATUS_OPTIONS.map((status) => ({ value: status, label: status }))}
-                value={draft.status}
-              />
-              <Textarea
-                className="field-span-2"
-                fullWidth
-                helperText="Shown only in admin records."
-                label="Description - Optional"
-                maxLength={4000}
-                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-                placeholder="What this project covers, key scope, or delivery notes"
-                rows={4}
-                value={draft.description}
-              />
-              <Input
-                fullWidth
-                helperText="Use when the project has a defined start date."
-                label="Start date - Optional"
-                onChange={(event) => setDraft((current) => ({ ...current, startDate: event.target.value }))}
-                type="date"
-                value={draft.startDate}
-              />
-              <Input
-                fullWidth
-                helperText="Use when delivery has a target completion date."
-                label="Due date - Optional"
-                onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                type="date"
-                value={draft.dueDate}
-              />
-            </div>
-            {selectedProject ? (
-              <section className="field-span-2" aria-labelledby="project-tasks-title">
-                <h3 id="project-tasks-title">Tasks for this project</h3>
-                <p className="muted-text">Related tasks help the admin team track delivery progress for this project.</p>
-                {selectedProjectTasks.length === 0 ? (
-                  <p>No tasks for this project.</p>
-                ) : (
-                  <div>
-                    {selectedProjectTasks.map((task) => (
-                      <p key={task.id}>{task.title}</p>
-                    ))}
-                  </div>
-                )}
-              </section>
-            ) : null}
-            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
-          </form>
         </Modal>
       ) : null}
     </section>

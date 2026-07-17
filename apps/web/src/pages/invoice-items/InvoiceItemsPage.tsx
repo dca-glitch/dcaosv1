@@ -1,5 +1,4 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/ui";
 import {
   Button,
   EmptyState,
@@ -13,8 +12,11 @@ import {
   SectionPanel,
   StatusBadge,
   Textarea,
+  WorkflowPageShell,
 } from "../../components/ui";
+import { useEntityEditorHash } from "../../lib/use-entity-editor-hash";
 import "../finance/finance.css";
+import "../ai-delivery/ai-delivery-workflow.css";
 
 export type InvoiceItemSummary = {
   id: string;
@@ -69,6 +71,10 @@ export function InvoiceItemsPage({
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const invoiceItems = useMemo(
+    () => [...activeItems, ...archivedItems],
+    [activeItems, archivedItems]
+  );
   const visibleItems = tab === "active" ? activeItems : archivedItems;
   const totalActiveValue = useMemo(
     () => activeItems.reduce((total, item) => total + item.unitPriceCents, 0),
@@ -76,18 +82,13 @@ export function InvoiceItemsPage({
   );
   const submitLabel = editorId ? "Update service" : "Create service";
 
-  function closeEditor() {
+  function closeEditorState() {
     setEditorId(null);
     setDraft(emptyInvoiceItemForm);
     setIsEditorOpen(false);
   }
 
-  function openCreateModal() {
-    closeEditor();
-    setIsEditorOpen(true);
-  }
-
-  function openEditModal(item: InvoiceItemSummary) {
+  function applyInvoiceItemDraft(item: InvoiceItemSummary) {
     setEditorId(item.id);
     setDraft({
       name: item.name,
@@ -95,6 +96,40 @@ export function InvoiceItemsPage({
       unitPriceCents: item.unitPriceCents
     });
     setIsEditorOpen(true);
+  }
+
+  const { navigateEditor } = useEntityEditorHash({
+    base: "invoice-items",
+    listRevision: invoiceItems,
+    openCreateFromHash: () => {
+      setEditorId(null);
+      setDraft(emptyInvoiceItemForm);
+      setIsEditorOpen(true);
+    },
+    openEditFromHash: (id) => {
+      const item = invoiceItems.find((entry) => entry.id === id);
+      if (!item) return false;
+      applyInvoiceItemDraft(item);
+      return true;
+    },
+    closeFromHash: closeEditorState
+  });
+
+  function closeEditor() {
+    closeEditorState();
+    navigateEditor({ kind: "hub" });
+  }
+
+  function openCreateModal() {
+    setEditorId(null);
+    setDraft(emptyInvoiceItemForm);
+    setIsEditorOpen(true);
+    navigateEditor({ kind: "new" });
+  }
+
+  function openEditModal(item: InvoiceItemSummary) {
+    applyInvoiceItemDraft(item);
+    navigateEditor({ kind: "edit", id: item.id });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -119,7 +154,59 @@ export function InvoiceItemsPage({
   }
 
   return (
-    <section className="view-section finance-lite" aria-labelledby="invoice-items-title" data-density="compact">
+    <section className="view-section finance-lite entity-editor-page" aria-labelledby="invoice-items-title" data-density="compact">
+      {isEditorOpen ? (
+        <WorkflowPageShell
+          backLabel="Back to Service library"
+          eyebrow={editorId ? "Edit" : "Create"}
+          onClose={closeEditor}
+          title={editorId ? "Edit Service" : "Add Service"}
+          titleId="invoice-items-editor-title"
+        >
+          <form className="entity-form entity-editor-form" onSubmit={handleSubmit}>
+            <p className="muted-text">Used as reusable invoice line items. Changing this does not update existing invoices.</p>
+            <ModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <div className="field-grid">
+              <Input
+                fullWidth
+                helperText="Used as reusable invoice line items."
+                label="Service name - Required"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
+                placeholder="SEO article, monthly retainer, website maintenance"
+                required
+                value={draft.name}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Changing this does not update existing invoices."
+                label="Description - Optional"
+                maxLength={4000}
+                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Default line item description used on invoices"
+                rows={4}
+                value={draft.description}
+              />
+              <Input
+                fullWidth
+                helperText="Stored as the reusable default price for future invoice drafting."
+                label="Unit price - Required"
+                min={0}
+                onChange={(event) => setDraft((current) => ({ ...current, unitPriceCents: event.target.valueAsNumber || 0 }))}
+                placeholder="Default price before tax or discount"
+                required
+                type="number"
+                value={draft.unitPriceCents}
+              />
+            </div>
+            <ModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
+          </form>
+        </WorkflowPageShell>
+      ) : null}
+
+      {!isEditorOpen ? (
+      <>
       <PageHeader
         eyebrow="Finance"
         title="Service library"
@@ -234,52 +321,7 @@ export function InvoiceItemsPage({
           </div>
         )}
       </SectionPanel>
-
-      {isEditorOpen ? (
-        <Modal isOpen
-          onClose={closeEditor}
-          title={editorId ? "Edit Service" : "Add Service"}
-        >
-          <form className="entity-form" onSubmit={handleSubmit}>
-            <p className="muted-text">Used as reusable invoice line items. Changing this does not update existing invoices.</p>
-            <ModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
-            <div className="field-grid">
-              <Input
-                fullWidth
-                helperText="Used as reusable invoice line items."
-                label="Service name - Required"
-                maxLength={255}
-                onChange={(event) => setDraft((current) => ({ ...current, name: event.target.value }))}
-                placeholder="SEO article, monthly retainer, website maintenance"
-                required
-                value={draft.name}
-              />
-              <Textarea
-                className="field-span-2"
-                fullWidth
-                helperText="Changing this does not update existing invoices."
-                label="Description - Optional"
-                maxLength={4000}
-                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-                placeholder="Default line item description used on invoices"
-                rows={4}
-                value={draft.description}
-              />
-              <Input
-                fullWidth
-                helperText="Stored as the reusable default price for future invoice drafting."
-                label="Unit price - Required"
-                min={0}
-                onChange={(event) => setDraft((current) => ({ ...current, unitPriceCents: event.target.valueAsNumber || 0 }))}
-                placeholder="Default price before tax or discount"
-                required
-                type="number"
-                value={draft.unitPriceCents}
-              />
-            </div>
-            <ModalActions disabled={saving || !draft.name.trim()} label={submitLabel} onCancel={closeEditor} saving={saving} />
-          </form>
-        </Modal>
+      </>
       ) : null}
     </section>
   );

@@ -67,12 +67,12 @@ function baseProps(overrides: Partial<AiDeliveryBriefModalProps> = {}): AiDelive
 }
 
 function getDialog() {
-  const dialogs = screen.getAllByRole("dialog", { name: "AI Delivery Brief" });
+  const dialogs = screen.getAllByRole("region", { name: "AI Delivery Brief" });
   return dialogs[dialogs.length - 1]!;
 }
 
 describe("AiDeliveryBriefModal", () => {
-  it("opens with the AI Delivery Brief accessible dialog name", () => {
+  it("opens with the AI Delivery Brief accessible page heading", () => {
     render(<AiDeliveryBriefModal {...baseProps()} />);
     expect(getDialog()).toBeTruthy();
   });
@@ -197,10 +197,10 @@ describe("AiDeliveryBriefModal", () => {
     expect(within(dialog).queryByText(/sk_|Bearer |token=|storage\//i)).toBeNull();
   });
 
-  it("closes via Escape when the modal foundation supports it", () => {
+  it("closes via Back to AI Delivery on the workflow page shell", () => {
     const onClose = vi.fn();
     render(<AiDeliveryBriefModal {...baseProps({ onClose })} />);
-    fireEvent.keyDown(document, { key: "Escape" });
+    fireEvent.click(screen.getAllByRole("button", { name: "Back to AI Delivery" }).at(-1)!);
     expect(onClose).toHaveBeenCalled();
   });
 

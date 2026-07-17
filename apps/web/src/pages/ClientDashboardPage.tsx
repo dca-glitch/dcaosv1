@@ -246,7 +246,7 @@ export function ClientDashboardPage({ user }: ClientDashboardPageProps) {
         tone="highlight"
       >
         {attentionItems.length === 0 ? (
-          <p className="muted-text" style={{ color: "rgba(110, 231, 183, 0.95)", margin: 0 }}>
+          <p className="muted-text client-dashboard-caught-up" style={{ margin: 0 }}>
             You&apos;re all caught up
           </p>
         ) : (

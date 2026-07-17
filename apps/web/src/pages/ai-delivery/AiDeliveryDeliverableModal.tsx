@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Input, Modal, Select, StatusBadge, Textarea, getPublishingStatusLabel } from "../../components/ui";
+import { Button, Input, Select, StatusBadge, Textarea, WorkflowPageShell, getPublishingStatusLabel } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -247,7 +247,7 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Deliverables">
+    <WorkflowPageShell onClose={onClose} title="Deliverables" titleId="ai-delivery-deliverables-title">
         {loading ? (
           <AiDeliveryInlineLoading label="Loading deliverables" />
         ) : project ? (
@@ -1105,6 +1105,6 @@ export function AiDeliveryDeliverableModal(props: AiDeliveryDeliverableModalProp
           </div>
         ) : <div>Project not found.</div>}
 
-    </Modal>
+    </WorkflowPageShell>
   );
 }

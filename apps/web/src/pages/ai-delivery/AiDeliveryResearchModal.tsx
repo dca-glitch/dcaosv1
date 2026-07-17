@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Input, Modal, Select, StatusBadge, Textarea } from "../../components/ui";
+import { Button, Input, Select, StatusBadge, Textarea, WorkflowPageShell } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -111,7 +111,7 @@ export function AiDeliveryResearchModal({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Research / Sources">
+    <WorkflowPageShell onClose={onClose} title="Research / Sources" titleId="ai-delivery-research-title">
       {loading ? (
         <AiDeliveryInlineLoading label="Loading research requests and sources" />
       ) : project ? (
@@ -688,6 +688,6 @@ export function AiDeliveryResearchModal({
       ) : (
         <div>Project not found.</div>
       )}
-    </Modal>
+    </WorkflowPageShell>
   );
 }

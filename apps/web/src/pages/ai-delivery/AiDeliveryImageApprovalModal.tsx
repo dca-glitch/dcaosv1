@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Input, Modal, Select, StatusBadge, Textarea } from "../../components/ui";
+import { Button, Input, Select, StatusBadge, Textarea, WorkflowPageShell } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -127,7 +127,7 @@ export function AiDeliveryImageApprovalModal({
   const canSave = Boolean(form.contentDraftId && form.title.trim() && form.prompt.trim());
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="Image Production Planning">
+    <WorkflowPageShell onClose={onClose} title="Image Production Planning" titleId="ai-delivery-article-images-title">
       {loading ? (
         <AiDeliveryInlineLoading label="Loading article image requests" />
       ) : project ? (
@@ -583,6 +583,6 @@ export function AiDeliveryImageApprovalModal({
       ) : (
         <div>Project not found.</div>
       )}
-    </Modal>
+    </WorkflowPageShell>
   );
 }

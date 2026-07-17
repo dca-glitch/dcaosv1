@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Input, Modal, Select, StatusBadge, Textarea } from "../../components/ui";
+import { Button, Input, Select, StatusBadge, Textarea, WorkflowPageShell } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -117,7 +117,7 @@ export function AiDeliveryContentDraftModal({
   const activeDraftCount = contentDrafts.filter((draft) => !draft.isArchived).length;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="AI Content Production">
+    <WorkflowPageShell onClose={onClose} title="AI Content Production" titleId="ai-delivery-content-drafts-title">
       {loading ? (
         <AiDeliveryInlineLoading label="Loading content drafts" />
       ) : project ? (
@@ -508,6 +508,6 @@ export function AiDeliveryContentDraftModal({
       ) : (
         <div>Project not found.</div>
       )}
-    </Modal>
+    </WorkflowPageShell>
   );
 }

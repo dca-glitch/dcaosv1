@@ -64,7 +64,7 @@ const baseProps = {
 };
 
 function getWorkflowRunsDialog() {
-  const dialogs = screen.getAllByRole("dialog", { name: "Workflow Runs" });
+  const dialogs = screen.getAllByRole("region", { name: "Workflow Runs" });
   return dialogs[dialogs.length - 1]!;
 }
 

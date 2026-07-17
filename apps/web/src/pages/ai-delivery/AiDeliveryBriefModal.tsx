@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Modal, Textarea } from "../../components/ui";
+import { Button, Textarea, WorkflowPageShell } from "../../components/ui";
 import {
   AiDeliveryInlineAlert,
   AiDeliveryInlineEmpty,
@@ -40,9 +40,9 @@ export type AiDeliveryBriefModalProps = {
 };
 
 /**
- * P4E Brief Form/View modal — smoke-compatible dialog name "AI Delivery Brief".
+ * P4E Brief Form/View — workflow page (was modal). Heading "AI Delivery Brief".
  * Apply-to-brief from Research remains in AiDeliveryPage / Research lane.
- * Archive/restore are not part of the current Brief modal contract.
+ * Archive/restore are not part of the current Brief contract.
  */
 export function AiDeliveryBriefModal({
   isOpen,
@@ -64,7 +64,7 @@ export function AiDeliveryBriefModal({
   const editable = canEdit && canSave;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" title="AI Delivery Brief">
+    <WorkflowPageShell onClose={onClose} title="AI Delivery Brief" titleId="ai-delivery-brief-title">
       {loading ? (
         <AiDeliveryInlineLoading label="Loading brief" />
       ) : project ? (
@@ -244,6 +244,6 @@ export function AiDeliveryBriefModal({
       ) : (
         <div>Project not found.</div>
       )}
-    </Modal>
+    </WorkflowPageShell>
   );
 }

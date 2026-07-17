@@ -16,7 +16,6 @@ import {
   Input,
   LoadingState,
   MetricCard,
-  Modal,
   PageHeader,
   SectionPanel,
   Select,
@@ -24,9 +23,11 @@ import {
   StatusSummaryBar,
   Table,
   TablePaginationBar,
+  WorkflowPageShell,
 } from "../../components/ui";
 import {
   AI_OPS_PAGE_SIZE,
+  buildAiOperationsRunHash,
   buildRunsCsv,
   buildStatusSummaryItems,
   contextStatusLabel,
@@ -43,6 +44,7 @@ import {
   type AiOpsStatusFilter,
 } from "./aiOperationsModel";
 import "./ai-operations.css";
+import "../ai-delivery/ai-delivery-workflow.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "/api/v1";
 const SESSION_STORAGE_KEY = "dcaosv1.authToken";
@@ -95,11 +97,10 @@ function contextStatusBadge(status: AiWorkflowContextUsageSummary["status"]) {
 }
 
 /**
- * Run detail uses the existing AI Operations Modal.
- * AiRunReviewModal (Phase 4) reuse is deferred — that modal is tightly coupled to
- * AI Delivery project/form/save/execute props and cannot be wired safely without changes.
+ * Run detail workflow page (was Modal).
+ * AiRunReviewModal reuse is deferred — tightly coupled to AI Delivery project props.
  */
-function RunDetailModal({
+function RunDetailPage({
   run,
   loading,
   error,
@@ -111,7 +112,12 @@ function RunDetailModal({
   onClose: () => void;
 }) {
   return (
-    <Modal isOpen onClose={onClose} title={run ? `Run ${run.shortId}` : "AI run detail"}>
+    <WorkflowPageShell
+      backLabel="Back to AI Operations"
+      onClose={onClose}
+      title={run ? `Run ${run.shortId}` : "AI run detail"}
+      titleId="ai-operations-run-detail-title"
+    >
       {loading ? <LoadingState label="Loading run detail…" /> : null}
       {error ? <ErrorState message={error} title="Run detail blocked" /> : null}
       {!loading && !error && run ? (
@@ -226,7 +232,7 @@ function RunDetailModal({
           ) : null}
         </div>
       ) : null}
-    </Modal>
+    </WorkflowPageShell>
   );
 }
 
@@ -268,11 +274,17 @@ export function AiOperationsPage() {
     void loadRuns();
   }, [loadRuns]);
 
-  const openRunDetail = useCallback(async (runId: string) => {
+  const openRunDetail = useCallback(async (runId: string, options?: { syncHash?: boolean }) => {
     setSelectedRunId(runId);
     setDetailRun(null);
     setDetailLoading(true);
     setDetailError(null);
+    if (options?.syncHash !== false) {
+      const next = buildAiOperationsRunHash(runId);
+      if (window.location.hash !== next) {
+        window.location.hash = next;
+      }
+    }
     try {
       const response = await apiRequest<AiOperationsRunResponse>(`/ai-operations/runs/${runId}`);
       if (!response.ok) {
@@ -295,17 +307,25 @@ export function AiOperationsPage() {
     setSelectedRunId(null);
     setDetailRun(null);
     setDetailError(null);
-    const deepLinkId = parseAiOperationsRunIdFromHash(window.location.hash);
-    if (deepLinkId) {
-      window.location.hash = "#/ai-operations";
+    const next = buildAiOperationsRunHash(null);
+    if (window.location.hash !== next && parseAiOperationsRunIdFromHash(window.location.hash)) {
+      window.location.hash = next;
     }
   }, []);
 
   useEffect(() => {
     const openFromHash = () => {
       const runId = parseAiOperationsRunIdFromHash(window.location.hash);
-      if (runId && runId !== selectedRunId) {
-        void openRunDetail(runId);
+      if (!runId) {
+        if (selectedRunId) {
+          setSelectedRunId(null);
+          setDetailRun(null);
+          setDetailError(null);
+        }
+        return;
+      }
+      if (runId !== selectedRunId) {
+        void openRunDetail(runId, { syncHash: false });
       }
     };
     openFromHash();
@@ -358,7 +378,18 @@ export function AiOperationsPage() {
   const errorLogRuns = useMemo(() => selectErrorLogRuns(filteredRuns), [filteredRuns]);
 
   return (
-    <div className="page-stack ai-ops-console" data-density="compact">
+    <div className="page-stack ai-ops-console entity-editor-page" data-density="compact">
+      {selectedRunId ? (
+        <RunDetailPage
+          run={detailRun}
+          loading={detailLoading}
+          error={detailError}
+          onClose={closeRunDetail}
+        />
+      ) : null}
+
+      {!selectedRunId ? (
+      <>
       <PageHeader
         eyebrow="AI Operations"
         title="AI Operations Console"
@@ -571,14 +602,7 @@ export function AiOperationsPage() {
           </SectionPanel>
         </>
       ) : null}
-
-      {selectedRunId ? (
-        <RunDetailModal
-          run={detailRun}
-          loading={detailLoading}
-          error={detailError}
-          onClose={closeRunDetail}
-        />
+      </>
       ) : null}
     </div>
   );

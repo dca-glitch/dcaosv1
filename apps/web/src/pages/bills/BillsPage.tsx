@@ -15,13 +15,16 @@ import {
   StatusSummaryBar,
   Table,
   Textarea,
+  WorkflowPageShell,
 } from "../../components/ui";
+import { useEntityEditorHash } from "../../lib/use-entity-editor-hash";
 import {
   buildBillStatusSummary,
   formatFinanceDateLabel,
   formatFinanceMoney
 } from "../finance/finance-display";
 import "../finance/finance.css";
+import "../ai-delivery/ai-delivery-workflow.css";
 
 export type VendorSummary = {
   id: string;
@@ -198,14 +201,21 @@ export function BillsPage({
 
   const billStatusSummary = useMemo(() => buildBillStatusSummary(bills), [bills]);
 
-  function openCreateBillModal() {
+  function closeBillEditorState() {
+    setBillEditorId(null);
+    setBillDraft(emptyBillForm(firstActiveVendorId(vendors)));
+    setDocumentFile(null);
+    setIsBillEditorOpen(false);
+  }
+
+  function applyCreateBillDraft() {
     setBillEditorId(null);
     setBillDraft(emptyBillForm(firstActiveVendorId(vendors)));
     setDocumentFile(null);
     setIsBillEditorOpen(true);
   }
 
-  function openEditBillModal(bill: BillSummary) {
+  function applyEditBillDraft(bill: BillSummary) {
     setBillEditorId(bill.id);
     setBillDraft({
       vendorId: bill.vendorId,
@@ -224,6 +234,34 @@ export function BillsPage({
     setIsBillEditorOpen(true);
   }
 
+  const { navigateEditor } = useEntityEditorHash({
+    base: "bills",
+    listRevision: bills,
+    openCreateFromHash: applyCreateBillDraft,
+    openEditFromHash: (id) => {
+      const bill = bills.find((entry) => entry.id === id);
+      if (!bill) return false;
+      applyEditBillDraft(bill);
+      return true;
+    },
+    closeFromHash: closeBillEditorState
+  });
+
+  function closeBillEditor() {
+    closeBillEditorState();
+    navigateEditor({ kind: "hub" });
+  }
+
+  function openCreateBillModal() {
+    applyCreateBillDraft();
+    navigateEditor({ kind: "new" });
+  }
+
+  function openEditBillModal(bill: BillSummary) {
+    applyEditBillDraft(bill);
+    navigateEditor({ kind: "edit", id: bill.id });
+  }
+
   async function handleBillSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
@@ -237,10 +275,7 @@ export function BillsPage({
       }
 
       if (savedBill) {
-        setBillEditorId(null);
-        setBillDraft(emptyBillForm(firstActiveVendorId(vendors)));
-        setDocumentFile(null);
-        setIsBillEditorOpen(false);
+        closeBillEditor();
       }
     } finally {
       setSaving(false);
@@ -286,7 +321,156 @@ export function BillsPage({
   const vendorSubmitLabel = vendorEditorId ? "Update Vendor" : "Save Vendor";
 
   return (
-    <section className="view-section finance-lite" aria-labelledby="bills-title" data-density="compact">
+    <section className="view-section finance-lite entity-editor-page" aria-labelledby="bills-title" data-density="compact">
+      {isBillEditorOpen ? (
+        <WorkflowPageShell
+          backLabel="Back to Bills"
+          eyebrow={billEditorId ? "Edit" : "Create"}
+          onClose={closeBillEditor}
+          title={billEditorId ? "Edit Bill" : "New Bill"}
+          titleId="bills-editor-title"
+        >
+          <form className="entity-form entity-editor-form" onSubmit={handleBillSubmit}>
+            <ModalActions
+              disabled={saving || !hasActiveVendors}
+              label={billSubmitLabel}
+              onCancel={closeBillEditor}
+              saving={saving}
+            />
+            <div className="field-grid">
+              <Select
+                disabled={vendors.length === 0}
+                fullWidth
+                helperText="Used for expense tracking."
+                label="Vendor - Required"
+                onChange={(event) => setBillDraft((current) => ({ ...current, vendorId: event.target.value }))}
+                options={[
+                  { value: "", label: "Select vendor" },
+                  ...vendors.filter((vendor) => !vendor.isArchived || vendor.id === billDraft.vendorId).map((vendor) => ({
+                    value: vendor.id,
+                    label: vendor.name
+                  }))
+                ]}
+                required
+                value={billDraft.vendorId}
+              />
+              <Input
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Bill reference - Optional"
+                maxLength={500}
+                onChange={(event) => setBillDraft((current) => ({ ...current, referenceNumber: event.target.value }))}
+                placeholder="Vendor invoice number, receipt ID, or reference"
+                value={billDraft.referenceNumber}
+              />
+              <Input
+                fullWidth
+                helperText="Used for expense tracking."
+                label="Bill date - Required"
+                onChange={(event) => setBillDraft((current) => ({ ...current, billDate: event.target.value }))}
+                required
+                type="date"
+                value={billDraft.billDate}
+              />
+              <Input
+                fullWidth
+                helperText="Used to track when this bill should be paid."
+                label="Due date - Required"
+                onChange={(event) => setBillDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                required
+                type="date"
+                value={billDraft.dueDate}
+              />
+              <Input
+                fullWidth
+                helperText="Recorded in cents for the bill total."
+                label="Amount - Required"
+                min={1}
+                onChange={(event) => setBillDraft((current) => ({ ...current, amountCents: event.target.valueAsNumber || 0 }))}
+                placeholder="Total bill amount before payment tracking"
+                required
+                type="number"
+                value={billDraft.amountCents}
+              />
+              <Select
+                fullWidth
+                helperText="Does not create a bank transaction."
+                label="Payment status / method - Required"
+                onChange={(event) => setBillDraft((current) => ({ ...current, paymentForm: event.target.value }))}
+                options={paymentFormOptions.map((option) => ({ value: option.value, label: option.label }))}
+                required
+                value={billDraft.paymentForm}
+              />
+              <Input
+                fullWidth
+                helperText="Used only when a payment date is known."
+                label="Payment date - Optional"
+                onChange={(event) => setBillDraft((current) => ({ ...current, paymentDate: event.target.value }))}
+                type="date"
+                value={billDraft.paymentDate}
+              />
+              <Input
+                fullWidth
+                helperText="Used for admin reporting and filtering."
+                label="Category - Optional"
+                maxLength={500}
+                onChange={(event) => setBillDraft((current) => ({ ...current, category: event.target.value }))}
+                placeholder="Supplies, software, subcontractor, or service"
+                value={billDraft.category}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Document URL / reference - Optional"
+                maxLength={2048}
+                onChange={(event) => setBillDraft((current) => ({ ...current, documentUrl: event.target.value }))}
+                placeholder="Receipt, invoice file, or folder reference"
+                value={billDraft.documentUrl}
+              />
+              <Input
+                className="field-span-2"
+                fullWidth
+                helperText="Visible only to admin team."
+                label="Document storage key - Optional"
+                maxLength={2048}
+                onChange={(event) => setBillDraft((current) => ({ ...current, documentStorageKey: event.target.value }))}
+                placeholder="Storage key or internal document path"
+                value={billDraft.documentStorageKey}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Visible only to admin team."
+                label="Internal notes - Optional"
+                maxLength={4000}
+                onChange={(event) => setBillDraft((current) => ({ ...current, notes: event.target.value }))}
+                placeholder="Notes for admin team only"
+                rows={3}
+                value={billDraft.notes}
+              />
+              <Input
+                accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
+                className="field-span-2"
+                fullWidth
+                helperText="Optional. Allowed: PDF, PNG, JPG, WebP up to 5 MB. Uploading does not create a payment."
+                label="Upload document"
+                onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
+                type="file"
+              />
+            </div>
+            <ModalActions
+              disabled={saving || !hasActiveVendors}
+              label={billSubmitLabel}
+              onCancel={closeBillEditor}
+              saving={saving}
+            />
+          </form>
+        </WorkflowPageShell>
+      ) : null}
+
+      {!isBillEditorOpen ? (
+        <>
       <PageHeader
         eyebrow="Expenses"
         title="Bills"
@@ -453,156 +637,7 @@ export function BillsPage({
         </div>
       )}
       </SectionPanel>
-
-      {isBillEditorOpen ? (
-        <Modal isOpen
-          eyebrow={billEditorId ? "Edit" : "Create"}
-          onClose={() => {
-            setBillEditorId(null);
-            setBillDraft(emptyBillForm(firstActiveVendorId(vendors)));
-            setDocumentFile(null);
-            setIsBillEditorOpen(false);
-          }}
-          size="md"
-          title={billEditorId ? "Edit Bill" : "New Bill"}
-        >
-          <form className="entity-form" onSubmit={handleBillSubmit}>
-            <ModalActions
-              disabled={saving || !hasActiveVendors}
-              label={billSubmitLabel}
-              onCancel={() => setIsBillEditorOpen(false)}
-              saving={saving}
-            />
-            <div className="field-grid">
-              <Select
-                disabled={vendors.length === 0}
-                fullWidth
-                helperText="Used for expense tracking."
-                label="Vendor - Required"
-                onChange={(event) => setBillDraft((current) => ({ ...current, vendorId: event.target.value }))}
-                options={[
-                  { value: "", label: "Select vendor" },
-                  ...vendors.filter((vendor) => !vendor.isArchived || vendor.id === billDraft.vendorId).map((vendor) => ({
-                    value: vendor.id,
-                    label: vendor.name
-                  }))
-                ]}
-                required
-                value={billDraft.vendorId}
-              />
-              <Input
-                fullWidth
-                helperText="Shown only in admin records."
-                label="Bill reference - Optional"
-                maxLength={500}
-                onChange={(event) => setBillDraft((current) => ({ ...current, referenceNumber: event.target.value }))}
-                placeholder="Vendor invoice number, receipt ID, or reference"
-                value={billDraft.referenceNumber}
-              />
-              <Input
-                fullWidth
-                helperText="Used for expense tracking."
-                label="Bill date - Required"
-                onChange={(event) => setBillDraft((current) => ({ ...current, billDate: event.target.value }))}
-                required
-                type="date"
-                value={billDraft.billDate}
-              />
-              <Input
-                fullWidth
-                helperText="Used to track when this bill should be paid."
-                label="Due date - Required"
-                onChange={(event) => setBillDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                required
-                type="date"
-                value={billDraft.dueDate}
-              />
-              <Input
-                fullWidth
-                helperText="Recorded in cents for the bill total."
-                label="Amount - Required"
-                min={1}
-                onChange={(event) => setBillDraft((current) => ({ ...current, amountCents: event.target.valueAsNumber || 0 }))}
-                placeholder="Total bill amount before payment tracking"
-                required
-                type="number"
-                value={billDraft.amountCents}
-              />
-              <Select
-                fullWidth
-                helperText="Does not create a bank transaction."
-                label="Payment status / method - Required"
-                onChange={(event) => setBillDraft((current) => ({ ...current, paymentForm: event.target.value }))}
-                options={paymentFormOptions.map((option) => ({ value: option.value, label: option.label }))}
-                required
-                value={billDraft.paymentForm}
-              />
-              <Input
-                fullWidth
-                helperText="Used only when a payment date is known."
-                label="Payment date - Optional"
-                onChange={(event) => setBillDraft((current) => ({ ...current, paymentDate: event.target.value }))}
-                type="date"
-                value={billDraft.paymentDate}
-              />
-              <Input
-                fullWidth
-                helperText="Used for admin reporting and filtering."
-                label="Category - Optional"
-                maxLength={500}
-                onChange={(event) => setBillDraft((current) => ({ ...current, category: event.target.value }))}
-                placeholder="Supplies, software, subcontractor, or service"
-                value={billDraft.category}
-              />
-              <Input
-                className="field-span-2"
-                fullWidth
-                helperText="Shown only in admin records."
-                label="Document URL / reference - Optional"
-                maxLength={2048}
-                onChange={(event) => setBillDraft((current) => ({ ...current, documentUrl: event.target.value }))}
-                placeholder="Receipt, invoice file, or folder reference"
-                value={billDraft.documentUrl}
-              />
-              <Input
-                className="field-span-2"
-                fullWidth
-                helperText="Visible only to admin team."
-                label="Document storage key - Optional"
-                maxLength={2048}
-                onChange={(event) => setBillDraft((current) => ({ ...current, documentStorageKey: event.target.value }))}
-                placeholder="Storage key or internal document path"
-                value={billDraft.documentStorageKey}
-              />
-              <Textarea
-                className="field-span-2"
-                fullWidth
-                helperText="Visible only to admin team."
-                label="Internal notes - Optional"
-                maxLength={4000}
-                onChange={(event) => setBillDraft((current) => ({ ...current, notes: event.target.value }))}
-                placeholder="Notes for admin team only"
-                rows={3}
-                value={billDraft.notes}
-              />
-              <Input
-                accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp"
-                className="field-span-2"
-                fullWidth
-                helperText="Optional. Allowed: PDF, PNG, JPG, WebP up to 5 MB. Uploading does not create a payment."
-                label="Upload document"
-                onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
-                type="file"
-              />
-            </div>
-            <ModalActions
-              disabled={saving || !hasActiveVendors}
-              label={billSubmitLabel}
-              onCancel={() => setIsBillEditorOpen(false)}
-              saving={saving}
-            />
-          </form>
-        </Modal>
+        </>
       ) : null}
 
       {isVendorEditorOpen ? (

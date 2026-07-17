@@ -1,12 +1,26 @@
 import { type FormEvent, useMemo, useState } from "react";
-import { Modal } from "../../components/ui";
-import { Button, EmptyState, ErrorState, Input, LoadingState, ModalActions, PageHeader, Select, StatusBadge, Table, Textarea } from "../../components/ui";
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  Input,
+  LoadingState,
+  ModalActions,
+  PageHeader,
+  Select,
+  StatusBadge,
+  Table,
+  Textarea,
+  WorkflowPageShell,
+} from "../../components/ui";
+import { useEntityEditorHash } from "../../lib/use-entity-editor-hash";
 import {
   persistTableDensityPreference,
   readTableDensityPreference,
   type PersistedTableDensity
 } from "../../lib/table-density";
 import type { ProjectSummary } from "../projects/ProjectsPage";
+import "../ai-delivery/ai-delivery-workflow.css";
 
 export type TaskSummary = {
   id: string;
@@ -145,18 +159,13 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
 
   const submitLabel = editorTaskId ? "Update task" : "Create task";
 
-  function closeEditor() {
+  function closeEditorState() {
     setEditorTaskId(null);
     setDraft(emptyForm(""));
     setIsEditorOpen(false);
   }
 
-  function openCreateModal() {
-    closeEditor();
-    setIsEditorOpen(true);
-  }
-
-  function openEditModal(task: TaskSummary) {
+  function applyTaskDraft(task: TaskSummary) {
     setEditorTaskId(task.id);
     setDraft({
       projectId: task.projectId ?? "",
@@ -169,6 +178,40 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
         : "NONE"
     });
     setIsEditorOpen(true);
+  }
+
+  const { navigateEditor } = useEntityEditorHash({
+    base: "tasks",
+    listRevision: tasks,
+    openCreateFromHash: () => {
+      setEditorTaskId(null);
+      setDraft(emptyForm(""));
+      setIsEditorOpen(true);
+    },
+    openEditFromHash: (id) => {
+      const task = tasks.find((entry) => entry.id === id);
+      if (!task) return false;
+      applyTaskDraft(task);
+      return true;
+    },
+    closeFromHash: closeEditorState
+  });
+
+  function closeEditor() {
+    closeEditorState();
+    navigateEditor({ kind: "hub" });
+  }
+
+  function openCreateModal() {
+    setEditorTaskId(null);
+    setDraft(emptyForm(""));
+    setIsEditorOpen(true);
+    navigateEditor({ kind: "new" });
+  }
+
+  function openEditModal(task: TaskSummary) {
+    applyTaskDraft(task);
+    navigateEditor({ kind: "edit", id: task.id });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -193,7 +236,93 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
   }
 
   return (
-    <section className="view-section" aria-labelledby="tasks-title" data-density={tableDensity}>
+    <section className="view-section entity-editor-page" aria-labelledby="tasks-title" data-density={tableDensity}>
+      {isEditorOpen ? (
+        <WorkflowPageShell
+          backLabel="Back to Tasks"
+          eyebrow={editorTaskId ? "Edit" : "Create"}
+          onClose={closeEditor}
+          title={editorTaskId ? "Edit Task" : "Add Task"}
+          titleId="tasks-editor-title"
+        >
+          <form className="entity-form entity-editor-form" onSubmit={handleSubmit}>
+            <p className="muted-text">Used by admin team to organize work and delivery. Archived items are hidden from active work but can be restored.</p>
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+            <div className="field-grid">
+              <Input
+                fullWidth
+                helperText="Used by admin team to track the work that needs to be completed."
+                label="Task name - Required"
+                maxLength={255}
+                onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
+                placeholder="Short action the team needs to complete"
+                required
+                value={draft.title}
+              />
+              <Select
+                fullWidth
+                helperText="Tasks can exist without a project."
+                label="Project - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, projectId: event.target.value }))}
+                options={[
+                  { value: "", label: "Tasks can exist without a project" },
+                  ...projects.map((project) => ({
+                    value: project.id,
+                    label: `${project.name} (${project.client?.name ?? "No client"})`
+                  }))
+                ]}
+                value={draft.projectId}
+              />
+              <Input
+                fullWidth
+                helperText="When this task should be completed."
+                label="Due date - Required"
+                onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
+                required
+                type="date"
+                value={draft.dueDate}
+              />
+              <Select
+                fullWidth
+                helperText="Use only for work that repeats on a schedule."
+                label="Recurring - Optional"
+                onChange={(event) => setDraft((current) => ({ ...current, recurringType: event.target.value }))}
+                options={recurringOptions.map((recurringType) => ({
+                  value: recurringType,
+                  label: formatRecurringLabel(recurringType)
+                }))}
+                value={draft.recurringType}
+              />
+              <Select
+                fullWidth
+                helperText="Tracks delivery progress without changing archive rules."
+                label="Status - Required"
+                onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
+                options={statusOptions.map((status) => ({
+                  value: status,
+                  label: formatStatusLabel(status, false)
+                }))}
+                value={draft.status}
+              />
+              <Textarea
+                className="field-span-2"
+                fullWidth
+                helperText="Shown only in admin records."
+                label="Description - Optional"
+                maxLength={4000}
+                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
+                placeholder="Context, handoff details, or completion notes"
+                rows={4}
+                value={draft.description}
+              />
+            </div>
+            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
+          </form>
+        </WorkflowPageShell>
+      ) : null}
+
+      {!isEditorOpen ? (
+      <>
       <PageHeader
         eyebrow="My work"
         title="Tasks"
@@ -324,88 +453,7 @@ export function TasksPage({ tasks, projects, canEdit, error, loading, onArchive,
           />
         </div>
       )}
-
-      {isEditorOpen ? (
-        <Modal isOpen
-          eyebrow={editorTaskId ? "Edit" : "Create"}
-          onClose={closeEditor}
-          size="md"
-          title={editorTaskId ? "Edit Task" : "Add Task"}
-        >
-          <form className="entity-form" onSubmit={handleSubmit}>
-            <p className="muted-text">Used by admin team to organize work and delivery. Archived items are hidden from active work but can be restored.</p>
-            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
-            <div className="field-grid">
-              <Input
-                fullWidth
-                helperText="Used by admin team to track the work that needs to be completed."
-                label="Task name - Required"
-                maxLength={255}
-                onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))}
-                placeholder="Short action the team needs to complete"
-                required
-                value={draft.title}
-              />
-              <Select
-                fullWidth
-                helperText="Tasks can exist without a project."
-                label="Project - Optional"
-                onChange={(event) => setDraft((current) => ({ ...current, projectId: event.target.value }))}
-                options={[
-                  { value: "", label: "Tasks can exist without a project" },
-                  ...projects.map((project) => ({
-                    value: project.id,
-                    label: `${project.name} (${project.client?.name ?? "No client"})`
-                  }))
-                ]}
-                value={draft.projectId}
-              />
-              <Input
-                fullWidth
-                helperText="When this task should be completed."
-                label="Due date - Required"
-                onChange={(event) => setDraft((current) => ({ ...current, dueDate: event.target.value }))}
-                required
-                type="date"
-                value={draft.dueDate}
-              />
-              <Select
-                fullWidth
-                helperText="Use only for work that repeats on a schedule."
-                label="Recurring - Optional"
-                onChange={(event) => setDraft((current) => ({ ...current, recurringType: event.target.value }))}
-                options={recurringOptions.map((recurringType) => ({
-                  value: recurringType,
-                  label: formatRecurringLabel(recurringType)
-                }))}
-                value={draft.recurringType}
-              />
-              <Select
-                fullWidth
-                helperText="Tracks delivery progress without changing archive rules."
-                label="Status - Required"
-                onChange={(event) => setDraft((current) => ({ ...current, status: event.target.value }))}
-                options={statusOptions.map((status) => ({
-                  value: status,
-                  label: formatStatusLabel(status, false)
-                }))}
-                value={draft.status}
-              />
-              <Textarea
-                className="field-span-2"
-                fullWidth
-                helperText="Shown only in admin records."
-                label="Description - Optional"
-                maxLength={4000}
-                onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
-                placeholder="Context, handoff details, or completion notes"
-                rows={4}
-                value={draft.description}
-              />
-            </div>
-            <ModalActions disabled={saving} label={submitLabel} onCancel={closeEditor} saving={saving} />
-          </form>
-        </Modal>
+      </>
       ) : null}
     </section>
   );

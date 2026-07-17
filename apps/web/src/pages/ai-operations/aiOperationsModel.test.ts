@@ -189,7 +189,8 @@ describe("context usage + error log", () => {
 });
 
 describe("parseAiOperationsRunIdFromHash", () => {
-  it("reads runId from ai-operations deep links", () => {
+  it("reads path and legacy query deep links", () => {
+    expect(parseAiOperationsRunIdFromHash("#/ai-operations/runs/abc-123")).toBe("abc-123");
     expect(parseAiOperationsRunIdFromHash("#/ai-operations?runId=abc-123")).toBe("abc-123");
     expect(parseAiOperationsRunIdFromHash("#/ai-operations")).toBeNull();
     expect(parseAiOperationsRunIdFromHash("")).toBeNull();
