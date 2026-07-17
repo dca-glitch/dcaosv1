@@ -11,7 +11,7 @@ Related:
 
 - [`STAGING_READINESS.md`](./STAGING_READINESS.md) â€” staging proven; does not authorize production
 - [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](./G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) â€” environment proof approval pattern
-- [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) â€” Puriva blockers vs still-deferred scope
+- `../operator/deferred-scope-register.md` (archived reference; see Git history) â€” Puriva blockers vs still-deferred scope
 - [`../operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md) â€” operator entry point
 
 ---
@@ -98,7 +98,7 @@ These must be resolved or explicitly accepted with owner sign-off before any pro
 
 Separate from Â§4.1. Puriva cannot launch until these are closed with evidence.
 
-See [`deferred-scope-register.md`](../operator/deferred-scope-register.md) Â§ Puriva Launch blockers. Summary:
+See `deferred-scope-register.md` (archived reference; see Git history) Â§ Puriva Launch blockers. Summary:
 
 - R2 real-bucket proof
 - GA/GSC live sync proof

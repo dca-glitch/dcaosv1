@@ -154,8 +154,8 @@ Current state clarification: Client Access Admin UI foundation is closed; Client
 `AiDeliveryBrief` is the simpler, project-attached brief concept described above. It is
 distinct from the richer, composable intake/context layer owned by WorkflowBriefs
 (`Brief`/`ProductionPlan`). Neither is legacy or scheduled for removal; see
-[`docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md`](./modules/WORKFLOW_BRIEFS_MODULE_PLAN.md)
-for the full relationship.
+[`docs/CURRENT_SYSTEM_SNAPSHOT.md`](./CURRENT_SYSTEM_SNAPSHOT.md) for the current
+capability relationship.
 
 ### Relationship and behavior requirements
 

@@ -15,7 +15,7 @@ Related:
 - [`G53_PRODUCTION_SAFETY_PLAN.md`](./G53_PRODUCTION_SAFETY_PLAN.md) â€” production safety blockers and gate sequence
 - [`STAGING_READINESS.md`](./STAGING_READINESS.md) â€” staging proven; does not authorize production
 - [`G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md`](./G9_ENVIRONMENT_PROOF_APPROVAL_GATE.md) â€” environment proof approval pattern
-- [`../operator/deferred-scope-register.md`](../operator/deferred-scope-register.md) â€” Puriva Launch blockers (separate gate)
+- `../operator/deferred-scope-register.md` (archived reference; see Git history) â€” Puriva Launch blockers (separate gate)
 - [`../operator/OPERATOR_RUNBOOK.md`](../operator/OPERATOR_RUNBOOK.md) â€” operator entry point
 
 ---
@@ -301,7 +301,7 @@ Stop immediately and do **not** proceed to G50 or any deploy if:
 | **DCA OS Production v1** (G49 â†’ G50) | Deploy safety, infrastructure, env separation, dry-run proof |
 | **Puriva Client-Service Launch** | Live integration proofs + product workflow gates |
 
-Clearing G49 (or even G50) does **not** authorize Puriva Launch. Puriva remains **blocked** until live proof gates pass: R2, GA/GSC, live AI, image generation, transactional notifications, and product workflow gates. See [`deferred-scope-register.md`](../operator/deferred-scope-register.md).
+Clearing G49 (or even G50) does **not** authorize Puriva Launch. Puriva remains **blocked** until live proof gates pass: R2, GA/GSC, live AI, image generation, transactional notifications, and product workflow gates. See `deferred-scope-register.md` (archived reference; see Git history).
 
 ---
 

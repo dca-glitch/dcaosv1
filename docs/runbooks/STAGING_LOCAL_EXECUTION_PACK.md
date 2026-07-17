@@ -33,7 +33,7 @@ Complete before requesting G4 approval.
 | 6 | E2E admin chain PASS | [`E2E_CLIENT_DELIVERY_SMOKE.md`](./E2E_CLIENT_DELIVERY_SMOKE.md) | Optional focused rerun |
 | 7 | No secrets in diff or logs | Review | — |
 | 8 | Env inventory reviewed | [`ENV_READINESS_INVENTORY.md`](../operator/ENV_READINESS_INVENTORY.md) | Staging values prepared server-side |
-| 9 | Deferred scope acknowledged | [`deferred-scope-register.md`](../operator/deferred-scope-register.md) | — |
+| 9 | Deferred scope acknowledged | `deferred-scope-register.md` (archived reference; see Git history) | — |
 | 10 | Staging smoke production-host guard | Negative test below | PASS-by-blocking (nonzero exit) |
 
 **Pre-G4 production-host guard rehearsal (local only, no VPS):**

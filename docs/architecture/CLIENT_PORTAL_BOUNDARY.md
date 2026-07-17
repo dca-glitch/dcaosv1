@@ -6,10 +6,10 @@
 
 Related:
 
-- [`docs/modules/CLIENT_PORTAL_PLAN.md`](../modules/CLIENT_PORTAL_PLAN.md)
+- [`docs/CURRENT_SYSTEM_SNAPSHOT.md`](../CURRENT_SYSTEM_SNAPSHOT.md)
 - [`docs/runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md`](../runbooks/PURIVA_CLIENT_PORTAL_BOUNDARY_GATE.md)
 - [`docs/runbooks/CLIENT_PORTAL_ROUTE_INVENTORY.md`](../runbooks/CLIENT_PORTAL_ROUTE_INVENTORY.md)
-- [`docs/architecture/CLIENT_PORTAL_NOTIFICATIONS_PLAN.md`](./CLIENT_PORTAL_NOTIFICATIONS_PLAN.md)
+- `docs/architecture/CLIENT_PORTAL_NOTIFICATIONS_PLAN.md` (archived reference; see Git history)
 
 ---
 

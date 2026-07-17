@@ -114,7 +114,7 @@ Do **not** use `openrouter/auto` for Puriva or medical/compliance content.
 - Routing truth labels: `ai-model-routing-truth-labels.ts` + shared `AI_MODEL_ROUTING_TRUTH_LABELS` (G622 live_completed cases).
 - Finance Lite remains separate: no AI budget report creates, mutates, or reconciles a Finance Lite invoice. G618 helper: `finance-lite-ai-budget-separation.ts`.
 - Reconciliation design exposes estimate, trusted actual, invoice, and variance slots, but invoice fields remain `null` / `not_integrated` until a separately approved provider-invoice workflow exists.
-- Detail: [`AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](./AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md) · [`AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md`](./AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md).
+- Historical implementation detail: [`AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md`](./AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md).
 
 **G75 (local live spend attribution proof — PARTIAL):** After one controlled OpenRouter live smoke (`workflowRunId=6e538323-8e68-4d41-a4c5-9e30ca0cf8a1`), completed attribution metadata could be **generated** from live workflow observability via G74 `finalizeOrchestratorLiteLedgerAttribution` (verifier PASS in G75c). At G75 time the execute path did not auto-persist a COMPLETED row.
 
@@ -160,6 +160,5 @@ Unit tests: `ai-model-routing-policy.service.test.ts`, `ai-budget-guard.service.
 ## Related docs
 
 - [`AI_PROVIDER_LIVE_PROOF.md`](./AI_PROVIDER_LIVE_PROOF.md) — formal OpenRouter proof (G71e-retry)
-- [`AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](./AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md)
 - [`docs/ai/AI_MODEL_POLICY.md`](../ai/AI_MODEL_POLICY.md)
-- [`deferred-scope-register.md`](../operator/deferred-scope-register.md)
+- [`docs/STATUS.md`](../STATUS.md)

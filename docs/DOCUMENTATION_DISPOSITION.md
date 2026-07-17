@@ -18,10 +18,12 @@ Apply `AGENTS.md` only after the authority chain above.
 
 ## Counts for this documentation refresh
 
-- Deleted in the first pass already on this PR: **10**
-- Deleted in this correction pass: **35**
-- Total deleted on this PR: **45**
-- Rewritten current/canonical documents in this correction pass: **12**
+- Deleted on this PR: **172**
+- Remaining classified documentation files: **294**
+- Current canonical: **10**
+- Current supporting: **159**
+- Historical evidence retained for proof, security, recovery, deployment, or audit provenance: **125**
+- Superseded plans and UI packs left in the active tree: **0**
 
 ## Deleted in this correction pass
 
@@ -36,6 +38,13 @@ Apply `AGENTS.md` only after the authority chain above.
 | `docs/ui/UI_TESTABILITY_G661_G672_CLOSEOUT.md` | stale lane closeout superseded by current proof baseline |
 | `docs/ux/next-gate-proposal-ui.md` | obsolete next-gate planning noise |
 | `docs/ux/ui-docs-closeout-g429-g448.md` | obsolete UI closeout duplicate retained in Git history |
+| `docs/auth/*` superseded plans and skeletons | implemented foundation is represented by current architecture and code; old planning detail remains in Git history |
+| `docs/database/*` superseded plans | implemented database foundation is represented by current architecture, schema, migrations, and code |
+| `docs/design/*` legacy pack | replaced by the Botanical Light authority |
+| `docs/gates/*` and `docs/release/*` superseded gates | obsolete planning gates retained in Git history only |
+| `docs/modules/*` superseded plans | replaced by the current system snapshot and active module references |
+| legacy roadmap and completion ledgers | replaced by concise `STATUS.md`, `CURRENT_SYSTEM_SNAPSHOT.md`, and the project-control matrix |
+| obsolete UI inventories, mockups, and testability packs | replaced by Botanical Light authority and current responsive proof |
 
 ## Rewritten current documents
 
@@ -69,3 +78,5 @@ The following areas remain intentionally retained for provenance, rollback, depl
 - Unified authority ordering across `README.md`, `docs/README.md`, `AGENTS.md`, and `DOCUMENTATION_INVENTORY.json`.
 - Corrected WordPress current-state claims to local prepared-draft/admin foundations only.
 - Expanded Botanical Light authority to include tokens, typography, radii, density rules, responsive proof viewports, and modal-to-page rules.
+- Removed every file classified as `SUPERSEDED_PLAN` or `SUPERSEDED_UI_PACK`; Git history remains the archive.
+- Repaired relative Markdown references after consolidation.

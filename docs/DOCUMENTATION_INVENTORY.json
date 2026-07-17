@@ -12,12 +12,12 @@
     "docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md"
   ],
   "summary": {
-    "totalFiles": 412,
+    "totalFiles": 294,
     "CURRENT_CANONICAL": 10,
-    "CURRENT_SUPPORTING": 164,
-    "SUPERSEDED_PLAN": 86,
-    "HISTORICAL_EVIDENCE": 126,
-    "SUPERSEDED_UI_PACK": 26
+    "CURRENT_SUPPORTING": 159,
+    "SUPERSEDED_PLAN": 0,
+    "HISTORICAL_EVIDENCE": 125,
+    "SUPERSEDED_UI_PACK": 0
   },
   "files": {
     "README.md": {
@@ -48,14 +48,6 @@
       "classification": "CURRENT_CANONICAL",
       "note": "concise current-system truth"
     },
-    "docs/DATABASE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
-    "docs/DEPLOYMENT_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
     "docs/DEVELOPMENT_WORKFLOW.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current contributor workflow guidance"
@@ -68,41 +60,9 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "file-by-file classification index"
     },
-    "docs/FINANCE_MVP_COMPLETION.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
-    "docs/MODULE_CATALOG.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
-    "docs/MODULE_SYSTEM.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
-    "docs/MVP_READINESS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
-    "docs/PLATFORM_MODULES.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
     "docs/README.md": {
       "classification": "CURRENT_CANONICAL",
       "note": "documentation map and authority order"
-    },
-    "docs/ROADMAP.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
-    "docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
-    },
-    "docs/ROADMAP_POST_DEFERRED_PHASE_G.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "superseded planning snapshot; do not treat as current authority"
     },
     "docs/SECURITY_BASELINE.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -115,10 +75,6 @@
     "docs/STATUS.md": {
       "classification": "CURRENT_CANONICAL",
       "note": "current status baseline"
-    },
-    "docs/STATUS_COMPLETION.md": {
-      "classification": "HISTORICAL_EVIDENCE",
-      "note": "older completion snapshot retained only for provenance"
     },
     "docs/TENANT_MODEL.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -219,10 +175,6 @@
     "docs/architecture/CLIENT_PORTAL_BOUNDARY.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current client portal safety boundary"
-    },
-    "docs/architecture/CLIENT_PORTAL_NOTIFICATIONS_PLAN.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "retained supporting documentation; defer to the canonical chain on conflicts"
     },
     "docs/architecture/CLIENT_PORTAL_SERIALIZER_NO_LEAK.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -360,162 +312,6 @@
       "classification": "HISTORICAL_EVIDENCE",
       "note": "retained proof or deployment provenance only"
     },
-    "docs/auth/AUTH_AUDIT_WRITE_STRATEGY.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_BACKEND_ROUTE_PATTERNS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_CONTEXT_MIDDLEWARE_SKELETON.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_FOUNDATION_IMPLEMENTATION_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_GATE_DESIGN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_IMPLEMENTATION_PREFLIGHT_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_IMPLEMENTATION_SCOPE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_MODULE_ACCESS_RESOLVER_SKELETON.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_PASSWORD_SERVICE_FOUNDATION.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_PERMISSION_RESOLVER_SKELETON.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_ROUTE_SKELETON.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_RUNTIME_IMPLEMENTATION_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_RUNTIME_PREPARATION_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_SCHEMA_DEPENDENCY_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_SCHEMA_GATE_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_SESSION_HELPER_FOUNDATION.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_SESSION_PERSISTENCE_BOUNDARY.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_STRATEGY_DECISION.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_TENANT_DEPENDENCY_MAP.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/AUTH_TENANT_RESOLVER_SKELETON.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/PASSWORD_AUTH_SECURITY_REQUIREMENTS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/RBAC_MIDDLEWARE_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/SESSION_STRATEGY_DECISION.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/auth/TENANT_MIDDLEWARE_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early auth implementation planning retained only for historical traceability"
-    },
-    "docs/database/API_DATABASE_INTEGRATION_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/API_RUNTIME_DB_INTEGRATION_SKELETON_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/AUTH_MIGRATION_EXECUTION_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/AUTH_SEED_EXECUTION_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/DATABASE_GATE_DESIGN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/DATA_ACCESS_LAYER_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/DATA_LAYER_VALIDATION_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/DB_1_PRISMA_SCHEMA_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/DB_READINESS_HEALTH_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/INTERNAL_BOOTSTRAP_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/LOCAL_POSTGRES_DEV_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/MIGRATION_READINESS_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/PRISMA_CLIENT_GENERATION_READINESS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/PRISMA_CLIENT_STRATEGY.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
-    "docs/database/SEED_STRATEGY_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "early database planning retained only for historical traceability"
-    },
     "docs/deployment/VPS_STAGING_DEPLOYMENT_PLAN.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "retained supporting documentation; defer to the canonical chain on conflicts"
@@ -523,34 +319,6 @@
     "docs/deployment/VPS_STAGING_EXECUTION_APPROVAL_PACK.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "retained supporting documentation; defer to the canonical chain on conflicts"
-    },
-    "docs/design/DESIGN_SYSTEM_SPEC.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "older design pack detail retained behind Botanical Light authority"
-    },
-    "docs/design/FIGMA_SOURCE.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "older design pack detail retained behind Botanical Light authority"
-    },
-    "docs/design/MODAL_PATTERNS.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "older design pack detail retained behind Botanical Light authority"
-    },
-    "docs/design/README.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "older design pack detail retained behind Botanical Light authority"
-    },
-    "docs/design/REDESIGN_ROLLOUT_PLAN.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "older design pack detail retained behind Botanical Light authority"
-    },
-    "docs/design/SCREEN_REFERENCE.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "older design pack detail retained behind Botanical Light authority"
-    },
-    "docs/design/assets/README.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "older design pack detail retained behind Botanical Light authority"
     },
     "docs/email-notifications-contract.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -563,26 +331,6 @@
     "docs/frontend/PROTECTED_SHELL_PLAN.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current protected shell reference"
-    },
-    "docs/gates/AUTH_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/gates/DATABASE_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/gates/DATABASE_RUNTIME_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/gates/DEPLOYMENT_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/gates/GATE_1_FOUNDATION_READINESS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
     },
     "docs/implementation/API_RESPONSE_PATTERN.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -651,78 +399,6 @@
     "docs/implementation/VALIDATION_PATTERN.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "reusable implementation pattern still compatible with the current architecture"
-    },
-    "docs/modules/ACTIVITY_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/BILLING_AREA.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/CLIENT_PORTAL_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/COMPANY_RECORDS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/CONTACTS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/FRONTEND_PATTERN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/KNOWLEDGE_BASE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/MODULE_CONTRACT_SKELETON.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/MODULE_IMPLEMENTATION_ORDER.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/OVERVIEW_METRICS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/PLANNING_QUEUE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/REPORTS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/ROUTE_PATTERN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/SEO_MODULE_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/SETTINGS_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/TEAM_ACCESS.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/WORKFLOW_BRIEFS_MODULE_PLAN.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
-    },
-    "docs/modules/WORK_MANAGEMENT.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "earlier module-by-module planning retained only for historical traceability"
     },
     "docs/operator/AI_PROVIDER_LOCAL_CONFIG.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -836,18 +512,6 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "current client wording guide"
     },
-    "docs/operator/deferred-scope-register.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "current deferred-scope register"
-    },
-    "docs/operator/first-client-dry-run-checklist.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "operator planning doc retained only for historical context"
-    },
-    "docs/operator/first-client-next-actions.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "operator planning doc retained only for historical context"
-    },
     "docs/operator/github-first-reporting-standard.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current GitHub-first reporting rules"
@@ -860,18 +524,6 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "current proof checklist"
     },
-    "docs/operator/module-completion-matrix.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "operator planning doc retained only for historical context"
-    },
-    "docs/operator/notification-persistence-design.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "operator planning doc retained only for historical context"
-    },
-    "docs/operator/notifications-blocker-plan.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "operator planning doc retained only for historical context"
-    },
     "docs/operator/post-merge-completion-status-20260627.md": {
       "classification": "HISTORICAL_EVIDENCE",
       "note": "old operator closeout or next-gate context retained only for provenance"
@@ -879,14 +531,6 @@
     "docs/operator/post-merge-completion-status-20260628.md": {
       "classification": "HISTORICAL_EVIDENCE",
       "note": "old operator closeout or next-gate context retained only for provenance"
-    },
-    "docs/operator/pre-production-readiness-checklist.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "operator planning doc retained only for historical context"
-    },
-    "docs/operator/staging-target-decision-template.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "operator planning doc retained only for historical context"
     },
     "docs/ops/DCA_OS_LITE_OPERATING_TARGETS.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -900,30 +544,6 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "current component-system decision reference"
     },
-    "docs/release/AUTH_RELEASE_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/release/DATABASE_RELEASE_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/release/DEPLOYMENT_RELEASE_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/release/FOUNDATION_RELEASE_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/release/MODULE_RELEASE_GATE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
-    "docs/release/RELEASE_SEQUENCE.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "old gate/release sequencing retained only for history"
-    },
     "docs/releases/DCA_OS_LITE_V1_DARK_NEBULA_DEPLOYMENT.md": {
       "classification": "HISTORICAL_EVIDENCE",
       "note": "retained proof or deployment provenance only"
@@ -931,10 +551,6 @@
     "docs/runbooks/ADMIN_OPERATIONS_RECOVERY.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current admin recovery runbook"
-    },
-    "docs/runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md": {
-      "classification": "SUPERSEDED_PLAN",
-      "note": "older contract/design note retained for history"
     },
     "docs/runbooks/AI_BUDGET_ROUTING_G613_G624_CLOSEOUT.md": {
       "classification": "HISTORICAL_EVIDENCE",
@@ -1568,101 +1184,13 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "retained supporting documentation; defer to the canonical chain on conflicts"
     },
-    "docs/ui/ADMIN_SURFACE_INVENTORY.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/AI_DELIVERY_HOTSPOT_SPLIT_PLAN.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
     "docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md": {
       "classification": "CURRENT_CANONICAL",
       "note": "current UI authority"
     },
-    "docs/ui/CLIENT_PORTAL_SURFACE_INVENTORY.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/CLIENT_PORTAL_UI_TESTABILITY.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/DESIGN_SYSTEM.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/INTEGRATION_TRUTH_BADGE_DESIGN.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/LAUNCH_BLOCKER_BOARD_DESIGN.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/MONTHLY_REPORT_UI_TESTABILITY.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/PROOF_STATE_BADGE_LABELS.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/UI_EMPTY_ERROR_STATE_SAFETY.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/admin-data-dense-ui.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/admin-proof-state-badge-design.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/ai-delivery-hotspot-file-review.md": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/mockups/01-admin-clients-list.html": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/mockups/02-client-pending-approvals.html": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/mockups/03-article-approval-editor.html": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/mockups/04-client-portal-archive.html": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/mockups/index.html": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ui/mockups/shared.css": {
-      "classification": "SUPERSEDED_UI_PACK",
-      "note": "supporting or historical UI pack detail subordinate to Botanical Light authority"
-    },
-    "docs/ux/ADMIN_WORKFLOW_POLISH_AUDIT.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "current scoped UX follow-up audit beneath Botanical Light"
-    },
-    "docs/ux/client-portal-ui-testability.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "current client portal UI testability notes"
-    },
     "docs/ux/monthly-report-ui-testability.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current monthly-report UI testability notes"
-    },
-    "docs/ux/proof-state-vocabulary.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "current proof-state wording reference"
     },
     "docs/ux/remaining-ui-blockers.md": {
       "classification": "CURRENT_SUPPORTING",

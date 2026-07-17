@@ -79,7 +79,7 @@ Live execution requires separate proof per [`AI_PROVIDER_LIVE_PROOF.md`](../runb
 - `actualCostUsd` remains **null** until a trusted provider cost source is integrated (`leave_null_until_trusted_provider_cost`)
 - Do **not** fabricate actual cost from estimates, route caps, token×list-price, or marketing pricing pages
 - Estimated AI cost is budget-control data only — **not** an invoice and **not** Finance Lite proof
-- Reporting/reconciliation contract: [`../runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](../runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md)
+- Current routing and reporting rules: [`../runbooks/AI_MODEL_ROUTING_POLICY.md`](../runbooks/AI_MODEL_ROUTING_POLICY.md)
 
 ---
 

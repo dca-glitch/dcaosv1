@@ -4,8 +4,8 @@
 
 Related:
 
-- [`docs/operator/first-client-next-actions.md`](../operator/first-client-next-actions.md)
-- [`docs/operator/first-client-dry-run-checklist.md`](../operator/first-client-dry-run-checklist.md)
+- `docs/operator/first-client-next-actions.md` (archived reference; see Git history)
+- `docs/operator/first-client-dry-run-checklist.md` (archived reference; see Git history)
 
 ## Practice run steps
 

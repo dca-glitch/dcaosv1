@@ -51,7 +51,7 @@ Validate does **not** by itself prove runtime behavior, browser flows, or extern
 | Production rollback | [`../runbooks/PRODUCTION_ROLLBACK.md`](../runbooks/PRODUCTION_ROLLBACK.md) |
 | Production safety | [`../runbooks/PRODUCTION_SAFETY_CHECKLIST.md`](../runbooks/PRODUCTION_SAFETY_CHECKLIST.md) |
 | Security boundary | [`../security/SECURITY_BOUNDARY_AUDIT.md`](../security/SECURITY_BOUNDARY_AUDIT.md) |
-| Deferred scope register | [`./deferred-scope-register.md`](./deferred-scope-register.md) |
+| Deferred scope register | `./deferred-scope-register.md` (archived reference; see Git history) |
 
 ## 7. WordPress and integrations boundary
 

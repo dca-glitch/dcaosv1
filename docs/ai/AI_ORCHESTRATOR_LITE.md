@@ -109,4 +109,4 @@ Preview fields: workflow, client, step, agent role, provider/model, input materi
 - Preview/plan keeps `liveProviderCalled=false` and `actualCostUsd=null`
 - Monthly cap enforcement uses budget guard + ledger estimates until trusted actuals exist
 - Routing truth labels document backend policy selection, override rejection, and null-actual policy
-- See [`../runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md`](../runbooks/AI_BUDGET_REPORTING_RECONCILIATION_CONTRACT.md) and [`../runbooks/AI_MODEL_ROUTING_POLICY.md`](../runbooks/AI_MODEL_ROUTING_POLICY.md)
+- See [`../runbooks/AI_MODEL_ROUTING_POLICY.md`](../runbooks/AI_MODEL_ROUTING_POLICY.md).

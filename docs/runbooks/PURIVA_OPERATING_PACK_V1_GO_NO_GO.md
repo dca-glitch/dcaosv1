@@ -20,7 +20,7 @@ Related:
 - [`PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md`](./PURIVA_OPERATIONAL_INTAKE_AND_COMPLIANCE.md)
 - [`PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md`](./PURIVA_LOCAL_E2E_OPERATOR_DRY_RUN.md)
 - [`docs/operator/client-delivery-sop.md`](../operator/client-delivery-sop.md)
-- [`docs/operator/first-client-next-actions.md`](../operator/first-client-next-actions.md)
+- `docs/operator/first-client-next-actions.md` (archived reference; see Git history)
 - [`docs/ai-delivery/client-delivery-readiness.md`](../ai-delivery/client-delivery-readiness.md)
 
 ---

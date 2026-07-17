@@ -6,10 +6,10 @@
 
 Related:
 
-- [`docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md`](../ROADMAP_LOCAL_COMPLETION_PHASE_F.md)
-- [`docs/STATUS_COMPLETION.md`](../STATUS_COMPLETION.md)
+- `docs/ROADMAP_LOCAL_COMPLETION_PHASE_F.md` (archived reference; see Git history)
+- `docs/STATUS_COMPLETION.md` (archived reference; see Git history)
 - [`docs/operator/post-merge-completion-status-20260627.md`](../operator/post-merge-completion-status-20260627.md)
-- [`docs/operator/module-completion-matrix.md`](../operator/module-completion-matrix.md)
+- `docs/operator/module-completion-matrix.md` (archived reference; see Git history)
 
 ---
 
