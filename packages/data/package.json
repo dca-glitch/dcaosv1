@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "node ../../scripts/run-sequential.mjs \"node ../../scripts/check-package.mjs data\" \"npm run prisma:validate\"",
+    "check": "node ../../scripts/run-sequential.mjs \"node ../../scripts/check-package.mjs data\" \"npm run prisma:validate\" \"node scripts/check-workspace-foundation.mjs\"",
     "build": "node ../../scripts/check-package.mjs data",
     "check:data-layer": "node scripts/check-data-layer.mjs",
     "prisma:validate": "node ../../scripts/run-sequential.mjs \"node scripts/validate-prisma-schema.mjs\" \"node scripts/run-prisma-validate.mjs\"",
