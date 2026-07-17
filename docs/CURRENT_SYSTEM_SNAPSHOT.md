@@ -20,7 +20,7 @@ DCA OS v2 is the private Agency Operations System for one organization: Digital 
 - Shared TypeScript contracts between frontend and backend
 - One internet domain = one `Client`
 - `Tenant`, `TenantMembership`, `Role`, `Permission`, `Client`, and `ClientUserAccess` are current legacy compatibility foundations, not proof of Phase 1 completion.
-- `Workspace` is the approved future primary boundary for data, authorization, reporting, costs, integrations, materials, and search. Phase 1 has not started at this baseline.
+- `Workspace` is the approved future primary boundary for data, authorization, reporting, costs, integrations, materials, and search. Phase 1 P1.1 has added the expand-only schema foundation; it has not switched runtime scope, authorization, or client-visible behavior.
 
 ## 3. Roles and access boundaries
 

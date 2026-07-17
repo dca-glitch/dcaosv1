@@ -28,6 +28,14 @@ enum MembershipStatus {
   REMOVED
 }
 
+enum WorkspaceRoleKey {
+  ADMIN
+  WORKSPACE_MANAGER
+  TEAM_MEMBER
+  CLIENT_MANAGER
+  CLIENT_USER
+}
+
 enum RoleStatus {
   ACTIVE
   INACTIVE
@@ -353,6 +361,7 @@ model User {
   updatedAt                DateTime           @updatedAt
   deletedAt                DateTime?
   memberships              TenantMembership[]
+  workspaceMemberships     WorkspaceMembership[]
   sessions                 Session[]
   auditLogs                AuditLog[]         @relation("UserAuditLogs")
   uploadedProjectDocuments ProjectDocument[]  @relation("ProjectDocumentUploadedBy")
@@ -2472,4 +2481,42 @@ model AiContextSnapshot {
   @@index([tenantId, workflowRunId])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
+}
+
+model Workspace {
+  id          String                @id @default(uuid())
+  name        String
+  slug        String                @unique
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+  memberships WorkspaceMembership[]
+}
+
+model WorkspaceMembership {
+  id        String                    @id @default(uuid())
+  workspaceId String
+  userId    String
+  status    MembershipStatus
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+  workspace Workspace                 @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roles     WorkspaceMembershipRole[]
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+  @@index([status])
+}
+
+model WorkspaceMembershipRole {
+  id                    String              @id @default(uuid())
+  workspaceMembershipId String
+  role                  WorkspaceRoleKey
+  createdAt             DateTime            @default(now())
+  workspaceMembership  WorkspaceMembership @relation(fields: [workspaceMembershipId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceMembershipId, role])
+  @@index([workspaceMembershipId])
+  @@index([role])
 }

@@ -7,7 +7,7 @@
 | 0 | Private-agency charter, scope separation, and canonical authority | IMPLEMENTED | 100% |
 | 0.5 | Read-only legacy inventory: current Tenant/Client/membership/role structures and existing isolation boundary | IMPLEMENTED | 100% |
 | 0.6 | Migration sequence, authorization baseline, rollback boundary, and P1.1 acceptance criteria | IMPLEMENTED | 100% |
-| 1 | Identity, tenancy, and Workspace foundation | APPROVED_DIRECTION_NOT_IMPLEMENTED | 0% |
+| 1 | Identity, tenancy, and Workspace foundation | IN_PROGRESS | 20% |
 | 2 | Backfill and reconciliation | NOT_STARTED | 0% |
 | 3 | Scoped authorization and endpoint switch | NOT_STARTED | 0% |
 | 4 | Legacy cleanup after stable reconciliation | NOT_STARTED | 0% |
@@ -15,11 +15,11 @@
 
 ## Phase 1 readiness baseline
 
-Phase 1 is ready only for **P1.1 expand-only** work. Current `Tenant`, `TenantMembership`, `Role`, `Permission`, `Client`, and `ClientUserAccess` behavior remains authoritative at runtime. No Workspace behavior is implemented or client-visible.
+Phase 1 is ready only for **P1.1 expand-only** work. The P1.1 schema foundation is implemented; current `Tenant`, `TenantMembership`, `Role`, `Permission`, `Client`, and `ClientUserAccess` behavior remains authoritative at runtime. No Workspace behavior is client-visible or authoritative.
 
 ## Package order
 
-1. **P1.1 — expand:** add independent Workspace identity and membership structures, additive indexes, a Prisma migration, and focused isolation tests. No existing rows, endpoint behavior, sessions, or authorization paths change.
+1. **P1.1 — expand:** **IMPLEMENTED** — independent Workspace identity and membership structures, additive indexes, a Prisma migration, and focused isolation tests. No existing rows, endpoint behavior, sessions, or authorization paths change.
 2. **P1.2 — backfill:** only after a deterministic local tool, reconciliation report, and separate review.
 3. **P1.3 — reconciliation:** prove mapping completeness, uniqueness, membership treatment, and exceptions without switching callers.
 4. **P1.4 — switch:** move one bounded path behind server-side deny-by-default workspace authorization and negative isolation tests.
