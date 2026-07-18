@@ -46,7 +46,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Live GA4/GSC integration | WITHDRAWN | No live OAuth/sync/manual import claim |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 canonical prerequisite package | IMPLEMENTED | Current authority reconciled to the private-agency charter; implementation remains separate |
-| Phase 1 Workspace foundation | IN_PROGRESS (P1.1 and P1.2a complete; P1.3a preparation only next) | P1.1's additive schema foundation completed in `PR #60` / `14b52f8b`; P1.2a provides deterministic snapshot-based mapping validation and dry-run planning with no data mutation. Legacy Tenant/Client behavior remains authoritative, and execution-only backfill, reconciliation, and switch require the future owner-critical gate |
+| Phase 1 Workspace foundation | IN_PROGRESS (P1.1–P1.3a complete; P1.4a preparation only next) | P1.3a adds deterministic reconciliation comparison, inactive OFF flags, isolation proof, and rollback planning only. Tenant/Client remains authoritative; no reconciliation or switch was executed |
 
 ## 4. Current boundaries that must not be overclaimed
 
