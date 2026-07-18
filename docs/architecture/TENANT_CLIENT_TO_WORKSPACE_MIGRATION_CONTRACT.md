@@ -33,6 +33,10 @@ P1.4a remains deterministic sanitized preparation evidence. The owner-approved l
 
 P1.2b–P1.4b are the owner-authorized local execution package. They require approved mapping, clean reconciliation evidence, backup/restore and rollback proof, security/isolation proof, and local rehearsal before source mutation. `Tenant` and `Client` remain authoritative until the bounded endpoint switch passes.
 
+## Phase 2 P2-01 owner decision boundary
+
+P2-01 approves only the population definition for a future P2-A preparation/dry-run: exactly one existing active Tenant from local source `127.0.0.1:5434`, all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records. P2-A must work only from an anonymized offline snapshot with a deterministic population manifest/hash. It cannot connect to a database, mutate data, activate Workspace authority, change ClientUserAccess, alter feature flags or endpoint authority, or begin Phase 2 execution. The six no-role membership dispositions remain pending.
+
 ## Isolation and rollback
 
 - Server-side membership and Workspace scope are required; caller-supplied identifiers are never authority.

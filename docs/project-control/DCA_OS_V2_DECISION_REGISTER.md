@@ -16,6 +16,7 @@
 | V2-010 | P1.3a comparison and isolation preparation is snapshot-only and flags are OFF in that preparation package. | DECIDED | It cannot reconcile or mutate; rollback requirements are carried into the owner-authorized local execution gate. |
 | V2-011 | P1.4a staging-like rehearsal is local, deterministic, and snapshot-only; the owner gate permitted the bounded local execution package after evidence passed. | DECIDED | P1.2b–P1.4b are COMPLETE for the approved localhost-only scope; endpoint authority and feature flag remain `LOCAL_ONLY`. |
 | V2-012 | Owner authorized P1.2b–P1.4b only on local source/restore targets. | DECIDED | The completed local scope used source `127.0.0.1:5434`, restore `127.0.0.1:5435`, backup/restore, exact mapping/roles, and one local-only endpoint proof; it did not authorize remote, production, VPS, Tellanic, cleanup, or Phase 2 work. |
+| V2-013 (P2-01) | Owner approves only the future Phase 2 P2-A population definition. | DECIDED | The future P2-A scope is exactly one existing active Tenant from local source `127.0.0.1:5434`, all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records. P2-A must consume only an anonymized offline snapshot with a deterministic population manifest/hash; it cannot connect to a database or mutate data. This does not implement P2-A, start Phase 2, decide the six no-role memberships, or authorize backup, backfill, reconciliation, execution, remote, staging, production, VPS, or Tellanic work. |
 
 ## Unspecified items
 

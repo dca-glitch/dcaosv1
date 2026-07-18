@@ -17,6 +17,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Client Portal MVP | Client-safe visibility, approvals, archive, and FINAL monthly reports only |
 | WordPress | Local prepared-draft/admin foundation only; live HTTP draft/publish is not current canonical capability |
 | GA4/GSC | **WITHDRAWN**; manual import not implemented |
+| Phase 2 owner decisions | **IN_PROGRESS** — P2-01 population definition approved; P2-02 no-role membership disposition pending; Phase 2 remains **NOT_STARTED** |
 
 ## 2. Current proof baseline (`PR #55` / `998c294`)
 
