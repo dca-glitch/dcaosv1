@@ -29,3 +29,7 @@ P1.1–P1.4a preparation is complete. P1.4a adds deterministic local sanitized r
 ## P1.1 constraints and rollback
 
 P1.1 may not access production/VPS, secrets, live Google OAuth/sync, or remote data. It must not backfill, switch, clean up, or destructively modify existing data. Its rollback is application rollback; later packages require their own reviewed rollback plans.
+
+## P1.2b–P1.4b owner gate (pre-execution)
+
+**OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. The authorized sequence is backup and verified restore on `127.0.0.1:5435`, rehearsal, drift gate, source `127.0.0.1:5434`, reconciliation, and one local-only endpoint switch. Scope is unique `legacyTenantId`, one approved Workspace, one ADMIN, six CLIENT_USER memberships, five excluded no-role memberships, and unchanged per-Client ClientUserAccess. Endpoint permission is active ADMIN/WORKSPACE_MANAGER allow and deny otherwise. Feature flag remains OFF until reconciliation. No execution, backfill, switch, or Phase 1 COMPLETE status is declared by this pre-execution writeback.

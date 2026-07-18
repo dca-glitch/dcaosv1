@@ -45,9 +45,9 @@ export async function runBackupRehearsal(args, env = process.env, io = { stdout:
     await writeFile(backupPath, dump); const backupSha256 = createHash("sha256").update(dump).digest("hex");
     await writeFile(`${backupPath}.manifest.json`, JSON.stringify({ target: "127.0.0.1:5434", backupSha256, counts: scope.counts, hashes: scope.hashes, excludedNoRoleMembershipIds: scope.noRoleMembershipIds, schema: { migrations: scope.migrationState, workspaceFoundationPresent: scope.workspaceFoundationPresent }, safety: { activeWriterCount: 0, rawDataIncluded: false } }, null, 2));
     const image = docker(["inspect", SOURCE_CONTAINER, "--format", "{{.Config.Image}}"]).trim();
-    docker(["run", "-d", "--name", RESTORE_CONTAINER, "--publish", "127.0.0.1:5435:5432", "-e", "POSTGRES_HOST_AUTH_METHOD=trust", image]);
-    for (let attempt = 0; attempt < 30; attempt += 1) { try { docker(["exec", RESTORE_CONTAINER, "pg_isready", "-U", "postgres"]); break; } catch { if (attempt === 29) throw new Error("RESTORE_TARGET_NOT_READY"); await new Promise((resolve) => setTimeout(resolve, 1000)); } }
-    docker(["exec", "-i", RESTORE_CONTAINER, "pg_restore", "-C", "-d", "postgres", "-U", "postgres"], { input: dump, encoding: "buffer", maxBuffer: 1024 * 1024 * 1024 });
+    docker(["run", "-d", "--name", RESTORE_CONTAINER, "--publish", "127.0.0.1:5435:5432", "-e", "POSTGRES_USER=dcaosv1_dev", "-e", "POSTGRES_DB=dcaosv1_dev", "-e", "POSTGRES_HOST_AUTH_METHOD=trust", image]);
+    for (let attempt = 0; attempt < 30; attempt += 1) { try { docker(["exec", RESTORE_CONTAINER, "pg_isready", "-U", "dcaosv1_dev", "-d", "dcaosv1_dev"]); break; } catch { if (attempt === 29) throw new Error("RESTORE_TARGET_NOT_READY"); await new Promise((resolve) => setTimeout(resolve, 1000)); } }
+    docker(["exec", "-i", RESTORE_CONTAINER, "pg_restore", "--no-owner", "--no-acl", "-C", "-d", "dcaosv1_dev", "-U", "dcaosv1_dev"], { input: dump, encoding: "buffer", maxBuffer: 1024 * 1024 * 1024 });
     const restoreUrl = replacePort(env.DATABASE_URL, "5435");
     execFileSync("npx.cmd", ["prisma", "migrate", "deploy"], { cwd: path.resolve("packages/data"), env: { ...env, DATABASE_URL: restoreUrl }, stdio: "inherit" });
     const prisma = new PrismaClient({ datasources: { db: { url: restoreUrl } } });

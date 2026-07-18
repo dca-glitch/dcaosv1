@@ -38,3 +38,7 @@ P1.2b–P1.4b are future execution-only packages. They require approved mapping,
 - Server-side membership and Workspace scope are required; caller-supplied identifiers are never authority.
 - Client-visible serialization remains deny-by-default and cannot expose prompts, provider internals, AI cost details, raw workflow runs, credentials, `storageKey`, or admin notes.
 - P1.1 rollback is application rollback because it is additive and does not alter existing rows. Backfill, switch, and cleanup require their own reviewed rollback plans.
+
+## Owner-authorized local execution gate (pre-execution)
+
+**OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. Source is exactly `127.0.0.1:5434`; restore/rehearsal is exactly `127.0.0.1:5435`. A verified backup/restore precedes source mutation. The only mapping is one approved Tenant to one Workspace through unique FK-free `legacyTenantId`. The only role translations are `owner→ADMIN` and six approved `client→CLIENT_USER`; five no-role memberships are excluded and unchanged. `ClientUserAccess` remains mandatory per-Client authority. The first switch is `GET /api/admin/workspaces/:workspaceId`, allowing active ADMIN and WORKSPACE_MANAGER only; all other roles, missing/inactive membership, and cross-workspace access deny. The flag is default OFF and local-only after reconciliation. Any abort condition stops execution; automatic source overwrite, cleanup, remote environments, production/VPS, and Tellanic remain prohibited.

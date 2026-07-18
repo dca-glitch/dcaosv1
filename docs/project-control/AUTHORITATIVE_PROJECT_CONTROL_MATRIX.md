@@ -70,3 +70,7 @@ These are the current UI proof references for the `998c294` baseline.
 - This does not authorize production or VPS actions, destructive migrations, secret handling, spending, legal/privacy decisions, or unresolved Critical issues; those remain owner-gated.
 - The verified local tool boundary is Graphify `0.9.17`, Codex/Graphify configuration at local commit `5ad4eeb`, and OpenClaw `2026.7.1` with the official Codex plugin using OpenAI OAuth (no API key required).
 - OpenClaw remains temporary development/deployment orchestration only until the live-VPS launch gate closes. It is not a DCA OS runtime dependency. Gateway is loopback-only with token authentication; `tools.elevated`, heartbeat, Scheduled Tasks, and autonomous recurring monitoring are disabled or unapproved.
+
+## 7. Owner execution gate (pre-execution)
+
+**OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. P1.2b–P1.4b are bounded to `127.0.0.1:5434` with restore/rehearsal on `127.0.0.1:5435`, mandatory backup/verified restore, unique `legacyTenantId` mapping, approved owner/client role translation, five excluded no-role memberships, and unchanged ClientUserAccess authority. The first endpoint is `GET /api/admin/workspaces/:workspaceId`; active ADMIN and WORKSPACE_MANAGER allow and every other role/cross-workspace request denies. Feature flag remains OFF until local reconciliation passes. No execution or Phase 1 completion is claimed yet; remote/prod/VPS/Tellanic/cleanup/source overwrite remain forbidden.

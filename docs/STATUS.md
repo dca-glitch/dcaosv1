@@ -84,3 +84,7 @@ Use retained evidence under `docs/audits/`, `docs/audit/`, `docs/releases/`, sel
 | Review evidence | Review decisions must be recorded as `APPROVE_READ_ONLY` or `REQUEST_CHANGES` in the PR/report; native GitHub approvals are never simulated |
 
 DCA OS and Tellanic OS remain separate scopes; no orchestration work changes that boundary.
+
+## 8. Owner execution gate (pre-execution)
+
+**OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. P1.2b–P1.4b are authorized only for source `127.0.0.1:5434` and isolated restore/rehearsal `127.0.0.1:5435`. Backup and verified restore are mandatory before source mutation. The approved mapping uses unique `Workspace.legacyTenantId`; `owner` maps to `ADMIN`, six approved `client` memberships map to `CLIENT_USER`, and five active memberships without roles are excluded. `ClientUserAccess` remains the required per-Client authority. The first bounded endpoint is `GET /api/admin/workspaces/:workspaceId`: active `ADMIN` and `WORKSPACE_MANAGER` allow; all other roles, inactive/revoked memberships, missing membership, and cross-workspace access deny. Its feature flag is default OFF and may activate only locally after reconciliation. No execution, backfill, reconciliation, switch, or Phase 1 completion is claimed here.

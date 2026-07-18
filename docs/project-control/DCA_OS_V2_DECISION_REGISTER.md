@@ -15,6 +15,7 @@
 | V2-009 | P1.2a validates only explicit proposed mappings from a sanitized local snapshot and emits dry-run plan output. | DECIDED | The tool has no database client or apply mode; it rejects execution flags and unresolved mapping, collision, orphan, unsupported, and legacy membership/role cases. |
 | V2-010 | P1.3a comparison and isolation preparation is snapshot-only and flags are permanently OFF in this package. | DECIDED | It cannot reconcile, mutate, or grant Workspace authority; rollback remains a future execution-gate plan. |
 | V2-011 | P1.4a staging-like rehearsal is local, deterministic, and snapshot-only; its execution-gate packet is fail-closed. | DECIDED | It orchestrates P1.2a/P1.3a evidence and hashes but always reports `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; P1.2b–P1.4b stay owner-gated. |
+| V2-012 | Owner authorizes P1.2b–P1.4b only on local source/restore targets. | DECIDED | State is `OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE`; source `127.0.0.1:5434`, restore `127.0.0.1:5435`, backup/restore before source mutation, exact mapping/roles, and one default-OFF local endpoint switch are mandatory. |
 
 ## Unspecified items
 

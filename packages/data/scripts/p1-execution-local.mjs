@@ -40,11 +40,12 @@ export function assertLocalTarget(databaseUrl, target) {
 }
 
 export async function inspectApprovedScope(prisma) {
-  const [tenant, clients, memberships, access] = await Promise.all([
+  const [tenant, clients, memberships, access, legacyRoles] = await Promise.all([
     prisma.tenant.findUnique({ where: { id: APPROVED_TENANT_ID }, select: { id: true, name: true, slug: true, status: true } }),
     prisma.client.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, isArchived: true }, orderBy: { id: "asc" } }),
     prisma.tenantMembership.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, userId: true, status: true, membershipRoles: { select: { role: { select: { key: true, status: true } } } } }, orderBy: { id: "asc" } }),
-    prisma.clientUserAccess.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, userId: true, clientId: true, isArchived: true }, orderBy: { id: "asc" } })
+    prisma.clientUserAccess.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, userId: true, clientId: true, isArchived: true }, orderBy: { id: "asc" } }),
+    prisma.role.findMany({ where: { tenantId: APPROVED_TENANT_ID, status: "ACTIVE" }, select: { id: true, key: true }, orderBy: { id: "asc" } })
   ]);
   const blockers = [];
   if (!tenant || tenant.status !== "ACTIVE" || !tenant.name || !tenant.slug) blockers.push("TENANT_IDENTITY_MISMATCH");
@@ -69,7 +70,7 @@ export async function inspectApprovedScope(prisma) {
   if (activeAccess.filter((item) => clientUsers.has(item.userId)).length !== 35 || activeAccess.filter((item) => item.userId === ownerUser).length !== 244) blockers.push("CLIENT_ACCESS_DISTRIBUTION_DRIFT");
   const clientById = new Map(clients.map((item) => [item.id, item]));
   if (access.some((item) => !clientById.has(item.clientId) || clientById.get(item.clientId).tenantId !== item.tenantId)) blockers.push("CLIENT_ACCESS_ORPHAN_OR_CROSS_TENANT");
-  return { tenant, memberships: byId, expectedMemberships: approved.map(([id, role]) => ({ tenantMembershipId: id, userId: byId.get(id)?.userId ?? null, role: role === "owner" ? "ADMIN" : "CLIENT_USER" })), noRoleMembershipIds: noRole.map((item) => item.id).sort(), counts: { activeClients: activeClients.length, activeClientUserAccess: activeAccess.length }, hashes: { clientIds: hash(activeClients.map((item) => item.id)), clientUserAccessIds: hash(activeAccess.map((item) => item.id)) }, blockers };
+  return { tenant, memberships: byId, expectedMemberships: approved.map(([id, role]) => ({ tenantMembershipId: id, userId: byId.get(id)?.userId ?? null, role: role === "owner" ? "ADMIN" : "CLIENT_USER" })), noRoleMembershipIds: noRole.map((item) => item.id).sort(), legacyRoles, counts: { tenants: 1, activeClients: activeClients.length, activeTenantMemberships: activeMemberships.length, activeLegacyRoles: legacyRoles.length, activeClientUserAccess: activeAccess.length }, hashes: { clientIds: hash(activeClients.map((item) => item.id)), clientUserAccessIds: hash(activeAccess.map((item) => item.id)) }, blockers };
 }
 
 export async function createPlan(prisma) {
