@@ -12,6 +12,7 @@
 | V2-006 | Production/VPS, secrets, live Google OAuth/sync, and destructive migration remain outside this package. | DECIDED | Local non-production development and validation only. |
 | V2-007 | P1.2a–P1.4a are preparation-only; P1.2b–P1.4b execute backfill, reconciliation, and switch only after a future owner-critical gate. | DECIDED | Preparation may produce mappings, dry runs, proofs, flags, and rollback plans, but must not mutate data or activate Workspace authority. |
 | V2-008 | P1.1's Workspace schema foundation is complete through `PR #60` / `14b52f8b`. | DECIDED | The completed package is additive and expand-only; `Tenant` and `Client` remain authoritative, with no client-visible or authoritative Workspace runtime behavior. |
+| V2-009 | P1.2a validates only explicit proposed mappings from a sanitized local snapshot and emits dry-run plan output. | DECIDED | The tool has no database client or apply mode; it rejects execution flags and unresolved mapping, collision, orphan, unsupported, and legacy membership/role cases. |
 
 ## Unspecified items
 

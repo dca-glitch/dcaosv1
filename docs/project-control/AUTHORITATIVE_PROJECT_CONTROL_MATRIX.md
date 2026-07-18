@@ -42,6 +42,7 @@ This file is no longer a running next-gate ledger. Use it to understand what eac
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 charter/authority package | IMPLEMENTED | Private-agency direction and Phase 1 governing contracts are canonical |
 | Phase 1 Workspace foundation | IMPLEMENTED | P1.1 additive schema foundation completed in `PR #60` / `14b52f8b`; Tenant/Client remains authoritative at runtime, with no client-visible Workspace authority |
+| Phase 1 P1.2a mapping validation and dry-run planning | IMPLEMENTED_LOCAL_PROVEN | Deterministic sanitized-snapshot validation and plan output only; data mutation, backfill, reconciliation execution, and Workspace authority activation are disabled |
 
 ## 4. Current proof baseline
 
