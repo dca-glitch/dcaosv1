@@ -28,6 +28,13 @@ Run in this exact order and stop on first failure:
 - OpenClaw `2026.7.1` plus the official Codex plugin may orchestrate local development through OpenAI OAuth; no API key is required. Gateway remains loopback-only with token authentication, `tools.elevated` and heartbeat are disabled, and no Scheduled Task or autonomous recurring monitoring is approved.
 - OpenClaw is temporary development/deployment orchestration only, not a DCA OS runtime component. Do not install it in the product runtime or on the production VPS.
 
+## 2.2 Autonomous repository workflow
+
+- Codex auto-review handles routine workspace-write tool approvals. Routine repository reads, edits, local commands, tests, commits, pushes, PR creation, CI monitoring, and routine CI fixes do not require a human approval pause.
+- Before each eligible merge of a material code or policy diff, obtain a separate read-only Terra reviewer-agent decision against the exact unchanged diff and record `APPROVE_READ_ONLY` or `REQUEST_CHANGES` with evidence in the PR/report.
+- Green CI plus that recorded independent reviewer decision is sufficient when GitHub branch protection does not technically require a native approval. If it does, obtain a genuinely distinct authorized GitHub approval; never simulate or falsely claim one.
+- Owner involvement remains required for production/VPS, secrets, costs, destructive migrations, legal/privacy issues, live integrations, actual backfill/reconciliation/switch/cleanup, and unresolved critical/canonical conflicts.
+
 ## 3. What validate is expected to prove
 
 - Prisma client generation

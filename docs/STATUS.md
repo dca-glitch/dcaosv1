@@ -78,8 +78,9 @@ Use retained evidence under `docs/audits/`, `docs/audit/`, `docs/releases/`, sel
 | Local orchestrator | OpenClaw `2026.7.1` and the official Codex plugin are installed locally; OpenAI OAuth is used and no API key is required |
 | Orchestrator security | Gateway is loopback-only with token authentication; `tools.elevated` and heartbeat are disabled; no Scheduled Task or autonomous recurring monitoring is approved |
 | Runtime boundary | OpenClaw is temporary development/deployment orchestration only until live-VPS launch and is not part of the DCA OS runtime |
-| Delegated authority | Owner-approved `AUTONOMY-HIGH` (2026-07-17) permits gated routine local commits, feature-branch pushes, draft PRs, CI repair, and review loops |
-| Owner gates | Production, VPS, destructive migrations, secrets, spending, legal/privacy decisions, and unresolved Critical issues remain owner-gated |
-| Review proof | Terra executor plus independent Sol reviewer proof passed with `APPROVE_READ_ONLY` and an unchanged repository |
+| Delegated authority | Durable `AUTONOMY-HIGH`: Codex auto-review permits routine repository reads, edits, local commands, tests, commits, task-branch pushes, PR creation, CI monitoring/repair, and eligible merges |
+| Review gate | Each material code or policy diff requires a distinct read-only Terra reviewer decision on the exact unchanged diff plus green CI; native GitHub approval is needed only when branch protection technically requires it |
+| Owner gates | Production/VPS, secrets, costs, destructive migrations, legal/privacy issues, live integrations, actual backfill/reconciliation/switch/cleanup, and unresolved critical/canonical conflicts remain owner-gated |
+| Review evidence | Review decisions must be recorded as `APPROVE_READ_ONLY` or `REQUEST_CHANGES` in the PR/report; native GitHub approvals are never simulated |
 
 DCA OS and Tellanic OS remain separate scopes; no orchestration work changes that boundary.
