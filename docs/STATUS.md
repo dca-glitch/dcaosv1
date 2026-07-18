@@ -62,6 +62,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 - Architecture map: [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 - Client/domain model: [`architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md)
 - Status vocabulary: [`project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
+- Canonical owner handoff: [`project-control/DCA_OS_V2_CANONICAL_HANDOFF.md`](./project-control/DCA_OS_V2_CANONICAL_HANDOFF.md)
 - Operator guardrails: [`operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 - UI authority: [`ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md)
 
