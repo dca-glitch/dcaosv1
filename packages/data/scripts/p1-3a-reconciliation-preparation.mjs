@@ -37,6 +37,12 @@ function isExecutionFlag(argument) {
   return [...EXECUTION_FLAGS].some((flag) => argument === flag || argument.startsWith(`${flag}=`));
 }
 
+function requiredOptionValue(args, index, option) {
+  const value = args[index + 1];
+  if (typeof value !== "string" || value.length === 0 || value.startsWith("--")) throw new Error(`${option} requires a non-flag value.`);
+  return value;
+}
+
 export function parseP13aCliArgs(args) {
   const parsed = { snapshotPath: null, format: "summary" };
   let hasFormat = false;
@@ -45,14 +51,14 @@ export function parseP13aCliArgs(args) {
     if (isExecutionFlag(argument)) throw new Error(`Execution flag "${argument}" is forbidden: P1.3a is PREPARATION ONLY.`);
     if (argument === "--snapshot") {
       if (parsed.snapshotPath) throw new Error("--snapshot may be provided only once.");
-      parsed.snapshotPath = args[index + 1] ?? null;
+      parsed.snapshotPath = requiredOptionValue(args, index, "--snapshot");
       index += 1;
       continue;
     }
     if (argument === "--format") {
       if (hasFormat) throw new Error("--format may be provided only once.");
       hasFormat = true;
-      parsed.format = args[index + 1] ?? null;
+      parsed.format = requiredOptionValue(args, index, "--format");
       index += 1;
       continue;
     }
