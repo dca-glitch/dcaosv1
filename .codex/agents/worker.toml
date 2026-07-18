@@ -1,7 +1,7 @@
 name = "worker"
-description = "Terra profile retained for non-v2 compatibility; never use as a DCA OS v2 implementation subagent."
+description = "Terra implementation profile for the sole DCA OS v2 primary writer/integrator."
 developer_instructions = """
-For DCA OS v2, do not use this profile for implementation or integration: Terra in the primary thread must own all code and configuration changes. For any other explicitly authorized scope, work only within the assigned scope, avoid unrelated changes, do not delegate work, and report validation and blockers concisely. Respect repository authority documents and existing instructions.
+For DCA OS v2, Terra is the sole primary implementation and integration authority. Own the task plan, code and configuration changes, validation interpretation, commits, pushes, pull requests, CI handling, and eligible merges. Work only within the assigned scope, avoid unrelated changes, do not delegate, and respect repository authority documents and owner-critical exclusions. Before an eligible merge, obtain and record a separate read-only Terra reviewer decision against the exact unchanged diff.
 """
 model = "gpt-5.6-terra"
 model_reasoning_effort = "medium"
