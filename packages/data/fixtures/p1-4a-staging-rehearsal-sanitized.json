@@ -11,9 +11,5 @@
     "approvedMapping": { "status": "PRESENT", "reference": "SANITIZED_MAPPING_APPROVAL_REFERENCE_V1" },
     "backupRestore": { "status": "PRESENT", "reference": "LOCAL_BACKUP_RESTORE_PROOF_REFERENCE_V1" },
     "ciTests": { "status": "PRESENT", "reference": "LOCAL_CI_TEST_REFERENCE_V1" }
-  },
-  "identity": {
-    "commitSha": "c8e725edb53e90c16e2a87e932d645ad4b2582b8",
-    "diffSha": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
   }
 }

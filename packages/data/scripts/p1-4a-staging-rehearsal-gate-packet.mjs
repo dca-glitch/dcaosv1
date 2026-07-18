@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -44,6 +45,12 @@ function assertIdentity(identity) {
   return { commitSha: identity.commitSha.toLowerCase(), diffSha: identity.diffSha.toLowerCase() };
 }
 
+export function getLocalExactIdentity() {
+  const commitSha = execFileSync("git", ["rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const diff = execFileSync("git", ["diff", "--binary", "HEAD"], { encoding: "buffer" });
+  return assertIdentity({ commitSha, diffSha: createHash("sha256").update(diff).digest("hex") });
+}
+
 function executionFlag(argument) {
   return P1_4A_EXECUTION_FLAGS.some((flag) => argument === flag || argument.startsWith(`${flag}=`));
 }
@@ -81,11 +88,11 @@ function gate(id, status, detail, category = "EVIDENCE") {
   return { id, category, status, detail };
 }
 
-export function createP14aExecutionGatePacket(input) {
+export function createP14aExecutionGatePacket(input, identity = getLocalExactIdentity()) {
   if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("P1.4a input must be a JSON object.");
   assertSanitized(input);
-  if (!input.snapshot || !input.evidence || !input.identity) throw new Error("P1.4a input requires snapshot, evidence, and identity.");
-  const identity = assertIdentity(input.identity);
+  if (!input.snapshot || !input.evidence) throw new Error("P1.4a input requires snapshot and evidence.");
+  const exactIdentity = assertIdentity(identity);
   const evidence = [assertEvidence(input.evidence, "approvedMapping"), assertEvidence(input.evidence, "backupRestore"), assertEvidence(input.evidence, "ciTests")];
   const p12a = createP12aDryRunReport(input.snapshot);
   const p13a = createP13aPreparationReport(input.snapshot);
@@ -102,7 +109,7 @@ export function createP14aExecutionGatePacket(input) {
     gate("backup_restore_proof", backupRestore.status, backupRestore.reference),
     gate("rollback_plan", "PRESENT", p13a.rollbackPlan.execution),
     gate("staging_like_rehearsal", rehearsalPassed ? "PRESENT" : "FAILED", rehearsalPassed ? "LOCAL_SANITIZED_REHEARSAL_PASSED" : "LOCAL_SANITIZED_REHEARSAL_BLOCKED"),
-    gate("exact_commit_diff_identity", "PRESENT", identity.commitSha),
+    gate("exact_commit_diff_identity", "PRESENT", exactIdentity.commitSha),
     gate("ci_test_evidence", ciTests.status, ciTests.reference),
     gate("owner_acceptance", "OWNER_ACCEPTANCE_REQUIRED", "Future owner-critical decision required.", "OWNER_CRITICAL"),
     gate("execution_authorization", "EXECUTION_NOT_AUTHORIZED", "P1.4a cannot authorize or execute P1.2b-P1.4b.", "EXECUTION_FORBIDDEN")
@@ -111,7 +118,7 @@ export function createP14aExecutionGatePacket(input) {
   return {
     reportVersion: P1_4A_REPORT_VERSION,
     mode: "LOCAL_STAGING_LIKE_REHEARSAL_ONLY",
-    inputManifest: { algorithm: "SHA-256", snapshotHash: sha256(input.snapshot), inputHash: sha256(input), identity },
+    inputManifest: { algorithm: "SHA-256", snapshotHash: sha256(input.snapshot), inputHash: sha256(input), identity: exactIdentity },
     safety: { dataMutation: false, backfillExecuted: false, reconciliationExecuted: false, workspaceAuthorityActivated: false, featureFlagsActivated: false, executionGateApproved: false, productionVpsTouched: false, remoteStagingTouched: false, tenantClientAuthority: "UNCHANGED" },
     rehearsal: { status: rehearsalPassed ? "LOCAL_REHEARSAL_PASSED" : "LOCAL_REHEARSAL_BLOCKED", p12a: { reportVersion: p12a.reportVersion, status: p12a.status, blockers: p12a.counts.blockers }, p13a: { reportVersion: p13a.reportVersion, status: p13a.status, blockers: p13a.counts.blockers, featureFlags: p13a.featureFlags } },
     gates,
@@ -132,7 +139,7 @@ export async function runP14aCli(args, io = { readFile, stdout: process.stdout, 
   try { options = parseP14aCliArgs(args); } catch (error) { io.stderr.write(`P1.4A PREPARATION ONLY / ${error.message}\n`); return 64; }
   if (options.help) { io.stdout.write("Usage: node p1-4a-staging-rehearsal-gate-packet.mjs --snapshot <sanitized-snapshot.json> [--format json|summary]\n"); return 0; }
   try {
-    const packet = createP14aExecutionGatePacket(JSON.parse(await io.readFile(path.resolve(options.snapshotPath), "utf8")));
+    const packet = createP14aExecutionGatePacket(JSON.parse(await io.readFile(path.resolve(options.snapshotPath), "utf8")), io.getLocalExactIdentity ? io.getLocalExactIdentity() : getLocalExactIdentity());
     io.stdout.write(`${options.format === "json" ? JSON.stringify(packet, null, 2) : formatP14aSummary(packet)}\n`);
     return packet.readiness.startsWith("PREPARATION_EVIDENCE_COMPLETE") ? 0 : 2;
   } catch (error) { io.stderr.write(`P1.4A PREPARATION ONLY / ${error.message}\n`); return 65; }
