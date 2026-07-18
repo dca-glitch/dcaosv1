@@ -13,6 +13,7 @@ export function parseBackupArgs(args) {
     const value = args[index];
     if (["--apply", "--approve", "--backfill", "--cleanup", "--reconcile", "--switch"].includes(value)) throw new Error(`Forbidden flag ${value}.`);
     if (value === "--execute") { parsed.execute = true; continue; }
+    if (value === "--post-migration") { continue; }
     if (value === "--backup-dir") { parsed.backupDir = args[++index] ?? null; continue; }
     if (value === "--help") return { help: true };
     throw new Error(`Unsupported argument ${value}.`);
@@ -28,7 +29,16 @@ function replacePort(url, port) { const value = new URL(url); value.port = port;
 export async function runBackupRehearsal(args, env = process.env, io = { stdout: process.stdout, stderr: process.stderr }) {
   try {
     const options = parseBackupArgs(args); if (options.help) { io.stdout.write("Usage: workspace:backup-rehearsal:local --execute --backup-dir <absolute-untracked-path>\n"); return 0; }
-    assertLocalTarget(env.DATABASE_URL, "source");
+    assertLocalTarget(env.DATABASE_URL, options.postMigration ? "restore" : "source");
+    if (options.postMigration) {
+      const restore = new PrismaClient({ datasources: { db: { url: replacePort(env.DATABASE_URL, "5435") } } });
+      try {
+        const backfill = await executeBackfill(restore);
+        const reconciliation = await reconcile(restore);
+        if (reconciliation.status !== "RECONCILIATION_PASSED") throw new Error("REHEARSAL_RECONCILIATION_FAILED");
+        io.stdout.write(`${JSON.stringify({ status: "RESTORE_REHEARSAL_PASSED", restoreTarget: "127.0.0.1:5435", backfill: backfill.status, reconciliation: reconciliation.status }, null, 2)}\n`); return 0;
+      } finally { await restore.$disconnect(); }
+    }
     if (docker(["port", SOURCE_CONTAINER, "5432/tcp"]).trim() !== "127.0.0.1:5434") throw new Error("SOURCE_CONTAINER_TARGET_MISMATCH");
     if (hasContainer(RESTORE_CONTAINER)) throw new Error("RESTORE_TARGET_EXISTS_OR_UNKNOWN: refusing overwrite or cleanup.");
     const source = new PrismaClient();
