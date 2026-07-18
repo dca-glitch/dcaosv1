@@ -64,7 +64,7 @@ export async function inspectApprovedScope(prisma) {
   const users = await prisma.user.findMany({ where: { id: { in: [...userIds] } }, select: { id: true } });
   if (users.length !== 7) blockers.push("APPROVED_USER_MISSING_OR_DUPLICATE");
   const noRole = memberships.filter((item) => item.status === "ACTIVE" && activeRoles(item).length === 0);
-  if (memberships.filter((item) => item.status === "ACTIVE").length !== 12 || noRole.length !== 5) blockers.push("NO_ROLE_EXCEPTION_DRIFT");
+  if (memberships.filter((item) => item.status === "ACTIVE").length !== 13 || noRole.length !== 6) blockers.push("NO_ROLE_EXCEPTION_DRIFT");
   const clientUsers = new Set(CLIENT_MEMBERSHIP_IDS.map((id) => byId.get(id)?.userId));
   const ownerUser = byId.get(OWNER_MEMBERSHIP_ID)?.userId;
   if (activeAccess.filter((item) => clientUsers.has(item.userId)).length !== 35 || activeAccess.filter((item) => item.userId === ownerUser).length !== 244) blockers.push("CLIENT_ACCESS_DISTRIBUTION_DRIFT");
