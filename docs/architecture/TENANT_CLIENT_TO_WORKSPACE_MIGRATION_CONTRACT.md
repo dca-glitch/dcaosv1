@@ -29,9 +29,9 @@ P1.2a is complete: it validates only an explicit proposed Tenant/Client-to-Works
 
 P1.3a is complete: snapshot-only comparison validates expected-state shape and unique workspace records, then detects expected-state conflicts, cross-workspace membership, missing membership, and invalid roles. Its flags are OFF and it records a future rollback plan. It does not reconcile, mutate, switch authority, or change runtime behavior.
 
-P1.4a is complete: a deterministic local staging-like rehearsal runs only against sanitized snapshots, orchestrates P1.2a/P1.3a proof results, and emits a machine-readable SHA-256 evidence manifest. It fails closed for missing or failed evidence and execution-like flags. Its final status is always `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; it cannot approve or execute P1.2b–P1.4b, mutate data, reach remote staging/production, activate flags, or change runtime authority.
+P1.4a remains deterministic sanitized preparation evidence. The owner-approved local execution gate supersedes its preparation-only authorization boundary for P1.2b–P1.4b, limited to the declared localhost targets and still fail-closed on evidence, drift, mapping, restore, reconciliation, and isolation errors.
 
-P1.2b–P1.4b are future execution-only packages. They require approved mapping, dry-run and clean reconciliation evidence, backup/restore and rollback proof, security/isolation proof, staging rehearsal, and explicit owner acceptance. `Tenant` and `Client` remain authoritative and no Workspace client-facing authority is activated until that gate passes.
+P1.2b–P1.4b are the owner-authorized local execution package. They require approved mapping, clean reconciliation evidence, backup/restore and rollback proof, security/isolation proof, and local rehearsal before source mutation. `Tenant` and `Client` remain authoritative until the bounded endpoint switch passes.
 
 ## Isolation and rollback
 

@@ -23,7 +23,7 @@ DCA OS v2 is the private Agency Operations System for one organization: Digital 
 - `Workspace` is the approved future primary boundary for data, authorization, reporting, costs, integrations, materials, and search. Phase 1 P1.1's expand-only schema foundation is complete through `PR #60` / `14b52f8b`; it has not switched runtime scope, authorization, or client-visible behavior.
 - Phase 1 P1.2a is complete: deterministic validation and dry-run planning consume only a sanitized local snapshot plus explicit proposed mappings. It cannot connect to or mutate data, execute a backfill or reconciliation, or activate Workspace runtime authority.
 - Phase 1 P1.3a is complete: a snapshot-only comparison and isolation preparation report keeps both Workspace flags OFF and records a future rollback plan.
-- Phase 1 P1.4a is complete: deterministic local staging-like rehearsal orchestrates P1.2a/P1.3a from sanitized fixtures and emits SHA-256 input manifests plus gate evidence. Its result is always `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; it does not authorize P1.2b–P1.4b.
+- Phase 1 P1.4a preparation remains deterministic sanitized evidence; the owner-approved local gate now authorizes P1.2b–P1.4b execution only on the declared localhost targets. Execution evidence is pending.
 
 ## 3. Roles and access boundaries
 
@@ -78,7 +78,7 @@ These results come from `PR #55` and remain the canonical UI proof baseline for 
 
 ## 8. Approved direction not implemented
 
-Treat the following as `APPROVED_DIRECTION_NOT_IMPLEMENTED` unless a higher-authority current doc says otherwise:
+Treat the following as `APPROVED_DIRECTION_NOT_IMPLEMENTED` unless a higher-authority current doc says otherwise (the bounded local P1.2b–P1.4b gate is the explicit exception):
 
 - Phase 1 Workspace runtime authority beyond the completed P1.1–P1.4a preparation: memberships enforcement, five-role authorization, scoped API/query/search, feature flags, audit context, and execution-gate authorization
 - advanced public/client collaboration features

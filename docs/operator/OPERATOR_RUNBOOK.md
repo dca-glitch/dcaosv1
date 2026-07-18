@@ -52,7 +52,7 @@ Run in this exact order and stop on first failure:
 - `npm.cmd run -w @dca-os-v1/data workspace:staging-rehearsal:prepare -- --snapshot <sanitized-snapshot.json> --format json`
 - Input is a local sanitized packet containing the P1.2a/P1.3a snapshot and declared evidence references. Never include names, e-mail addresses, notes, credentials, tokens, connection strings, URLs, real staging/production data, or a caller-supplied commit/diff identity.
 - The tool derives P1.2a/P1.3a results, records deterministic SHA-256 input hashes, and derives exact local `HEAD` plus SHA-256 `git diff --binary HEAD` identity itself. It fails closed for missing/failed evidence or execution-like flags including apply, execute, approve, reconcile, switch, backfill, and cleanup.
-- Even with complete local evidence, the only passing preparation result is `PREPARATION_EVIDENCE_COMPLETE_EXECUTION_NOT_AUTHORIZED`; `OWNER_ACCEPTANCE_REQUIRED` remains unsatisfied and no execution package is authorized.
+- Complete preparation evidence is a prerequisite for the owner-authorized local execution package; execution remains pending until backup, restore, rehearsal, drift, and review gates pass.
 
 ## 3. What validate is expected to prove
 

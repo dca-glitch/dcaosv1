@@ -46,7 +46,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Live GA4/GSC integration | WITHDRAWN | No live OAuth/sync/manual import claim |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 canonical prerequisite package | IMPLEMENTED | Current authority reconciled to the private-agency charter; implementation remains separate |
-| Phase 1 Workspace foundation | IN_PROGRESS (P1.1–P1.4a complete; future P1.2b–P1.4b owner-critical execution gate only) | P1.4a provides deterministic local sanitized rehearsal and a fail-closed packet. It remains `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; Tenant/Client remains authoritative and no reconciliation, switch, or data mutation was executed |
+| Phase 1 Workspace foundation | IN_PROGRESS (P1.2b–P1.4b locally authorized; evidence pending) | Owner gate is restricted to localhost source/restore targets. Tenant/Client remains authoritative until reconciliation and the bounded endpoint proof pass. |
 
 ## 4. Current boundaries that must not be overclaimed
 
