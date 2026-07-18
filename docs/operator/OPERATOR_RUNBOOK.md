@@ -45,7 +45,7 @@ Run in this exact order and stop on first failure:
 ## 2.4 P1.3a reconciliation preparation
 
 - `npm.cmd run -w @dca-os-v1/data workspace:reconciliation:prepare -- --snapshot <sanitized-snapshot.json> --format json`
-- The comparison is read-only and rejects reconciliation, apply, switch, write, and mutation flags. Both feature flags remain OFF; the output contains only evidence and a future rollback plan.
+- The comparison is read-only and rejects reconciliation, apply, switch, write, mutation, backfill, cleanup, and unsupported flags. Snapshot input requires uniquely identified, structurally valid expected Workspace state. Both feature flags remain OFF; the output contains only evidence and a future rollback plan.
 
 ## 3. What validate is expected to prove
 

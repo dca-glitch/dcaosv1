@@ -12,12 +12,61 @@ export const P1_3A_ROLLBACK_PLAN = Object.freeze({
   abortConditions: ["mapping_exception", "cross_workspace_access", "missing_membership", "role_translation_exception", "reconciliation_mismatch"],
   recovery: ["stop_execution", "preserve_evidence", "restore_verified_backup", "return_to_tenant_client_authority", "owner_review"]
 });
-const EXECUTION = /^(--apply|--execute|--reconcile|--switch|--write|--mutate)(=|$)/;
+const EXECUTION_FLAGS = new Set(["--apply", "--execute", "--reconcile", "--reconciliation", "--switch", "--write", "--mutate", "--mutation", "--backfill", "--cleanup"]);
 const sort = (items, key = "id") => [...items].sort((a, b) => String(a[key]).localeCompare(String(b[key])));
+
+function assertExpectedWorkspaceState(snapshot) {
+  if (!Array.isArray(snapshot.expectedWorkspaceState)) throw new Error('Snapshot field "expectedWorkspaceState" must be an array.');
+  const workspaceIds = new Set();
+  for (const state of snapshot.expectedWorkspaceState) {
+    if (!state || typeof state.workspaceId !== "string" || state.workspaceId.length === 0 || typeof state.tenantId !== "string" || state.tenantId.length === 0 || !Array.isArray(state.memberships)) {
+      throw new Error("Every expected workspace state requires non-empty workspaceId, tenantId, and memberships array values.");
+    }
+    if (workspaceIds.has(state.workspaceId)) throw new Error(`Duplicate expected workspace state for "${state.workspaceId}" is unsupported.`);
+    workspaceIds.add(state.workspaceId);
+    for (const membership of state.memberships) {
+      if (!membership || typeof membership.workspaceId !== "string" || typeof membership.userId !== "string" || typeof membership.status !== "string" || !Array.isArray(membership.roleKeys) || membership.roleKeys.some((role) => typeof role !== "string")) {
+        throw new Error("Every expected workspace membership requires string workspaceId, userId, status, and string roleKeys values.");
+      }
+    }
+  }
+  return snapshot.expectedWorkspaceState;
+}
+
+function isExecutionFlag(argument) {
+  return [...EXECUTION_FLAGS].some((flag) => argument === flag || argument.startsWith(`${flag}=`));
+}
+
+export function parseP13aCliArgs(args) {
+  const parsed = { snapshotPath: null, format: "summary" };
+  let hasFormat = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const argument = args[index];
+    if (isExecutionFlag(argument)) throw new Error(`Execution flag "${argument}" is forbidden: P1.3a is PREPARATION ONLY.`);
+    if (argument === "--snapshot") {
+      if (parsed.snapshotPath) throw new Error("--snapshot may be provided only once.");
+      parsed.snapshotPath = args[index + 1] ?? null;
+      index += 1;
+      continue;
+    }
+    if (argument === "--format") {
+      if (hasFormat) throw new Error("--format may be provided only once.");
+      hasFormat = true;
+      parsed.format = args[index + 1] ?? null;
+      index += 1;
+      continue;
+    }
+    if (argument === "--help") return { help: true };
+    throw new Error(`Unsupported argument "${argument}".`);
+  }
+  if (!parsed.snapshotPath) throw new Error("--snapshot <sanitized-snapshot.json> is required.");
+  if (!["json", "summary"].includes(parsed.format)) throw new Error("--format must be json or summary.");
+  return parsed;
+}
 
 export function createP13aPreparationReport(snapshot) {
   const p12a = createP12aDryRunReport(snapshot);
-  const expected = Array.isArray(snapshot.expectedWorkspaceState) ? snapshot.expectedWorkspaceState : [];
+  const expected = assertExpectedWorkspaceState(snapshot);
   const expectedByWorkspace = new Map(expected.map((item) => [item.workspaceId, item]));
   const conflicts = [];
   const missingExpectedState = [];
@@ -44,9 +93,9 @@ export function createP13aPreparationReport(snapshot) {
 }
 export function formatP13aSummary(report) { return `P1.3A PREPARATION ONLY / NO DATA MUTATION\nstatus=${report.status}; candidates=${report.counts.reconciliationCandidates}; blockers=${report.counts.blockers}; flags=OFF`; }
 export async function runP13aCli(args, io = { readFile, stdout: process.stdout, stderr: process.stderr }) {
-  if (args.some((arg) => EXECUTION.test(arg))) { io.stderr.write("P1.3A PREPARATION ONLY / execution flags are forbidden\n"); return 64; }
-  const snapshotIndex = args.indexOf("--snapshot"); const format = args.includes("--format") ? args[args.indexOf("--format") + 1] : "summary";
-  if (snapshotIndex < 0 || !args[snapshotIndex + 1] || !["json", "summary"].includes(format)) { io.stderr.write("Usage: --snapshot <sanitized.json> [--format json|summary]\n"); return 64; }
-  try { const report = createP13aPreparationReport(JSON.parse(await io.readFile(path.resolve(args[snapshotIndex + 1]), "utf8"))); io.stdout.write(`${format === "json" ? JSON.stringify(report, null, 2) : formatP13aSummary(report)}\n`); return report.status === "PREPARATION_READY" ? 0 : 2; } catch (error) { io.stderr.write(`P1.3A PREPARATION ONLY / ${error.message}\n`); return 65; }
+  let options;
+  try { options = parseP13aCliArgs(args); } catch (error) { io.stderr.write(`P1.3A PREPARATION ONLY / ${error.message}\n`); return 64; }
+  if (options.help) { io.stdout.write("Usage: node p1-3a-reconciliation-preparation.mjs --snapshot <sanitized-snapshot.json> [--format json|summary]\n"); return 0; }
+  try { const report = createP13aPreparationReport(JSON.parse(await io.readFile(path.resolve(options.snapshotPath), "utf8"))); io.stdout.write(`${options.format === "json" ? JSON.stringify(report, null, 2) : formatP13aSummary(report)}\n`); return report.status === "PREPARATION_READY" ? 0 : 2; } catch (error) { io.stderr.write(`P1.3A PREPARATION ONLY / ${error.message}\n`); return 65; }
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))) process.exitCode = await runP13aCli(process.argv.slice(2));
