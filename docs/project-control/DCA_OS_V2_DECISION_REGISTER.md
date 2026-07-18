@@ -24,3 +24,4 @@ The first switched endpoint and grants are now owner-decided for this local pack
 ## Superseded direction
 
 The prior broader SaaS and independent-licensee direction is superseded. Historical documents may preserve it as evidence but do not authorize new work.
+Owner-approved six no-role exception execution evidence is recorded as local-only; no remote or production authorization exists.
