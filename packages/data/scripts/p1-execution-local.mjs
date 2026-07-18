@@ -42,7 +42,7 @@ export function assertLocalTarget(databaseUrl, target) {
 export async function inspectApprovedScope(prisma) {
   const [tenant, clients, memberships, access] = await Promise.all([
     prisma.tenant.findUnique({ where: { id: APPROVED_TENANT_ID }, select: { id: true, name: true, slug: true, status: true } }),
-    prisma.client.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, isArchived: true }, orderBy: { id: "asc" } }),
+    prisma.client.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, isArchived: true }, orderBy: { id: "asc" } }),
     prisma.tenantMembership.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, userId: true, status: true, membershipRoles: { select: { role: { select: { key: true, status: true } } } } }, orderBy: { id: "asc" } }),
     prisma.clientUserAccess.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, userId: true, clientId: true, isArchived: true }, orderBy: { id: "asc" } })
   ]);
@@ -81,6 +81,8 @@ export async function createPlan(prisma) {
 
 export async function executeBackfill(prisma) {
   return prisma.$transaction(async (tx) => {
+    const writers = await tx.$queryRaw`SELECT count(*)::int AS count FROM pg_stat_activity WHERE datname = current_database() AND state = 'active' AND pid <> pg_backend_pid() AND query !~* '^\\s*(select|show|set)'`;
+    if (Number(writers[0].count) !== 0) throw new Error("BACKFILL_ABORT:ACTIVE_WRITER");
     const plan = await createPlan(tx);
     if (plan.blockers.length) throw new Error(`BACKFILL_ABORT:${plan.blockers.join(",")}`);
     const tenant = await tx.tenant.findUniqueOrThrow({ where: { id: APPROVED_TENANT_ID }, select: { name: true, slug: true } });
@@ -94,7 +96,7 @@ export async function executeBackfill(prisma) {
       await tx.workspaceMembershipRole.upsert({ where: { workspaceMembershipId_role: { workspaceMembershipId: membership.id, role: item.role } }, create: { workspaceMembershipId: membership.id, role: item.role }, update: {} });
     }
     return { ...plan, dataMutation: true, workspaceId: workspace.id, status: "BACKFILL_EXECUTED_LOCAL_ONLY" };
-  });
+  }, { isolationLevel: "Serializable" });
 }
 
 export async function reconcile(prisma) {

@@ -33,15 +33,17 @@ export async function runBackupRehearsal(args, env = process.env, io = { stdout:
     const source = new PrismaClient();
     let scope;
     try {
-      const writers = await source.$queryRaw`SELECT count(*)::int AS count FROM pg_stat_activity WHERE datname = current_database() AND state = 'active' AND pid <> pg_backend_pid() AND query !~* '^\\s*(select|show|set|with)'`;
+      const writers = await source.$queryRaw`SELECT count(*)::int AS count FROM pg_stat_activity WHERE datname = current_database() AND state = 'active' AND pid <> pg_backend_pid() AND query !~* '^\\s*(select|show|set)'`;
       if (Number(writers[0].count) !== 0) throw new Error("ACTIVE_WRITER_ABORT");
       scope = await inspectApprovedScope(source); if (scope.blockers.length) throw new Error(`SOURCE_PREFLIGHT_ABORT:${scope.blockers.join(",")}`);
+      scope.migrationState = await source.$queryRawUnsafe('SELECT migration_name, finished_at IS NOT NULL AS finished FROM "_prisma_migrations" ORDER BY migration_name');
+      scope.workspaceFoundationPresent = (await source.$queryRaw`SELECT to_regclass('public."Workspace"') IS NOT NULL AS present`)[0].present;
     } finally { await source.$disconnect(); }
     await mkdir(options.backupDir, { recursive: true });
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-"); const backupPath = path.join(options.backupDir, `p1-local-${timestamp}.dump`);
     const dump = docker(["exec", SOURCE_CONTAINER, "sh", "-c", "pg_dump -Fc -C -U \"$POSTGRES_USER\" \"$POSTGRES_DB\""], { encoding: "buffer", maxBuffer: 1024 * 1024 * 1024 });
     await writeFile(backupPath, dump); const backupSha256 = createHash("sha256").update(dump).digest("hex");
-    await writeFile(`${backupPath}.manifest.json`, JSON.stringify({ target: "127.0.0.1:5434", backupSha256, counts: scope.counts, hashes: scope.hashes, excludedNoRoleMembershipIds: scope.noRoleMembershipIds, schema: { expectedMigrations: ["20260717160000_add_workspace_foundation", "20260718190000_add_workspace_legacy_tenant_mapping"], sourceWorkspaceFoundationPresent: false }, safety: { activeWriterCount: 0, rawDataIncluded: false } }, null, 2));
+    await writeFile(`${backupPath}.manifest.json`, JSON.stringify({ target: "127.0.0.1:5434", backupSha256, counts: scope.counts, hashes: scope.hashes, excludedNoRoleMembershipIds: scope.noRoleMembershipIds, schema: { migrations: scope.migrationState, workspaceFoundationPresent: scope.workspaceFoundationPresent }, safety: { activeWriterCount: 0, rawDataIncluded: false } }, null, 2));
     const image = docker(["inspect", SOURCE_CONTAINER, "--format", "{{.Config.Image}}"]).trim();
     docker(["run", "-d", "--name", RESTORE_CONTAINER, "--publish", "127.0.0.1:5435:5432", "-e", "POSTGRES_HOST_AUTH_METHOD=trust", image]);
     for (let attempt = 0; attempt < 30; attempt += 1) { try { docker(["exec", RESTORE_CONTAINER, "pg_isready", "-U", "postgres"]); break; } catch { if (attempt === 29) throw new Error("RESTORE_TARGET_NOT_READY"); await new Promise((resolve) => setTimeout(resolve, 1000)); } }
