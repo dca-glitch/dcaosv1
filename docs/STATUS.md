@@ -46,7 +46,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Live GA4/GSC integration | WITHDRAWN | No live OAuth/sync/manual import claim |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 canonical prerequisite package | IMPLEMENTED | Current authority reconciled to the private-agency charter; implementation remains separate |
-| Phase 1 Workspace foundation | IN_PROGRESS (P1.2b–P1.4b locally authorized; evidence pending) | Owner gate is restricted to localhost source/restore targets. Tenant/Client remains authoritative until reconciliation and the bounded endpoint proof pass. |
+| Phase 1 Workspace foundation | COMPLETE (P1.1–P1.4b local scope) | Backup, restore, migration, backfill, reconciliation, idempotency and endpoint isolation evidence PASS; Tenant/Client remains authoritative for per-Client scope. |
 
 ## 4. Current boundaries that must not be overclaimed
 
@@ -85,7 +85,7 @@ Use retained evidence under `docs/audits/`, `docs/audit/`, `docs/releases/`, sel
 
 DCA OS and Tellanic OS remain separate scopes; no orchestration work changes that boundary.
 
-## 8. Owner execution gate (pre-execution)
+## 8. Phase 1 local execution closeout
 
-**PHASE_1_COMPLETE / LOCAL_EXECUTION_EVIDENCE_VERIFIED**. P1.2b–P1.4b executed only on source `127.0.0.1:5434` with restore/rehearsal `127.0.0.1:5435`; backup, restore, migrations, local-only backfill, reconciliation, idempotent rerun and endpoint isolation proof all PASS. Mapping produced 1 Workspace and 7 memberships (1 ADMIN, 6 CLIENT_USER); six no-role memberships remain excluded. Client/UserAccess hashes are unchanged. Feature flag and endpoint authority remain local-only; remote, production, VPS and Tellanic operations remain forbidden.
-Execution evidence (local-only): backup SHA `6ddadb4d579fe119ef027250d87b2e1815f888c350820ba396710758ba589755`; restore rehearsal PASS on `127.0.0.1:5435`; source `127.0.0.1:5434` migrations, backfill and reconciliation PASS. Created 1 Workspace and 7 memberships (1 ADMIN, 6 CLIENT_USER); 6 no-role exceptions excluded; client/access hashes unchanged. Endpoint flag remains local-only pending final verification.
+**PHASE_1_COMPLETE / LOCAL_EXECUTION_EVIDENCE_VERIFIED**. P1.1 and P1.2a–P1.4a are COMPLETE; P1.2b–P1.4b are COMPLETE for the approved local scope. `PR #67` merged at `55baa03d39e85819ea257127b18bc8f9094701a0`; `PR #68` merged at `a8caea74b440e8fa9311e1c09ba24febd7f29a44`. Both merge and post-merge CI gates PASS.
+Execution evidence (local-only): backup SHA `6ddadb4d579fe119ef027250d87b2e1815f888c350820ba396710758ba589755`; restore rehearsal PASS on `127.0.0.1:5435`; source `127.0.0.1:5434` migrations, backfill, reconciliation, and idempotent rerun PASS; endpoint permission/isolation proof PASS. Created 1 Workspace and 7 memberships (1 ADMIN, 6 CLIENT_USER); 6 no-role exceptions excluded; Client/UserAccess hashes unchanged. Endpoint authority and feature flag remain `LOCAL_ONLY`; remote, production, VPS, and Tellanic operations remain forbidden.

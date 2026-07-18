@@ -14,16 +14,16 @@
 | V2-008 | P1.1's Workspace schema foundation is complete through `PR #60` / `14b52f8b`. | DECIDED | The completed package is additive and expand-only; `Tenant` and `Client` remain authoritative, with no client-visible or authoritative Workspace runtime behavior. |
 | V2-009 | P1.2a validates only explicit proposed mappings from a sanitized local snapshot and emits dry-run plan output. | DECIDED | The tool has no database client or apply mode; it rejects execution flags and unresolved mapping, collision, orphan, unsupported, and legacy membership/role cases. |
 | V2-010 | P1.3a comparison and isolation preparation is snapshot-only and flags are OFF in that preparation package. | DECIDED | It cannot reconcile or mutate; rollback requirements are carried into the owner-authorized local execution gate. |
-| V2-011 | P1.4a staging-like rehearsal is local, deterministic, and snapshot-only; the owner gate permits the bounded local execution package after evidence passes. | DECIDED | P1.2b–P1.4b remain localhost-only, fail-closed, and evidence-pending until execution gates pass. |
-| V2-012 | Owner authorizes P1.2b–P1.4b only on local source/restore targets. | DECIDED | State is `OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE`; source `127.0.0.1:5434`, restore `127.0.0.1:5435`, backup/restore before source mutation, exact mapping/roles, and one default-OFF local endpoint switch are mandatory. |
+| V2-011 | P1.4a staging-like rehearsal is local, deterministic, and snapshot-only; the owner gate permitted the bounded local execution package after evidence passed. | DECIDED | P1.2b–P1.4b are COMPLETE for the approved localhost-only scope; endpoint authority and feature flag remain `LOCAL_ONLY`. |
+| V2-012 | Owner authorized P1.2b–P1.4b only on local source/restore targets. | DECIDED | The completed local scope used source `127.0.0.1:5434`, restore `127.0.0.1:5435`, backup/restore, exact mapping/roles, and one local-only endpoint proof; it did not authorize remote, production, VPS, Tellanic, cleanup, or Phase 2 work. |
 
 ## Unspecified items
 
-The first switched endpoint and grants are now owner-decided for this local package: `GET /api/admin/workspaces/:workspaceId`, active ADMIN/WORKSPACE_MANAGER allow, and deny-by-default otherwise. Runtime evidence remains pending.
+The first switched endpoint and grants are owner-decided and locally proven for this package: `GET /api/admin/workspaces/:workspaceId`, active ADMIN/WORKSPACE_MANAGER allow, and deny-by-default otherwise. Endpoint authority and feature flag remain `LOCAL_ONLY`.
 
 ## Superseded direction
 
 The prior broader SaaS and independent-licensee direction is superseded. Historical documents may preserve it as evidence but do not authorize new work.
 Owner-approved six no-role exception execution evidence is recorded as local-only; no remote or production authorization exists.
 ## Phase 1 closeout
-The owner-authorized local gate is completed and evidenced; PR #67 merge commit is `55baa03d39e85819ea257127b18bc8f9094701a0` with post-merge CI PASS.
+P1.1 and P1.2a–P1.4a are COMPLETE; P1.2b–P1.4b are COMPLETE for the approved local scope. PR #67 merge commit is `55baa03d39e85819ea257127b18bc8f9094701a0`; PR #68 merge commit is `a8caea74b440e8fa9311e1c09ba24febd7f29a44`. Merge and post-merge CI PASS. Restore rehearsal, source migrations/backfill/reconciliation, idempotent rerun, and endpoint permission/isolation proof PASS; 1 Workspace, 7 memberships (1 ADMIN, 6 CLIENT_USER), six excluded no-role exceptions, and unchanged Client/UserAccess hashes are verified.
