@@ -1,6 +1,6 @@
 # DCA OS v2 — Current Status
 
-**Last updated:** 2026-07-17
+**Last updated:** 2026-07-18
 **Canonical baseline:** merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55` — “Complete responsive modal-to-page migration”)
 
 This file replaces the old running gate ledger. Historical deploy logs, staging proofs, and prior gate closeouts remain under retained evidence paths and are no longer duplicated here.
@@ -10,7 +10,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Item | Current status |
 |---|---|
 | Product stance | **Private Agency Operations System for one Digital Cube Agency organization; not a public/self-service SaaS** |
-| First External Client Workspace / pilot | **Puriva** (approved direction; Workspace implementation not yet started) |
+| First External Client Workspace / pilot | **Puriva** (approved Client Operating Pack direction; no Workspace runtime authority) |
 | Production readiness | **NO** for new work unless a current runbook explicitly authorizes it |
 | UI baseline | **Botanical Light** with routed page flows from `PR #55` |
 | Client session restoration | Fixed in the `PR #55` baseline for local rate-limited client sessions |
@@ -46,7 +46,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Live GA4/GSC integration | WITHDRAWN | No live OAuth/sync/manual import claim |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 canonical prerequisite package | IMPLEMENTED | Current authority reconciled to the private-agency charter; implementation remains separate |
-| Phase 1 Workspace foundation | IN_PROGRESS (P1.1 expand-only) | Additive Workspace schema foundation is implemented; legacy Tenant/Client behavior remains authoritative pending later backfill, reconciliation, and switch packages |
+| Phase 1 Workspace foundation | IN_PROGRESS (P1.1 complete; P1.2a–P1.4a preparation only) | P1.1's additive schema foundation completed in `PR #60` / `14b52f8b`; legacy Tenant/Client behavior remains authoritative, and execution-only backfill, reconciliation, and switch require the future owner-critical gate |
 
 ## 4. Current boundaries that must not be overclaimed
 
