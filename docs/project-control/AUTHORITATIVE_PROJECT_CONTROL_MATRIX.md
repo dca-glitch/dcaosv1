@@ -41,7 +41,7 @@ This file is no longer a running next-gate ledger. Use it to understand what eac
 | Live GA4/GSC integration | WITHDRAWN | Removed from current/planned scope |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 charter/authority package | IMPLEMENTED | Private-agency direction and Phase 1 governing contracts are canonical |
-| Phase 1 Workspace foundation | APPROVED_DIRECTION_NOT_IMPLEMENTED | Existing Tenant/Client code is assessed legacy context; no completion claim |
+| Phase 1 Workspace foundation | IMPLEMENTED | P1.1 additive schema foundation completed in `PR #60` / `14b52f8b`; Tenant/Client remains authoritative at runtime, with no client-visible Workspace authority |
 
 ## 4. Current proof baseline
 

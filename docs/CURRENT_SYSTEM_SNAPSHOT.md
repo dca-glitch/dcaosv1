@@ -19,8 +19,8 @@ DCA OS v2 is the private Agency Operations System for one organization: Digital 
 - Prisma + PostgreSQL data layer
 - Shared TypeScript contracts between frontend and backend
 - One internet domain = one `Client`
-- `Tenant`, `TenantMembership`, `Role`, `Permission`, `Client`, and `ClientUserAccess` are current legacy compatibility foundations, not proof of Phase 1 completion.
-- `Workspace` is the approved future primary boundary for data, authorization, reporting, costs, integrations, materials, and search. Phase 1 P1.1 has added the expand-only schema foundation; it has not switched runtime scope, authorization, or client-visible behavior.
+- `Tenant`, `TenantMembership`, `Role`, `Permission`, `Client`, and `ClientUserAccess` are current legacy compatibility foundations and remain authoritative at runtime.
+- `Workspace` is the approved future primary boundary for data, authorization, reporting, costs, integrations, materials, and search. Phase 1 P1.1's expand-only schema foundation is complete through `PR #60` / `14b52f8b`; it has not switched runtime scope, authorization, or client-visible behavior.
 
 ## 3. Roles and access boundaries
 
@@ -77,7 +77,7 @@ These results come from `PR #55` and remain the canonical UI proof baseline for 
 
 Treat the following as `APPROVED_DIRECTION_NOT_IMPLEMENTED` unless a higher-authority current doc says otherwise:
 
-- the Phase 1 Workspace model, memberships, five-role authorization, scoped API/query/search, feature flags, audit context, and isolation proofs
+- Phase 1 Workspace runtime authority beyond the completed P1.1 schema foundation: memberships enforcement, five-role authorization, scoped API/query/search, feature flags, audit context, and isolation proofs
 - advanced public/client collaboration features
 - default live AI/provider execution across workflows
 - live WordPress HTTP draft or publish from the current local prepared-draft baseline

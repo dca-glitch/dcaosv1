@@ -14,9 +14,9 @@ DCA OS v2 is a private agency operations system and remains fully separate from 
 4. **Switch** — move one bounded path only with server-side deny-by-default scope enforcement and negative isolation tests.
 5. **Cleanup** — retire compatibility structures only after stable reconciliation, rollback expiry, and separate review.
 
-## P1.1: initial expand-only package
+## P1.1: completed expand-only package
 
-P1.1 may add Workspace identity, membership, and role relation structures with additive indexes and a Prisma migration. It must not:
+P1.1 completed in `PR #60` / `14b52f8b` with Workspace identity, membership, and role relation structures, additive indexes, and a Prisma migration. It did not:
 
 - update, delete, or backfill existing rows;
 - change existing `Tenant`/`Client` foreign keys, endpoints, sessions, or runtime authorization;
