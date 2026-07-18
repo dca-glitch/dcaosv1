@@ -17,6 +17,10 @@
 
 P1.1 and P1.2a–P1.4a are COMPLETE. P1.2b–P1.4b are COMPLETE for the approved local scope: restore rehearsal PASS on `127.0.0.1:5435`; source `127.0.0.1:5434` migrations, backfill, reconciliation, idempotent rerun, and endpoint permission/isolation proof PASS. The result is 1 Workspace and 7 memberships (1 ADMIN, 6 CLIENT_USER), with six no-role exceptions excluded and Client/UserAccess hashes unchanged. Tenant/Client remains authoritative for per-Client scope; endpoint authority and feature flag remain `LOCAL_ONLY`.
 
+## Phase 2 owner-decision baseline
+
+`PHASE_2=NOT_STARTED`; `OWNER_DECISIONS=IN_PROGRESS`; `P2_01_POPULATION=APPROVED`; `P2_02_NO_ROLE_DISPOSITION=PENDING`. P2-01 approves only the definition for a future P2-A preparation/dry-run package: exactly one existing active Tenant from local source `127.0.0.1:5434`, all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records. P2-A must use an anonymized offline snapshot with a deterministic manifest/hash that freezes the population. It cannot connect to a database or mutate data. This decision does not implement P2-A, start Phase 2, settle the six no-role memberships, or authorize backup, backfill, reconciliation, execution, remote, staging, production, VPS, Tellanic, feature-flag, endpoint-authority, switch, or cleanup work.
+
 ## Package order
 
 1. **P1.1 — expand:** **IMPLEMENTED** — independent Workspace identity and membership structures, additive indexes, a Prisma migration, and focused isolation tests. No existing rows, endpoint behavior, sessions, or authorization paths change.

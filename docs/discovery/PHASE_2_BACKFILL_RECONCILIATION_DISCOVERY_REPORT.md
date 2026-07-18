@@ -7,7 +7,7 @@
 
 ## 1. Executive verdict
 
-Discovery is sufficient to prepare an owner decision package, but not to authorize implementation or execution. The canonical Phase 2 label, **Backfill and reconciliation**, overlaps in words with work completed under the tightly bounded P1.2b–P1.4b local gate. The completed P1 work is a single, fixed local population and explicitly did not start Phase 2. The canonical plan does not yet identify the next population, role policy, permitted environments, or the reconciliation contract that would distinguish a Phase 2 package from repeating P1.
+Discovery is sufficient to prepare an owner decision package, but not to authorize implementation or execution. The canonical Phase 2 label, **Backfill and reconciliation**, overlaps in words with work completed under the tightly bounded P1.2b–P1.4b local gate. The completed P1 work is a single, fixed local population and explicitly did not start Phase 2. Owner decision P2-01 now approves only the future P2-A population definition; role policy, reconciliation contract, and all execution authority remain unresolved.
 
 `READY_FOR_PHASE_2_OWNER_DECISIONS` means that the owner can choose a bounded definition. It does **not** mean `READY_FOR_EXECUTION`, does not change Phase 2 status, and does not authorize a database, schema, flag, endpoint, remote, staging, production, VPS, Tellanic, or client-facing change.
 
@@ -17,6 +17,7 @@ Discovery is sufficient to prepare an owner decision package, but not to authori
 - Read sources: the authority chain in `AGENTS.md`, all seven requested Phase 1 canonical documents, the Phase 1 authorization matrix, Workspace schema/migrations, P1 tooling/tests, local endpoint implementation/tests, and Git history for PR #67, #68, and #69.
 - Graphify-first query was used before broad code navigation.
 - No `.env` file, secret, live OAuth, remote environment, production/VPS, staging, database connection, backup/restore, backfill, reconciliation execution, flag change, endpoint switch, or Tellanic content was accessed.
+- **P2-01 writeback (2026-07-19):** the owner approves only a future P2-A population definition: exactly one existing active Tenant from local source `127.0.0.1:5434`, all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records. P2-A must use an anonymized offline snapshot with a deterministic population manifest/hash; it cannot connect to a database or mutate data. P2-02, the disposition of six no-role memberships, remains pending.
 - The only targeted dynamic checks were unit tests that do not connect to a database: P1.2a (8 PASS), P1.3a (4 PASS), P1.4a (4 PASS), and execution/backup argument guards (2 PASS). An attempted Vitest invocation is not evidence against the API logic: these three API files use `node:test` and Vitest reported `No test suite found`; full repository validation remains the final validation gate for this report.
 
 ## 3. What Phase 1 already completed
@@ -41,16 +42,14 @@ This is evidence of a bounded local migration rehearsal and execution, not evide
 
 ### Canonical Phase 2
 
-The execution plan says only **Phase 2 — Backfill and reconciliation — NOT_STARTED — 0%**. It does not state whether that means any of the following:
+The execution plan says **Phase 2 — Backfill and reconciliation — NOT_STARTED — 0%**. P2-01 resolves only the future P2-A population boundary; the remaining Phase 2 scope is still limited to these unresolved questions:
 
-1. another local population beyond the P1 approved tenant;
+1. the P2-01-approved one-active-Tenant local population, represented only in a future offline snapshot;
 2. a policy and treatment for the six excluded no-role memberships;
-3. a broader Tenant-to-Workspace inventory and binding set;
-4. durable reconciliation of the per-Client relationship while `ClientUserAccess` remains the authority;
-5. preparation of a later non-local environment; or
-6. a different, owner-defined data scope.
+3. durable reconciliation of the per-Client relationship while `ClientUserAccess` remains the authority; or
+4. a future owner-approved scope beyond P2-01.
 
-No option is implied by the existing P1 evidence. Phase 2 must be defined as a new, explicitly approved population and evidence contract. It must not reuse P1's hard-coded identifiers or infer authority from the fact that P1's local execution passed.
+P2-01 does not imply any execution scope beyond its population definition. Phase 2 still requires a new evidence contract and must not reuse P1's hard-coded identifiers or infer authority from the fact that P1's local execution passed.
 
 ### Phase 3 boundary
 
@@ -114,18 +113,18 @@ No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, conne
 
 ## 9. Technical gaps
 
-- No canonical, machine-readable Phase 2 population definition or mapping input contract exists.
+- P2-01 defines the population boundary, but no canonical machine-readable input contract, tenant-selection rule, snapshot-creation procedure, or deterministic manifest/hash schema exists.
 - No approved role-translation policy exists for the six no-role exceptions or any role other than P1's one owner and six client cases.
 - No generic, parameterized execution runner exists; P1 runner is intentionally hard-coded and cannot be widened safely.
 - No Phase 2 reconciliation invariants define completeness across Tenant, Client, `TenantMembership`, `ClientUserAccess`, Workspace, and WorkspaceMembership relationships.
 - No Phase 2 evidence schema specifies input hashes, output hashes, row-level anomaly classification, retention, reviewer identity, or acceptable drift window.
-- No decision specifies whether a non-local environment is in Phase 2. The current plan and P1 evidence prohibit inferring it.
+- P2-01 does not authorize any non-local environment; remote, staging, production, and VPS remain prohibited. A future environment decision would require separate owner authorization.
 - No approved backup/restore/rollback runbook exists for a new Phase 2 population; P1 proof cannot be replayed as authorization.
 - No endpoint-by-endpoint inventory declares which future reads remain strictly Phase 3; only one local proof endpoint exists.
 
 ## 10. Business and governance gaps
 
-- The owner has not selected the business population for Phase 2 or confirmed whether it is broader than P1's one local tenant.
+- P2-01 selects the future P2-A population category but not the tenant identity, execution scope, or authority to read/create the snapshot.
 - The intended disposition of no-role memberships is unapproved: remain excluded, archive/revoke under a separate policy, map to a role, or require remediation.
 - It is unapproved whether Client Users receive a Workspace membership for every relevant client relationship, and what that membership can ever mean while per-Client scope remains authoritative.
 - The owner has not approved a Phase 2 environment posture; remote/staging is not implied and remains prohibited.
@@ -133,9 +132,9 @@ No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, conne
 
 ## 11. Owner decisions required before any Phase 2 package
 
-1. Name and bound the Phase 2 population: exact tenant(s), record categories, and explicitly excluded populations.
+1. P2-01 is decided: future P2-A covers exactly one existing active local-source Tenant and all of its active Clients, TenantMemberships, and ClientUserAccess records, represented only in an anonymized offline snapshot with deterministic manifest/hash.
 2. Decide the six no-role exception policy and any other legacy-role translation matrix; no default role is acceptable.
-3. Confirm whether Phase 2 is local-only. Any staging/remote request requires a separate explicit authorization and is not included by default.
+3. Confirm the tenant-selection and snapshot-creation authority for P2-A. Remote/staging/production/VPS remain prohibited and are not included by P2-01.
 4. Define Phase 2 completeness: required mappings, allowed nulls, tolerated anomalies, hash/count rules, and who accepts exceptions.
 5. Confirm that `ClientUserAccess` remains unchanged and authoritative for client-safe visibility throughout Phase 2.
 6. Approve the backup, restore rehearsal, rollback owner, abort authority, and evidence retention requirements for the selected population.
@@ -145,7 +144,7 @@ No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, conne
 
 These are proposals only. None is authorized by this report.
 
-1. **P2-A — preparation/dry-run:** create a sanitized, owner-approved input contract; inventory counts and approved hashes; validate deterministic tenant-to-workspace mappings; classify all exceptions; prove the runner has no database client or apply mode.
+1. **P2-A — preparation/dry-run:** use the P2-01-approved one-active-Tenant population only through an anonymized offline snapshot; create the deterministic population manifest/hash, validate deterministic tenant-to-workspace mappings, classify all exceptions, and prove the runner has no database client or apply mode. P2-01 does not implement or authorize this package.
 2. **P2-B — owner execution gate:** submit the exact population, mapping, role exception decisions, expected reconciliation invariant set, immutable diff identity, backup/restore plan, target environment, security review, abort conditions, and rollback owner. The gate must be explicit and single-use.
 3. **P2-C — execution:** only after P2-B approval, run a parameterized but fail-closed backfill against the approved target. It must use a serializable transaction, idempotent upserts, active-writer/drift guards, and zero authority/flag/endpoint changes.
 4. **P2-D — reconciliation evidence:** independently compare source legacy records and created Workspace records; verify completeness, uniqueness, exception disposition, unchanged `ClientUserAccess` hashes, idempotent rerun, and negative cross-workspace evidence. Record a reviewer decision. Do not start Phase 3.
@@ -154,7 +153,7 @@ These are proposals only. None is authorized by this report.
 
 For an owner-approved P2 package, all criteria must be met before closeout:
 
-- Exact approved population, mapping version, role matrix, and environment are recorded and match the execution input.
+- Exact P2-01 population selection, deterministic snapshot manifest/hash, mapping version, role matrix, and environment are recorded and match the approved input.
 - Sanitized dry-run is deterministic and returns zero unaccepted blockers.
 - Every binding is unique; no Workspace maps to multiple tenants; no duplicate or slug collision occurs.
 - All expected Workspace memberships and roles exactly match the approved matrix; all unapproved/no-role records remain untouched and classified.
@@ -194,6 +193,10 @@ Abort before a write, and preserve evidence without cleanup, when any of the fol
 
 ```text
 DISCOVERY_ONLY=YES
+PHASE_2=NOT_STARTED
+OWNER_DECISIONS=IN_PROGRESS
+P2_01_POPULATION=APPROVED
+P2_02_NO_ROLE_DISPOSITION=PENDING
 DATA_MUTATION=NO
 BACKFILL_EXECUTED=NO
 RECONCILIATION_EXECUTED=NO

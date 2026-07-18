@@ -54,6 +54,12 @@ Run in this exact order and stop on first failure:
 - The tool derives P1.2a/P1.3a results, records deterministic SHA-256 input hashes, and derives exact local `HEAD` plus SHA-256 `git diff --binary HEAD` identity itself. It fails closed for missing/failed evidence or execution-like flags including apply, execute, approve, reconcile, switch, backfill, and cleanup.
 - Complete preparation evidence is a prerequisite for the owner-authorized local execution package. That approved local package is complete; do not use this preparation command to begin Phase 2 or expand endpoint authority beyond `LOCAL_ONLY`.
 
+## 2.6 P2-A owner-decision boundary
+
+- `PHASE_2=NOT_STARTED`; P2-01 approves only the future P2-A population definition: exactly one existing active Tenant from local source `127.0.0.1:5434` and all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records.
+- Any future P2-A package must consume only an anonymized offline snapshot and produce a deterministic population manifest/hash. It must not connect to a database, create a snapshot in this package, mutate data, run backup/backfill/reconciliation, change Workspace authority, alter feature flags or endpoint authority, or touch remote, staging, production, VPS, or Tellanic.
+- P2-02 remains pending: do not assign, archive, revoke, or otherwise dispose of the six no-role memberships without a separate owner decision.
+
 ## 3. What validate is expected to prove
 
 - Prisma client generation
