@@ -7,7 +7,7 @@
 | 0 | Private-agency charter, scope separation, and canonical authority | IMPLEMENTED | 100% |
 | 0.5 | Read-only legacy inventory: current Tenant/Client/membership/role structures and existing isolation boundary | IMPLEMENTED | 100% |
 | 0.6 | Migration sequence, authorization baseline, rollback boundary, and P1.1 acceptance criteria | IMPLEMENTED | 100% |
-| 1 | Identity, tenancy, and Workspace foundation | IN_PROGRESS (P1.2b–P1.4b locally authorized; execution evidence pending) | 20% |
+| 1 | Identity, tenancy, and Workspace foundation | COMPLETE (P1.1–P1.4b) | 100% |
 | 2 | Backfill and reconciliation | NOT_STARTED | 0% |
 | 3 | Scoped authorization and endpoint switch | NOT_STARTED | 0% |
 | 4 | Legacy cleanup after stable reconciliation | NOT_STARTED | 0% |
@@ -34,3 +34,5 @@ P1.1 may not access production/VPS, secrets, live Google OAuth/sync, or remote d
 
 **OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. The authorized sequence is backup and verified restore on `127.0.0.1:5435`, rehearsal, drift gate, source `127.0.0.1:5434`, reconciliation, and one local-only endpoint switch. Scope is unique `legacyTenantId`, one approved Workspace, one ADMIN, six CLIENT_USER memberships, six excluded no-role memberships, and unchanged per-Client ClientUserAccess. Endpoint permission is active ADMIN/WORKSPACE_MANAGER allow and deny otherwise. Feature flag remains OFF until reconciliation. No execution, backfill, switch, or Phase 1 COMPLETE status is declared by this pre-execution writeback.
 P1.2b–P1.4b local execution evidence: restore rehearsal, source migration/backfill/reconciliation passed; final endpoint verification and merge gates remain.
+## Phase 1 closeout
+All Phase 1 criteria P1.1 through P1.4b are complete and evidenced. Phase 2 remains out of scope.
