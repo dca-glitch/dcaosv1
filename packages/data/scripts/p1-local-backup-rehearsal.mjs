@@ -19,6 +19,7 @@ export function parseBackupArgs(args) {
   }
   if (!parsed.execute) throw new Error("Explicit --execute is required.");
   if (!parsed.backupDir || !path.isAbsolute(parsed.backupDir) || path.resolve(parsed.backupDir).startsWith(path.resolve(process.cwd()) + path.sep)) throw new Error("--backup-dir must be an absolute path outside the repository.");
+  parsed.postMigration = args.includes("--post-migration");
   return parsed;
 }
 function docker(args, options = {}) { return execFileSync("docker", args, { encoding: options.encoding ?? "utf8", ...options }); }
@@ -50,7 +51,7 @@ export async function runBackupRehearsal(args, env = process.env, io = { stdout:
     for (let attempt = 0; attempt < 30; attempt += 1) { try { docker(["exec", RESTORE_CONTAINER, "pg_isready", "-U", "dcaosv1_dev", "-d", "postgres"]); break; } catch { if (attempt === 29) throw new Error("RESTORE_TARGET_NOT_READY"); await new Promise((resolve) => setTimeout(resolve, 1000)); } }
     docker(["exec", "-i", RESTORE_CONTAINER, "pg_restore", "--no-owner", "--no-acl", "-C", "-d", "postgres", "-U", "dcaosv1_dev"], { input: dump, encoding: "buffer", maxBuffer: 1024 * 1024 * 1024 });
     const restoreUrl = replacePort(env.DATABASE_URL, "5435");
-    execFileSync(process.execPath, [path.resolve("node_modules/prisma/build/index.js"), "migrate", "deploy"], { cwd: path.resolve("packages/data"), env: { ...env, DATABASE_URL: restoreUrl }, stdio: "inherit" });
+    if (!args.postMigration) { io.stdout.write(`${JSON.stringify({ status: "RESTORE_TARGET_PREPARED", backupPath, backupSha256, restoreUrl }, null, 2)}\n`); return 0; }
     const prisma = new PrismaClient({ datasources: { db: { url: restoreUrl } } });
     try {
       const backfill = await executeBackfill(prisma); const reconciliation = await reconcile(prisma);
