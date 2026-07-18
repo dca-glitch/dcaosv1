@@ -10,7 +10,9 @@
     "prisma:validate": "node ../../scripts/run-sequential.mjs \"node scripts/validate-prisma-schema.mjs\" \"node scripts/run-prisma-validate.mjs\"",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
-    "seed:db1:local": "node scripts/seed-db1.mjs"
+    "seed:db1:local": "node scripts/seed-db1.mjs",
+    "workspace:mapping:dry-run": "node scripts/p1-2a-mapping-dry-run.mjs",
+    "test:p1-2a": "node --test scripts/p1-2a-mapping-dry-run.test.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

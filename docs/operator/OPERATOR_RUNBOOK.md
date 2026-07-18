@@ -35,6 +35,13 @@ Run in this exact order and stop on first failure:
 - Green CI plus that recorded independent reviewer decision is sufficient when GitHub branch protection does not technically require a native approval. If it does, obtain a genuinely distinct authorized GitHub approval; never simulate or falsely claim one.
 - Owner involvement remains required for production/VPS, secrets, costs, destructive migrations, legal/privacy issues, live integrations, actual backfill/reconciliation/switch/cleanup, and unresolved critical/canonical conflicts.
 
+## 2.3 P1.2a mapping validation dry run
+
+- Run only against a sanitized local JSON snapshot; it accepts record IDs, statuses, role keys, and explicit proposed `tenantId` to `workspaceId` mappings. Do not include names, e-mail addresses, client notes, credentials, or connection strings.
+- `npm.cmd run -w @dca-os-v1/data workspace:mapping:dry-run -- --snapshot <sanitized-snapshot.json> --format json`
+- Output is always labeled `DRY_RUN_ONLY` / `NO DATA MUTATION`. The tool has no database client and rejects `--apply`, `--execute`, and equivalent mutation flags.
+- Exit `0` means validation passed; `2` means unresolved mapping blockers; `64` means invalid or execution-like arguments; `65` means invalid snapshot input. A passing report is preparation evidence only—it does not authorize backfill, reconciliation execution, a switch, cleanup, database deployment, or Workspace runtime authority.
+
 ## 3. What validate is expected to prove
 
 - Prisma client generation
