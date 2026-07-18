@@ -44,7 +44,8 @@ This file is no longer a running next-gate ledger. Use it to understand what eac
 | Phase 1 P1.1 Workspace foundation | IMPLEMENTED | Additive schema foundation completed in `PR #60` / `14b52f8b`; Tenant/Client remains authoritative at runtime, with no client-visible Workspace authority |
 | Phase 1 P1.2a mapping validation and dry-run planning | IMPLEMENTED_LOCAL_PROVEN | Deterministic sanitized-snapshot validation and plan output only; data mutation, backfill, reconciliation execution, and Workspace authority activation are disabled |
 | Phase 1 P1.3a reconciliation preparation | IMPLEMENTED_LOCAL_PROVEN | Deterministic snapshot-only comparison and isolation preparation; flags remain OFF and rollback is a future plan only |
-| Phase 1 P1.4a staging-like rehearsal and execution-gate packet | IMPLEMENTED_LOCAL_PROVEN | Sanitized rehearsal evidence; owner-authorized P1.2b–P1.4b execution is restricted to localhost and remains evidence-pending |
+| Phase 1 P1.4a staging-like rehearsal and execution-gate packet | IMPLEMENTED_LOCAL_PROVEN | Sanitized rehearsal evidence; the P1.2b–P1.4b approved localhost scope is complete and evidenced |
+| Phase 1 P1.2b–P1.4b local execution package | IMPLEMENTED_LOCAL_PROVEN | Backup/restore, source migration/backfill/reconciliation, idempotent rerun, and endpoint permission/isolation PASS; endpoint authority and feature flag remain `LOCAL_ONLY` |
 
 ## 4. Current proof baseline
 
@@ -71,9 +72,6 @@ These are the current UI proof references for the `998c294` baseline.
 - The verified local tool boundary is Graphify `0.9.17`, Codex/Graphify configuration at local commit `5ad4eeb`, and OpenClaw `2026.7.1` with the official Codex plugin using OpenAI OAuth (no API key required).
 - OpenClaw remains temporary development/deployment orchestration only until the live-VPS launch gate closes. It is not a DCA OS runtime dependency. Gateway is loopback-only with token authentication; `tools.elevated`, heartbeat, Scheduled Tasks, and autonomous recurring monitoring are disabled or unapproved.
 
-## 7. Owner execution gate (pre-execution)
+## 7. Phase 1 local execution closeout
 
-**OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. P1.2b–P1.4b are bounded to `127.0.0.1:5434` with restore/rehearsal on `127.0.0.1:5435`, mandatory backup/verified restore, unique `legacyTenantId` mapping, approved owner/client role translation, six excluded no-role memberships, and unchanged ClientUserAccess authority. The first endpoint is `GET /api/admin/workspaces/:workspaceId`; active ADMIN and WORKSPACE_MANAGER allow and every other role/cross-workspace request denies. Feature flag remains OFF until local reconciliation passes. No execution or Phase 1 completion is claimed yet; remote/prod/VPS/Tellanic/cleanup/source overwrite remain forbidden.
-Execution evidence: local-only backup, restore rehearsal, migration, backfill and reconciliation passed; endpoint remains local-only.
-## Phase 1 closeout
-Phase 1 is COMPLETE on the basis of PR #67 merge, green CI, verified local backup/restore, source execution evidence and local-only endpoint proof.
+P1.1 and P1.2a–P1.4a are COMPLETE; P1.2b–P1.4b are COMPLETE for the approved local scope. `PR #67` merged at `55baa03d39e85819ea257127b18bc8f9094701a0` and `PR #68` merged at `a8caea74b440e8fa9311e1c09ba24febd7f29a44`; merge and post-merge CI PASS. Restore rehearsal PASS on `127.0.0.1:5435`; source `127.0.0.1:5434` migrations, backfill, reconciliation, and idempotent rerun PASS. The result is 1 Workspace and 7 memberships (1 ADMIN, 6 CLIENT_USER), with six no-role exceptions excluded and Client/UserAccess hashes unchanged. Endpoint permission/isolation proof PASS; endpoint authority and feature flag remain `LOCAL_ONLY`. Remote, production, VPS, Tellanic, cleanup, and Phase 2 remain forbidden.
