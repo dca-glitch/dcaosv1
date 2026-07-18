@@ -6,7 +6,7 @@
 **System:** DCA OS v2, rozwijany z istniejącego DCA OS Lite / DCA OS v1
 **Repozytorium:** `dca-glitch/dcaosv1`
 **Lokalna ścieżka właściciela:** `C:\dcaosv1`
-**Kanoniczny `main`:** `e4cd592c65601bd947991123df14ed2d8e8f3884` (`PR #72`)
+**Zweryfikowany baseline przed aktualizacją handoffu:** `e4cd592c65601bd947991123df14ed2d8e8f3884` (`PR #72`)
 **Nie dotyczy:** Tellanic OS — jest to całkowicie odrębny system i jego repozytorium, dokumentacja ani stan wdrożenia nie mogą być mieszane z DCA OS.
 
 ---
