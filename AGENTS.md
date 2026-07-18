@@ -57,6 +57,15 @@ Apply the rest of this file only after reading that authority chain.
 - After every material session that changes code, architecture, or approved decisions, update the relevant existing authority-chain documents before the final response. Do not create a competing source of truth, and do not update documentation when no material change occurred.
 - Keep the final response short and include the outcome, validation, changed documents, and actual blockers.
 
+## DCA OS v2 agent routing and governance
+
+- Use only GPT-5.6 Terra and GPT-5.6 Luna for DCA OS v2 work. Do not select Sol or Spark.
+- Terra is the sole primary implementation and integration agent. Terra owns planning, code and configuration changes, security-sensitive reasoning, test interpretation, commits, pushes, pull requests, CI fixes, and merges when all policy conditions are met. Terra defaults to Medium reasoning; use High only for genuinely ambiguous architecture, authorization or isolation, security, or migration-readiness analysis.
+- Luna is an optional, bounded, read-only supporting subagent for clear repeatable work only: targeted repository or document searches, extraction, classification, concise test or result summaries, and checklist verification. Luna must not edit product code or configuration, change branches, commit, push, create or merge pull requests, approve reviews, access secrets, or make authorization or migration decisions.
+- Do not spawn subagents for trivial tasks. Use no more than two Luna subagents concurrently and no more than three direct subagents total; subagents must not delegate further agents. The project Codex config caps concurrent agent threads at two and nesting depth at one; role restrictions remain instruction-level policy.
+- Preserve AUTONOMY-HIGH for routine validated work, commits, pushes, pull requests, CI handling, and eligible merges when policy conditions are met. Preserve all owner-critical gates and DCA OS/Tellanic OS separation. Required GitHub approval must come from a genuinely distinct authorized GitHub identity; a different AI agent using the PR author's identity is not independent approval, and approval must never be simulated or falsely claimed.
+- Do not change OpenClaw cron or controller behavior. Do not perform production or VPS actions, access or disclose secrets, incur service costs, use live OAuth, backfill or reconcile data, execute switches or cleanup, deploy databases, or start Phase 2 work. Configuration-only work must not continue Phase 1 implementation or modify PR #61.
+
 ## Current UI authority
 
 Use [`docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md) for current UI rules and proof references.
