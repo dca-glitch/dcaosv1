@@ -16,7 +16,10 @@
     "workspace:reconciliation:prepare": "node scripts/p1-3a-reconciliation-preparation.mjs",
     "test:p1-3a": "node --test scripts/p1-3a-reconciliation-preparation.test.mjs",
     "workspace:staging-rehearsal:prepare": "node scripts/p1-4a-staging-rehearsal-gate-packet.mjs",
-    "test:p1-4a": "node --test scripts/p1-4a-staging-rehearsal-gate-packet.test.mjs"
+    "test:p1-4a": "node --test scripts/p1-4a-staging-rehearsal-gate-packet.test.mjs",
+    "workspace:execution:local": "node scripts/p1-execution-local.mjs",
+    "workspace:backup-rehearsal:local": "node scripts/p1-local-backup-rehearsal.mjs",
+    "test:p1-execution": "node --test scripts/p1-execution-local.test.mjs scripts/p1-local-backup-rehearsal.test.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

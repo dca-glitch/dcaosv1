@@ -2484,9 +2484,11 @@ model AiContextSnapshot {
 }
 
 model Workspace {
-  id          String                @id @default(uuid())
-  name        String
-  slug        String                @unique
+  id             String                @id @default(uuid())
+  /// Immutable, additive P1.2b binding. It intentionally has no legacy FK.
+  legacyTenantId String?               @unique
+  name           String
+  slug           String                @unique
   createdAt   DateTime              @default(now())
   updatedAt   DateTime              @updatedAt
   memberships WorkspaceMembership[]
