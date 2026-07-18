@@ -14,6 +14,7 @@
 | V2-008 | P1.1's Workspace schema foundation is complete through `PR #60` / `14b52f8b`. | DECIDED | The completed package is additive and expand-only; `Tenant` and `Client` remain authoritative, with no client-visible or authoritative Workspace runtime behavior. |
 | V2-009 | P1.2a validates only explicit proposed mappings from a sanitized local snapshot and emits dry-run plan output. | DECIDED | The tool has no database client or apply mode; it rejects execution flags and unresolved mapping, collision, orphan, unsupported, and legacy membership/role cases. |
 | V2-010 | P1.3a comparison and isolation preparation is snapshot-only and flags are permanently OFF in this package. | DECIDED | It cannot reconcile, mutate, or grant Workspace authority; rollback remains a future execution-gate plan. |
+| V2-011 | P1.4a staging-like rehearsal is local, deterministic, and snapshot-only; its execution-gate packet is fail-closed. | DECIDED | It orchestrates P1.2a/P1.3a evidence and hashes but always reports `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; P1.2b–P1.4b stay owner-gated. |
 
 ## Unspecified items
 

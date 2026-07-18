@@ -47,6 +47,13 @@ Run in this exact order and stop on first failure:
 - `npm.cmd run -w @dca-os-v1/data workspace:reconciliation:prepare -- --snapshot <sanitized-snapshot.json> --format json`
 - The comparison is read-only and rejects reconciliation, apply, switch, write, mutation, backfill, cleanup, and unsupported flags. Snapshot input requires uniquely identified, structurally valid expected Workspace state. Both feature flags remain OFF; the output contains only evidence and a future rollback plan.
 
+## 2.5 P1.4a local staging-like rehearsal and execution-gate packet
+
+- `npm.cmd run -w @dca-os-v1/data workspace:staging-rehearsal:prepare -- --snapshot <sanitized-snapshot.json> --format json`
+- Input is a local sanitized packet containing the P1.2a/P1.3a snapshot, declared evidence references, and exact commit/diff identity. Never include names, e-mail addresses, notes, credentials, tokens, connection strings, URLs, or real staging/production data.
+- The tool derives P1.2a/P1.3a results, records deterministic SHA-256 input hashes, and fails closed for missing/failed evidence or execution-like flags including apply, execute, approve, reconcile, switch, backfill, and cleanup.
+- Even with complete local evidence, the only passing preparation result is `PREPARATION_EVIDENCE_COMPLETE_EXECUTION_NOT_AUTHORIZED`; `OWNER_ACCEPTANCE_REQUIRED` remains unsatisfied and no execution package is authorized.
+
 ## 3. What validate is expected to prove
 
 - Prisma client generation

@@ -27,7 +27,9 @@ P1.1 completed in `PR #60` / `14b52f8b` with Workspace identity, membership, and
 
 P1.2a is complete: it validates only an explicit proposed Tenant/Client-to-Workspace mapping from a sanitized local snapshot and emits deterministic dry-run plan output. It rejects missing, ambiguous, duplicate/collision, orphaned, unsupported, and legacy membership/role-exception cases. It has no database client or apply mode and cannot mutate data, execute a backfill or reconciliation, switch an authoritative path, clean up legacy structures, or apply a database migration.
 
-P1.3a is complete: snapshot-only comparison validates expected-state shape and unique workspace records, then detects expected-state conflicts, cross-workspace membership, missing membership, and invalid roles. Its flags are OFF and it records a future rollback plan. It does not reconcile, mutate, switch authority, or change runtime behavior. P1.4a may prepare staging-rehearsal evidence only.
+P1.3a is complete: snapshot-only comparison validates expected-state shape and unique workspace records, then detects expected-state conflicts, cross-workspace membership, missing membership, and invalid roles. Its flags are OFF and it records a future rollback plan. It does not reconcile, mutate, switch authority, or change runtime behavior.
+
+P1.4a is complete: a deterministic local staging-like rehearsal runs only against sanitized snapshots, orchestrates P1.2a/P1.3a proof results, and emits a machine-readable SHA-256 evidence manifest. It fails closed for missing or failed evidence and execution-like flags. Its final status is always `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; it cannot approve or execute P1.2b–P1.4b, mutate data, reach remote staging/production, activate flags, or change runtime authority.
 
 P1.2b–P1.4b are future execution-only packages. They require approved mapping, dry-run and clean reconciliation evidence, backup/restore and rollback proof, security/isolation proof, staging rehearsal, and explicit owner acceptance. `Tenant` and `Client` remain authoritative and no Workspace client-facing authority is activated until that gate passes.
 
