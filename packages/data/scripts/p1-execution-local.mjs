@@ -44,7 +44,7 @@ export async function inspectApprovedScope(prisma) {
     prisma.tenant.findUnique({ where: { id: APPROVED_TENANT_ID }, select: { id: true, name: true, slug: true, status: true } }),
     prisma.client.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, isArchived: true }, orderBy: { id: "asc" } }),
     prisma.tenantMembership.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, userId: true, status: true, membershipRoles: { select: { role: { select: { key: true, status: true } } } } }, orderBy: { id: "asc" } }),
-    prisma.clientUserAccess.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, userId: true, clientId: true, isArchived: true }, orderBy: { id: "asc" } })
+    prisma.clientUserAccess.findMany({ where: { tenantId: APPROVED_TENANT_ID }, select: { id: true, tenantId: true, userId: true, clientId: true, isArchived: true }, orderBy: { id: "asc" } })
   ]);
   const blockers = [];
   if (!tenant || tenant.status !== "ACTIVE" || !tenant.name || !tenant.slug) blockers.push("TENANT_IDENTITY_MISMATCH");
@@ -60,33 +60,37 @@ export async function inspectApprovedScope(prisma) {
     if (!item || item.status !== "ACTIVE" || item.tenantId !== APPROVED_TENANT_ID || roles.length !== 1 || roles[0] !== expectedRole || userIds.has(item.userId)) blockers.push(`MEMBERSHIP_MISMATCH:${id}`);
     if (item) userIds.add(item.userId);
   }
+  const users = await prisma.user.findMany({ where: { id: { in: [...userIds] } }, select: { id: true } });
+  if (users.length !== 7) blockers.push("APPROVED_USER_MISSING_OR_DUPLICATE");
   const noRole = memberships.filter((item) => item.status === "ACTIVE" && activeRoles(item).length === 0);
   if (memberships.filter((item) => item.status === "ACTIVE").length !== 12 || noRole.length !== 5) blockers.push("NO_ROLE_EXCEPTION_DRIFT");
   const clientUsers = new Set(CLIENT_MEMBERSHIP_IDS.map((id) => byId.get(id)?.userId));
   const ownerUser = byId.get(OWNER_MEMBERSHIP_ID)?.userId;
   if (activeAccess.filter((item) => clientUsers.has(item.userId)).length !== 35 || activeAccess.filter((item) => item.userId === ownerUser).length !== 244) blockers.push("CLIENT_ACCESS_DISTRIBUTION_DRIFT");
-  return { tenant, memberships: byId, noRoleMembershipIds: noRole.map((item) => item.id).sort(), counts: { activeClients: activeClients.length, activeClientUserAccess: activeAccess.length }, hashes: { clientIds: hash(activeClients.map((item) => item.id)), clientUserAccessIds: hash(activeAccess.map((item) => item.id)) }, blockers };
+  const clientById = new Map(clients.map((item) => [item.id, item]));
+  if (access.some((item) => !clientById.has(item.clientId) || clientById.get(item.clientId).tenantId !== item.tenantId)) blockers.push("CLIENT_ACCESS_ORPHAN_OR_CROSS_TENANT");
+  return { tenant, memberships: byId, expectedMemberships: approved.map(([id, role]) => ({ tenantMembershipId: id, userId: byId.get(id)?.userId ?? null, role: role === "owner" ? "ADMIN" : "CLIENT_USER" })), noRoleMembershipIds: noRole.map((item) => item.id).sort(), counts: { activeClients: activeClients.length, activeClientUserAccess: activeAccess.length }, hashes: { clientIds: hash(activeClients.map((item) => item.id)), clientUserAccessIds: hash(activeAccess.map((item) => item.id)) }, blockers };
 }
 
 export async function createPlan(prisma) {
   const scope = await inspectApprovedScope(prisma);
   const workspace = await prisma.workspace.findUnique({ where: { legacyTenantId: APPROVED_TENANT_ID }, select: { id: true, legacyTenantId: true, name: true, slug: true } });
   if (workspace && (workspace.name !== scope.tenant?.name || workspace.slug !== scope.tenant?.slug)) scope.blockers.push("EXISTING_WORKSPACE_MAPPING_MISMATCH");
-  return { mode: "LOCAL_EXECUTION_PLAN", dataMutation: false, tenantId: APPROVED_TENANT_ID, workspace: workspace ? { id: workspace.id, state: "EXISTING" } : { state: "CREATE_ON_EXECUTE" }, intendedMemberships: [{ tenantMembershipId: OWNER_MEMBERSHIP_ID, role: "ADMIN" }, ...CLIENT_MEMBERSHIP_IDS.map((tenantMembershipId) => ({ tenantMembershipId, role: "CLIENT_USER" }))], excludedNoRoleMembershipIds: scope.noRoleMembershipIds, counts: scope.counts, hashes: scope.hashes, blockers: [...new Set(scope.blockers)].sort(), status: scope.blockers.length ? "BLOCKED" : "READY_TO_EXECUTE" };
+  return { mode: "LOCAL_EXECUTION_PLAN", dataMutation: false, tenantId: APPROVED_TENANT_ID, workspace: workspace ? { id: workspace.id, state: "EXISTING" } : { state: "CREATE_ON_EXECUTE" }, intendedMemberships: scope.expectedMemberships, excludedNoRoleMembershipIds: scope.noRoleMembershipIds, counts: scope.counts, hashes: scope.hashes, blockers: [...new Set(scope.blockers)].sort(), status: scope.blockers.length ? "BLOCKED" : "READY_TO_EXECUTE" };
 }
 
 export async function executeBackfill(prisma) {
-  const plan = await createPlan(prisma);
-  if (plan.blockers.length) throw new Error(`BACKFILL_ABORT:${plan.blockers.join(",")}`);
   return prisma.$transaction(async (tx) => {
+    const plan = await createPlan(tx);
+    if (plan.blockers.length) throw new Error(`BACKFILL_ABORT:${plan.blockers.join(",")}`);
     const tenant = await tx.tenant.findUniqueOrThrow({ where: { id: APPROVED_TENANT_ID }, select: { name: true, slug: true } });
     const collision = await tx.workspace.findFirst({ where: { slug: tenant.slug, legacyTenantId: { not: APPROVED_TENANT_ID } }, select: { id: true } });
     if (collision) throw new Error("BACKFILL_ABORT:WORKSPACE_SLUG_COLLISION");
     const workspace = await tx.workspace.upsert({ where: { legacyTenantId: APPROVED_TENANT_ID }, create: { legacyTenantId: APPROVED_TENANT_ID, name: tenant.name, slug: tenant.slug }, update: {}, select: { id: true, name: true, slug: true, legacyTenantId: true } });
     if (workspace.name !== tenant.name || workspace.slug !== tenant.slug || workspace.legacyTenantId !== APPROVED_TENANT_ID) throw new Error("BACKFILL_ABORT:WORKSPACE_MAPPING_MISMATCH");
     for (const item of plan.intendedMemberships) {
-      const legacy = (await tx.tenantMembership.findUniqueOrThrow({ where: { id: item.tenantMembershipId }, select: { userId: true } }));
-      const membership = await tx.workspaceMembership.upsert({ where: { workspaceId_userId: { workspaceId: workspace.id, userId: legacy.userId } }, create: { workspaceId: workspace.id, userId: legacy.userId, status: "ACTIVE" }, update: {}, select: { id: true } });
+      if (!item.userId) throw new Error("BACKFILL_ABORT:APPROVED_USER_MISSING");
+      const membership = await tx.workspaceMembership.upsert({ where: { workspaceId_userId: { workspaceId: workspace.id, userId: item.userId } }, create: { workspaceId: workspace.id, userId: item.userId, status: "ACTIVE" }, update: {}, select: { id: true } });
       await tx.workspaceMembershipRole.upsert({ where: { workspaceMembershipId_role: { workspaceMembershipId: membership.id, role: item.role } }, create: { workspaceMembershipId: membership.id, role: item.role }, update: {} });
     }
     return { ...plan, dataMutation: true, workspaceId: workspace.id, status: "BACKFILL_EXECUTED_LOCAL_ONLY" };
@@ -98,7 +102,8 @@ export async function reconcile(prisma) {
   const workspace = await prisma.workspace.findUnique({ where: { legacyTenantId: APPROVED_TENANT_ID }, include: { memberships: { include: { roles: true } } } });
   const actual = workspace?.memberships ?? [];
   const roleCount = (role) => actual.filter((membership) => membership.status === "ACTIVE" && membership.roles.some((entry) => entry.role === role)).length;
-  const pass = plan.blockers.length === 0 && workspace?.name === (await prisma.tenant.findUniqueOrThrow({where:{id:APPROVED_TENANT_ID},select:{name:true}})).name && actual.length === 7 && roleCount("ADMIN") === 1 && roleCount("CLIENT_USER") === 6 && roleCount("WORKSPACE_MANAGER") === 0 && roleCount("TEAM_MEMBER") === 0 && roleCount("CLIENT_MANAGER") === 0;
+  const exactMappings = plan.intendedMemberships.every((expected) => expected.userId && actual.some((item) => item.userId === expected.userId && item.status === "ACTIVE" && item.roles.length === 1 && item.roles[0].role === expected.role));
+  const pass = plan.blockers.length === 0 && workspace?.name === (await prisma.tenant.findUniqueOrThrow({where:{id:APPROVED_TENANT_ID},select:{name:true}})).name && actual.length === 7 && exactMappings && roleCount("ADMIN") === 1 && roleCount("CLIENT_USER") === 6 && roleCount("WORKSPACE_MANAGER") === 0 && roleCount("TEAM_MEMBER") === 0 && roleCount("CLIENT_MANAGER") === 0;
   return { mode: "LOCAL_RECONCILIATION", dataMutation: false, reconciliationExecuted: true, workspaceId: workspace?.id ?? null, counts: { workspace: workspace ? 1 : 0, memberships: actual.length, admin: roleCount("ADMIN"), clientUser: roleCount("CLIENT_USER") }, excludedNoRoleMembershipIds: plan.excludedNoRoleMembershipIds, hashes: plan.hashes, status: pass ? "RECONCILIATION_PASSED" : "RECONCILIATION_FAILED", blockers: plan.blockers };
 }
 

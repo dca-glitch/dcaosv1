@@ -14,8 +14,12 @@ for (const model of required) {
 for (const role of roles) {
   if (!new RegExp(`\\b${role}\\b`).test(schema)) throw new Error(`Missing canonical role ${role}`);
 }
-if (/tenantId|clientId/i.test(schema.match(/model Workspace[\s\S]*?\n}\n\nmodel WorkspaceMembership[\s\S]*?\n}/)?.[0] ?? "")) {
+const workspaceModel = schema.match(/model Workspace\s+\{[\s\S]*?\n\}/)?.[0] ?? "";
+if (/\btenantId\b|\bclientId\b/i.test(workspaceModel) || /legacyTenantId[^\n]*@relation/i.test(workspaceModel)) {
   throw new Error("Workspace foundation must not bind legacy Tenant or Client scope");
+}
+if (workspaceModel.includes("legacyTenantId") && !/legacyTenantId\s+String\?\s+@unique/.test(workspaceModel)) {
+  throw new Error("Workspace legacyTenantId must remain nullable, unique, and FK-free.");
 }
 if (/UPDATE\s+"(?:Tenant|Client|User)"|DELETE\s+FROM|ALTER TABLE\s+"(?:Tenant|Client)"/i.test(migration)) {
   throw new Error("Workspace migration must remain expand-only");
