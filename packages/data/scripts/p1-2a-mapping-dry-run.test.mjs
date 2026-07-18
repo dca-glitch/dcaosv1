@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { EXIT_CODES, createP12aDryRunReport, formatP12aSummary, parseP12aCliArgs, runP12aCli } from "./p1-2a-mapping-dry-run.mjs";
 
 function validSnapshot() {
@@ -42,8 +44,21 @@ test("P1.2a fails closed for missing, ambiguous, duplicate, orphan, and role exc
 });
 
 test("P1.2a rejects all execution flags and exposes no apply mode", () => {
-  for (const flag of ["--apply", "--execute", "--mutation", "--mutate", "--write"]) {
+  for (const flag of ["--apply", "--execute", "--mutation", "--mutate", "--write", "--apply=true", "--execute=false", "--mutation=1", "--mutate=yes", "--write=plan"]) {
     assert.throws(() => parseP12aCliArgs([flag]), /forbidden/);
+  }
+});
+
+test("P1.2a fails closed for duplicate snapshot identifiers", () => {
+  for (const [field, duplicate] of [
+    ["tenants", { id: "tenant-a", status: "ACTIVE" }],
+    ["workspaces", { id: "workspace-a" }],
+    ["tenantMemberships", { id: "membership-a", tenantId: "tenant-a", status: "ACTIVE", roleKeys: [] }]
+  ]) {
+    const snapshot = validSnapshot();
+    if (field === "tenantMemberships") snapshot.tenantMemberships.push(duplicate, duplicate);
+    else snapshot[field].push(duplicate);
+    assert.throws(() => createP12aDryRunReport(snapshot), /Duplicate/);
   }
 });
 
@@ -52,7 +67,7 @@ test("P1.2a CLI returns an invalid-argument exit code for apply flags", async ()
   assert.equal(exitCode, EXIT_CODES.INVALID_ARGUMENT);
 });
 
-test("P1.2a CLI returns stable JSON and never receives a database client", async () => {
+test("P1.2a CLI returns stable JSON through its snapshot-only I/O boundary", async () => {
   const writes = [];
   const io = {
     readFile: async () => JSON.stringify(validSnapshot()),
@@ -62,11 +77,13 @@ test("P1.2a CLI returns stable JSON and never receives a database client", async
   const exitCode = await runP12aCli(["--snapshot", "snapshot.json", "--format", "json"], io);
   assert.equal(exitCode, EXIT_CODES.OK);
   assert.deepEqual(JSON.parse(writes.join("")), createP12aDryRunReport(validSnapshot()));
-  assert.equal("create" in io, false);
-  assert.equal("update" in io, false);
-  assert.equal("upsert" in io, false);
-  assert.equal("delete" in io, false);
-  assert.equal("$executeRaw" in io, false);
+});
+
+test("P1.2a has no Prisma or mutating database operation path", () => {
+  const source = readFileSync(fileURLToPath(new URL("./p1-2a-mapping-dry-run.mjs", import.meta.url)), "utf8");
+  assert.equal(createP12aDryRunReport.length, 1, "mapping core accepts only a snapshot");
+  assert.doesNotMatch(source, /@prisma\/client|PrismaClient|\$executeRaw|\$queryRaw/);
+  assert.doesNotMatch(source, /\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/);
 });
 
 test("P1.2a CLI returns a meaningful blocked exit code without mutating anything", async () => {

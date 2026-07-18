@@ -35,6 +35,19 @@ function assertId(record, collection) {
   }
 }
 
+function assertUniqueIds(records, collection) {
+  const ids = new Set();
+  for (const record of records) {
+    assertId(record, collection);
+    if (ids.has(record.id)) throw new Error(`Duplicate ${collection} id "${record.id}" is unsupported.`);
+    ids.add(record.id);
+  }
+}
+
+function isExecutionFlag(argument) {
+  return [...EXECUTION_FLAGS].some((flag) => argument === flag || argument.startsWith(`${flag}=`));
+}
+
 function isActive(record) {
   return record.status === undefined || record.status === "ACTIVE";
 }
@@ -54,10 +67,10 @@ export function createP12aDryRunReport(snapshot) {
   const tenantMemberships = assertArray(snapshot.tenantMemberships, "tenantMemberships");
   const proposedMappings = assertArray(snapshot.proposedTenantWorkspaceMappings, "proposedTenantWorkspaceMappings");
 
-  for (const tenant of tenants) assertId(tenant, "tenant");
-  for (const client of clients) assertId(client, "client");
-  for (const workspace of workspaces) assertId(workspace, "workspace");
-  for (const membership of tenantMemberships) assertId(membership, "tenantMembership");
+  assertUniqueIds(tenants, "tenant");
+  assertUniqueIds(clients, "client");
+  assertUniqueIds(workspaces, "workspace");
+  assertUniqueIds(tenantMemberships, "tenantMembership");
 
   const tenantById = new Map(sortById(tenants).map((tenant) => [tenant.id, tenant]));
   const workspaceById = new Map(sortById(workspaces).map((workspace) => [workspace.id, workspace]));
@@ -209,7 +222,7 @@ export function parseP12aCliArgs(args) {
   const parsed = { snapshotPath: null, format: "summary" };
   for (let index = 0; index < args.length; index += 1) {
     const argument = args[index];
-    if (EXECUTION_FLAGS.has(argument)) throw new Error(`Execution flag "${argument}" is forbidden: P1.2a is DRY RUN ONLY.`);
+    if (isExecutionFlag(argument)) throw new Error(`Execution flag "${argument}" is forbidden: P1.2a is DRY RUN ONLY.`);
     if (argument === "--snapshot") {
       parsed.snapshotPath = args[index + 1] ?? null;
       index += 1;
