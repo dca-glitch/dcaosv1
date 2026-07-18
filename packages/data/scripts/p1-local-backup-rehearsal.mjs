@@ -50,7 +50,7 @@ export async function runBackupRehearsal(args, env = process.env, io = { stdout:
     for (let attempt = 0; attempt < 30; attempt += 1) { try { docker(["exec", RESTORE_CONTAINER, "pg_isready", "-U", "dcaosv1_dev", "-d", "postgres"]); break; } catch { if (attempt === 29) throw new Error("RESTORE_TARGET_NOT_READY"); await new Promise((resolve) => setTimeout(resolve, 1000)); } }
     docker(["exec", "-i", RESTORE_CONTAINER, "pg_restore", "--no-owner", "--no-acl", "-C", "-d", "postgres", "-U", "dcaosv1_dev"], { input: dump, encoding: "buffer", maxBuffer: 1024 * 1024 * 1024 });
     const restoreUrl = replacePort(env.DATABASE_URL, "5435");
-    execFileSync("npm.cmd", ["exec", "--", "prisma", "migrate", "deploy"], { cwd: path.resolve("packages/data"), env: { ...env, DATABASE_URL: restoreUrl }, stdio: "inherit" });
+    execFileSync("cmd.exe", ["/d", "/s", "/c", "npm exec -- prisma migrate deploy"], { cwd: path.resolve("packages/data"), env: { ...env, DATABASE_URL: restoreUrl }, stdio: "inherit" });
     const prisma = new PrismaClient({ datasources: { db: { url: restoreUrl } } });
     try {
       const backfill = await executeBackfill(prisma); const reconciliation = await reconcile(prisma);
