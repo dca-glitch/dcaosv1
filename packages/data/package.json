@@ -12,7 +12,9 @@
     "prisma:migrate:dev": "prisma migrate dev",
     "seed:db1:local": "node scripts/seed-db1.mjs",
     "workspace:mapping:dry-run": "node scripts/p1-2a-mapping-dry-run.mjs",
-    "test:p1-2a": "node --test scripts/p1-2a-mapping-dry-run.test.mjs"
+    "test:p1-2a": "node --test scripts/p1-2a-mapping-dry-run.test.mjs",
+    "workspace:reconciliation:prepare": "node scripts/p1-3a-reconciliation-preparation.mjs",
+    "test:p1-3a": "node --test scripts/p1-3a-reconciliation-preparation.test.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

@@ -42,6 +42,11 @@ Run in this exact order and stop on first failure:
 - Output is always labeled `DRY_RUN_ONLY` / `NO DATA MUTATION`. The tool has no database client and rejects `--apply`, `--execute`, and equivalent mutation flags.
 - Exit `0` means validation passed; `2` means unresolved mapping blockers; `64` means invalid or execution-like arguments; `65` means invalid snapshot input. A passing report is preparation evidence only—it does not authorize backfill, reconciliation execution, a switch, cleanup, database deployment, or Workspace runtime authority.
 
+## 2.4 P1.3a reconciliation preparation
+
+- `npm.cmd run -w @dca-os-v1/data workspace:reconciliation:prepare -- --snapshot <sanitized-snapshot.json> --format json`
+- The comparison is read-only and rejects reconciliation, apply, switch, write, and mutation flags. Both feature flags remain OFF; the output contains only evidence and a future rollback plan.
+
 ## 3. What validate is expected to prove
 
 - Prisma client generation
