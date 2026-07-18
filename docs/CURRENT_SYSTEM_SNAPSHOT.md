@@ -23,7 +23,7 @@ DCA OS v2 is the private Agency Operations System for one organization: Digital 
 - `Workspace` is the approved future primary boundary for data, authorization, reporting, costs, integrations, materials, and search. Phase 1 P1.1's expand-only schema foundation is complete through `PR #60` / `14b52f8b`; it has not switched runtime scope, authorization, or client-visible behavior.
 - Phase 1 P1.2a is complete: deterministic validation and dry-run planning consume only a sanitized local snapshot plus explicit proposed mappings. It cannot connect to or mutate data, execute a backfill or reconciliation, or activate Workspace runtime authority.
 - Phase 1 P1.3a is complete: a snapshot-only comparison and isolation preparation report keeps both Workspace flags OFF and records a future rollback plan.
-- Phase 1 P1.4a is complete: deterministic local staging-like rehearsal orchestrates P1.2a/P1.3a from sanitized fixtures and emits SHA-256 input manifests plus gate evidence. Its result is always `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; it does not authorize P1.2b–P1.4b.
+- Phase 1 P1.4a preparation remains deterministic sanitized evidence; the owner-approved local gate now authorizes P1.2b–P1.4b execution only on the declared localhost targets. Execution evidence is pending.
 
 ## 3. Roles and access boundaries
 
@@ -78,7 +78,7 @@ These results come from `PR #55` and remain the canonical UI proof baseline for 
 
 ## 8. Approved direction not implemented
 
-Treat the following as `APPROVED_DIRECTION_NOT_IMPLEMENTED` unless a higher-authority current doc says otherwise:
+Treat the following as `APPROVED_DIRECTION_NOT_IMPLEMENTED` unless a higher-authority current doc says otherwise (the bounded local P1.2b–P1.4b gate is the explicit exception):
 
 - Phase 1 Workspace runtime authority beyond the completed P1.1–P1.4a preparation: memberships enforcement, five-role authorization, scoped API/query/search, feature flags, audit context, and execution-gate authorization
 - advanced public/client collaboration features
@@ -100,3 +100,8 @@ Historical staging/production proofs, UI audits, deployment closeouts, and relea
 - OpenClaw is not part of the DCA OS runtime and must not be installed into it or onto the production VPS. This boundary lasts until the approved live-VPS launch gate closes, when retention/removal needs a separate owner decision.
 - Gateway access is loopback-only with token authentication; `tools.elevated` and heartbeat are disabled. No OpenClaw Scheduled Task or autonomous recurring monitoring is approved.
 - The durable `AUTONOMY-HIGH` model permits routine repository reads, edits, local commands, tests, commits, task-branch pushes, PR creation, CI monitoring/repair, and eligible merges through Codex auto-review. Every material code or policy diff still needs a separate read-only Terra reviewer decision on the exact unchanged diff plus green CI. Native GitHub approval is needed only when branch protection technically requires it; it must never be simulated. Production/VPS actions, secrets, costs, destructive migrations, legal/privacy issues, live integrations, actual backfill/reconciliation/switch/cleanup, and unresolved critical/canonical conflicts remain owner-gated.
+
+## 11. Owner-authorized local execution gate
+
+**OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. The only permitted targets are source `127.0.0.1:5434` and restore/rehearsal `127.0.0.1:5435`. Before source mutation, a hashed backup and verified isolated restore are required. The approved Tenant→Workspace identity is the unique nullable FK-free `legacyTenantId`; only `owner→ADMIN` and the six approved `client→CLIENT_USER` memberships are in scope, while six no-role memberships remain excluded. Per-Client access remains governed by active `ClientUserAccess`. The first switch is `GET /api/admin/workspaces/:workspaceId`, with active ADMIN/WORKSPACE_MANAGER allow and deny-by-default for every other role or workspace. Feature flag is default OFF and local-only after reconciliation. Execution evidence is pending; no backfill, switch, or Phase 1 completion is claimed.
+Local execution evidence: backup/restore rehearsal PASS; source migrations, 1 Workspace, 7 memberships (1 ADMIN/6 CLIENT_USER), six excluded no-role exceptions, and reconciliation PASS. Per-Client hashes unchanged; endpoint remains local-only.

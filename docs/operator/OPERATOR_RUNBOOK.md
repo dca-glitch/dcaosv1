@@ -52,7 +52,7 @@ Run in this exact order and stop on first failure:
 - `npm.cmd run -w @dca-os-v1/data workspace:staging-rehearsal:prepare -- --snapshot <sanitized-snapshot.json> --format json`
 - Input is a local sanitized packet containing the P1.2a/P1.3a snapshot and declared evidence references. Never include names, e-mail addresses, notes, credentials, tokens, connection strings, URLs, real staging/production data, or a caller-supplied commit/diff identity.
 - The tool derives P1.2a/P1.3a results, records deterministic SHA-256 input hashes, and derives exact local `HEAD` plus SHA-256 `git diff --binary HEAD` identity itself. It fails closed for missing/failed evidence or execution-like flags including apply, execute, approve, reconcile, switch, backfill, and cleanup.
-- Even with complete local evidence, the only passing preparation result is `PREPARATION_EVIDENCE_COMPLETE_EXECUTION_NOT_AUTHORIZED`; `OWNER_ACCEPTANCE_REQUIRED` remains unsatisfied and no execution package is authorized.
+- Complete preparation evidence is a prerequisite for the owner-authorized local execution package; execution remains pending until backup, restore, rehearsal, drift, and review gates pass.
 
 ## 3. What validate is expected to prove
 
@@ -94,3 +94,8 @@ Validate does **not** by itself prove runtime behavior, browser flows, or extern
 - Current WordPress claim is prepared-draft/local handoff only.
 - Live HTTP WordPress draft/publish remains outside current canonical capability.
 - GA4/GSC live integration is withdrawn; manual import is not implemented.
+
+## 8. P1.2b–P1.4b pre-execution gate
+
+Status: **OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. Use only source `127.0.0.1:5434` and separate restore/rehearsal `127.0.0.1:5435`. Create and hash the backup, verify restore, and complete rehearsal before source mutation. Validate exact `legacyTenantId` mapping, approved role counts, six excluded no-role memberships, ClientUserAccess hashes, orphan/cross-tenant checks, writer/drift gate, and rollback plan. The sole switch is `GET /api/admin/workspaces/:workspaceId`; active ADMIN and WORKSPACE_MANAGER allow, all other roles and cross-workspace access deny. Keep feature flag OFF until reconciliation passes, and never automatically overwrite source. Production/VPS, remote staging/database, cleanup, global Workspace authority, and Tellanic remain forbidden.
+Latest local evidence: restore rehearsal and source execution passed; retain backup hash and no remote targets were touched.

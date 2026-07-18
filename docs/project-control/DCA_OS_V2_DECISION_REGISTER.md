@@ -10,16 +10,18 @@
 | V2-004 | Canonical Workspace roles are `Admin`, `Workspace Manager`, `Team Member`, `Client Manager`, and `Client User`. | DECIDED | Authorization is deny-by-default and server-side; existing tenant-role enforcement remains current until a later switch. |
 | V2-005 | Migration order is expand -> backfill -> reconciliation -> switch -> cleanup. | DECIDED | P1.1 is expand-only; it cannot backfill, switch callers, clean up legacy structures, or perform destructive change. |
 | V2-006 | Production/VPS, secrets, live Google OAuth/sync, and destructive migration remain outside this package. | DECIDED | Local non-production development and validation only. |
-| V2-007 | P1.2a–P1.4a are preparation-only; P1.2b–P1.4b execute backfill, reconciliation, and switch only after a future owner-critical gate. | DECIDED | Preparation may produce mappings, dry runs, proofs, flags, and rollback plans, but must not mutate data or activate Workspace authority. |
+| V2-007 | P1.2a–P1.4a are preparation packages; owner-authorized P1.2b–P1.4b execute only within the declared local gate. | DECIDED | Local execution requires backup/restore, exact mapping, reconciliation, isolation, drift, and review evidence; no remote or global authority is allowed. |
 | V2-008 | P1.1's Workspace schema foundation is complete through `PR #60` / `14b52f8b`. | DECIDED | The completed package is additive and expand-only; `Tenant` and `Client` remain authoritative, with no client-visible or authoritative Workspace runtime behavior. |
 | V2-009 | P1.2a validates only explicit proposed mappings from a sanitized local snapshot and emits dry-run plan output. | DECIDED | The tool has no database client or apply mode; it rejects execution flags and unresolved mapping, collision, orphan, unsupported, and legacy membership/role cases. |
-| V2-010 | P1.3a comparison and isolation preparation is snapshot-only and flags are permanently OFF in this package. | DECIDED | It cannot reconcile, mutate, or grant Workspace authority; rollback remains a future execution-gate plan. |
-| V2-011 | P1.4a staging-like rehearsal is local, deterministic, and snapshot-only; its execution-gate packet is fail-closed. | DECIDED | It orchestrates P1.2a/P1.3a evidence and hashes but always reports `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; P1.2b–P1.4b stay owner-gated. |
+| V2-010 | P1.3a comparison and isolation preparation is snapshot-only and flags are OFF in that preparation package. | DECIDED | It cannot reconcile or mutate; rollback requirements are carried into the owner-authorized local execution gate. |
+| V2-011 | P1.4a staging-like rehearsal is local, deterministic, and snapshot-only; the owner gate permits the bounded local execution package after evidence passes. | DECIDED | P1.2b–P1.4b remain localhost-only, fail-closed, and evidence-pending until execution gates pass. |
+| V2-012 | Owner authorizes P1.2b–P1.4b only on local source/restore targets. | DECIDED | State is `OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE`; source `127.0.0.1:5434`, restore `127.0.0.1:5435`, backup/restore before source mutation, exact mapping/roles, and one default-OFF local endpoint switch are mandatory. |
 
 ## Unspecified items
 
-Exact permission grants per role, Workspace lifecycle values beyond the initial additive foundation, and the first switched endpoint are **PENDING**. They must be specified and reviewed in their respective later packages; this does not block the expand-only foundation.
+The first switched endpoint and grants are now owner-decided for this local package: `GET /api/admin/workspaces/:workspaceId`, active ADMIN/WORKSPACE_MANAGER allow, and deny-by-default otherwise. Runtime evidence remains pending.
 
 ## Superseded direction
 
 The prior broader SaaS and independent-licensee direction is superseded. Historical documents may preserve it as evidence but do not authorize new work.
+Owner-approved six no-role exception execution evidence is recorded as local-only; no remote or production authorization exists.

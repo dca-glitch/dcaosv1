@@ -46,7 +46,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Live GA4/GSC integration | WITHDRAWN | No live OAuth/sync/manual import claim |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 canonical prerequisite package | IMPLEMENTED | Current authority reconciled to the private-agency charter; implementation remains separate |
-| Phase 1 Workspace foundation | IN_PROGRESS (P1.1–P1.4a complete; future P1.2b–P1.4b owner-critical execution gate only) | P1.4a provides deterministic local sanitized rehearsal and a fail-closed packet. It remains `EXECUTION_NOT_AUTHORIZED` / `OWNER_ACCEPTANCE_REQUIRED`; Tenant/Client remains authoritative and no reconciliation, switch, or data mutation was executed |
+| Phase 1 Workspace foundation | IN_PROGRESS (P1.2b–P1.4b locally authorized; evidence pending) | Owner gate is restricted to localhost source/restore targets. Tenant/Client remains authoritative until reconciliation and the bounded endpoint proof pass. |
 
 ## 4. Current boundaries that must not be overclaimed
 
@@ -84,3 +84,8 @@ Use retained evidence under `docs/audits/`, `docs/audit/`, `docs/releases/`, sel
 | Review evidence | Review decisions must be recorded as `APPROVE_READ_ONLY` or `REQUEST_CHANGES` in the PR/report; native GitHub approvals are never simulated |
 
 DCA OS and Tellanic OS remain separate scopes; no orchestration work changes that boundary.
+
+## 8. Owner execution gate (pre-execution)
+
+**OWNER_EXECUTION_AUTHORIZED_LOCAL_ONLY / EXECUTION_PENDING_EVIDENCE**. P1.2b–P1.4b are authorized only for source `127.0.0.1:5434` and isolated restore/rehearsal `127.0.0.1:5435`. Backup and verified restore are mandatory before source mutation. The approved mapping uses unique `Workspace.legacyTenantId`; `owner` maps to `ADMIN`, six approved `client` memberships map to `CLIENT_USER`, and six active memberships without roles are excluded. `ClientUserAccess` remains the required per-Client authority. The first bounded endpoint is `GET /api/admin/workspaces/:workspaceId`: active `ADMIN` and `WORKSPACE_MANAGER` allow; all other roles, inactive/revoked memberships, missing membership, and cross-workspace access deny. Its feature flag is default OFF and may activate only locally after reconciliation. No execution, backfill, reconciliation, switch, or Phase 1 completion is claimed here.
+Execution evidence (local-only): backup SHA `6ddadb4d579fe119ef027250d87b2e1815f888c350820ba396710758ba589755`; restore rehearsal PASS on `127.0.0.1:5435`; source `127.0.0.1:5434` migrations, backfill and reconciliation PASS. Created 1 Workspace and 7 memberships (1 ADMIN, 6 CLIENT_USER); 6 no-role exceptions excluded; client/access hashes unchanged. Endpoint flag remains local-only pending final verification.
