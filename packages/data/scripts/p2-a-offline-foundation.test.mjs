@@ -103,6 +103,25 @@ test("P2-A rejects raw fields and any ClientUserAccess grant for a known no-role
   assert.throws(() => validateP2aSnapshot(knownAccess, policy()), /known no-role user/);
 });
 
+test("P2-A fails closed for orphan tenant and client mappings", () => {
+  const orphanTenant = fixture();
+  orphanTenant.proposedMappings.tenantToWorkspace.push({ tenantKey: "tenant-ghost", workspaceKey: "workspace-ghost" });
+  orphanTenant.manifest.inputSha256 = computeSnapshotSha256(orphanTenant);
+  assert.throws(() => validateP2aSnapshot(orphanTenant, policy()), /unknown or inactive tenant/);
+
+  const orphanClient = fixture();
+  orphanClient.proposedMappings.clientToWorkspace.push({ clientKey: "client-ghost", tenantKey: "tenant-alpha", workspaceKey: "workspace-alpha" });
+  orphanClient.manifest.inputSha256 = computeSnapshotSha256(orphanClient);
+  assert.throws(() => validateP2aSnapshot(orphanClient, policy()), /unknown or inactive client/);
+});
+
+test("P2-A rejects unsupported top-level snapshot fields", () => {
+  const snapshot = fixture();
+  snapshot.extra = "unsupported";
+  snapshot.manifest.inputSha256 = computeSnapshotSha256(snapshot);
+  assert.throws(() => validateP2aSnapshot(snapshot, policy()), /Unsupported top-level snapshot fields/);
+});
+
 test("P2-A CLI consumes only the tracked synthetic fixture and emits a no-snapshot evidence packet", async () => {
   const writes = [];
   const io = {

@@ -46,6 +46,7 @@ const FORBIDDEN_FIELD_NAMES = new Set([
   "databaseUrl"
 ]);
 const REQUIRED_RECORDS = ["tenants", "clients", "memberships", "clientUserAccess"];
+const REQUIRED_TOP_LEVEL_FIELDS = ["schemaVersion", "selection", "records", "proposedMappings", "accessInvariant", "manifest"];
 const REQUIRED_MAPPING_GROUPS = ["tenantToWorkspace", "clientToWorkspace", "membershipRoles"];
 const RECORD_KEY_FIELDS = ["tenantKey", "clientKey", "membershipKey", "accessKey", "workspaceKey", "userKey"];
 const DEFAULT_APPROVED_LEGACY_ROLES = Object.freeze(["OWNER", "CLIENT_USER"]);
@@ -239,6 +240,8 @@ function assertMappingShape(proposedMappings) {
 
 export function validateP2aSnapshot(snapshot, policy) {
   assertPlainObject(snapshot, "snapshot");
+  const unknownTopLevelFields = Object.keys(snapshot).filter((key) => !REQUIRED_TOP_LEVEL_FIELDS.includes(key));
+  if (unknownTopLevelFields.length > 0) throw new P2AValidationError(`Unsupported top-level snapshot fields: ${unknownTopLevelFields.join(", ")}.`, "TOP_LEVEL_FIELD_UNSUPPORTED");
   if (snapshot.schemaVersion !== P2A_SNAPSHOT_SCHEMA_VERSION) throw new P2AValidationError("Unsupported P2-A snapshot schema version.", "SCHEMA_VERSION_UNSUPPORTED");
   assertNoForbiddenFields(snapshot);
   const normalizedPolicy = normalizePolicy(policy);
@@ -293,9 +296,23 @@ export function validateP2aSnapshot(snapshot, policy) {
   assertMappingShape(snapshot.proposedMappings);
   const tenantMapping = findSingleMapping(snapshot.proposedMappings.tenantToWorkspace, "tenantKey", selectedTenantKey, "tenantToWorkspace");
   const workspaceKey = tenantMapping.workspaceKey;
+  const tenantByKey = new Map(tenants.map((tenant) => [tenant.tenantKey, tenant]));
+  for (const mapping of snapshot.proposedMappings.tenantToWorkspace) {
+    const tenant = tenantByKey.get(mapping.tenantKey);
+    if (!tenant || !isActive(tenant)) throw new P2AValidationError(`Tenant mapping references an unknown or inactive tenant "${mapping.tenantKey}".`, "ORPHAN_MAPPING");
+    if (mapping.tenantKey !== selectedTenantKey) throw new P2AValidationError(`Tenant mapping crosses the selected tenant boundary for "${mapping.tenantKey}".`, "CROSS_TENANT_LINK");
+  }
+  if (snapshot.proposedMappings.tenantToWorkspace.length !== activeTenants.length) throw new P2AValidationError("Every tenant mapping must correspond to exactly one active Tenant.", "ORPHAN_MAPPING");
   if (snapshot.proposedMappings.tenantToWorkspace.some((mapping) => mapping.workspaceKey === workspaceKey && mapping.tenantKey !== selectedTenantKey)) {
     throw new P2AValidationError(`Workspace "${workspaceKey}" maps to more than one tenant.`, "WORKSPACE_COLLISION");
   }
+  const clientByKey = new Map(clients.map((client) => [client.clientKey, client]));
+  for (const mapping of snapshot.proposedMappings.clientToWorkspace) {
+    const client = clientByKey.get(mapping.clientKey);
+    if (!client || !isActive(client)) throw new P2AValidationError(`Client mapping references an unknown or inactive client "${mapping.clientKey}".`, "ORPHAN_MAPPING");
+    if (mapping.tenantKey !== client.tenantKey || mapping.tenantKey !== selectedTenantKey || mapping.workspaceKey !== workspaceKey) throw new P2AValidationError(`Client mapping crosses the selected tenant or workspace boundary for "${mapping.clientKey}".`, "CROSS_WORKSPACE_LINK");
+  }
+  if (snapshot.proposedMappings.clientToWorkspace.length !== activeClients.length) throw new P2AValidationError("Every client mapping must correspond to exactly one active Client.", "ORPHAN_MAPPING");
   for (const client of activeClients) {
     const mapping = findSingleMapping(snapshot.proposedMappings.clientToWorkspace, "clientKey", client.clientKey, "clientToWorkspace");
     if (mapping.tenantKey !== selectedTenantKey || mapping.workspaceKey !== workspaceKey) throw new P2AValidationError(`Client "${client.clientKey}" has a cross-tenant or cross-workspace mapping.`, "CROSS_WORKSPACE_LINK");
