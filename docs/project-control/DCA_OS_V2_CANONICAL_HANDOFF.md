@@ -696,7 +696,7 @@ Poniższe wcześniejsze opisy capability zachowują wartość jako backlog produ
 ### Aktualna Phase 2 — Backfill and Reconciliation
 
 - Discovery zakończono przez `PR #70`; raport: `docs/discovery/PHASE_2_BACKFILL_RECONCILIATION_DISCOVERY_REPORT.md`.
-- Werdykt discovery: `READY_FOR_PHASE_2_OWNER_DECISIONS`, nie `READY_FOR_EXECUTION`.
+- Werdykt discovery po P2-02 writeback: `P2-02_OWNER_DECISION_RECORDED; PHASE_2_NOT_STARTED`, nie `READY_FOR_EXECUTION`.
 - P2-01 population definition zatwierdzono i zapisano przez `PR #72`.
 - Przyszła populacja P2-A to jeden istniejący aktywny lokalny Tenant oraz wszystkie jego aktywne Client, TenantMembership i ClientUserAccess.
 - P2-A może przyszłościowo używać wyłącznie zanonimizowanego offline snapshotu z deterministycznym manifestem/hash.
