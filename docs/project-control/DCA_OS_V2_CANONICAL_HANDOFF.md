@@ -686,7 +686,7 @@ Aktualną kanoniczną sekwencję określa `docs/project-control/DCA_OS_V2_PHASE_
 | 0.5 | Read-only legacy inventory i isolation boundary | IMPLEMENTED — 100% |
 | 0.6 | Migration sequence, authorization baseline i rollback boundary | IMPLEMENTED — 100% |
 | 1 | Identity, tenancy i Workspace foundation | COMPLETE — 100% |
-| 2 | Backfill i reconciliation | NOT_STARTED — remaining owner decisions IN_PROGRESS; P2-02 decided |
+| 2 | Backfill i reconciliation | NOT_STARTED — P2-A implementation-ready authorized; runtime/data execution remains gated |
 | 3 | Scoped authorization i endpoint switch | NOT_STARTED |
 | 4 | Legacy cleanup po stabilnej reconciliation | NOT_STARTED |
 | 5–12 | Późniejsze bounded product packages i launch preparation | NOT_STARTED |
@@ -700,8 +700,10 @@ Poniższe wcześniejsze opisy capability zachowują wartość jako backlog produ
 - P2-01 population definition zatwierdzono i zapisano przez `PR #72`.
 - Przyszła populacja P2-A to jeden istniejący aktywny lokalny Tenant oraz wszystkie jego aktywne Client, TenantMembership i ClientUserAccess.
 - P2-A może przyszłościowo używać wyłącznie zanonimizowanego offline snapshotu z deterministycznym manifestem/hash.
-- P2-01 nie autoryzuje snapshot creation, database access, implementacji P2-A, backupu, backfillu, reconciliation ani execution.
+- P2-01 alone did not authorize snapshot creation, database access, or P2-A implementation; the seven subsequent P2-A owner decisions authorize only the offline validator/consumer foundation, without a real snapshot or execution.
 - P2-02 is decided: the six active no-role memberships remain excluded and untouched, are classified `OWNER_REMEDIATION_REQUIRED`, receive no default role or access, and cause no data or runtime change. This is documentation-only; Phase 2 remains `NOT_STARTED`.
+- P2-A implementation-ready is authorized under seven owner decisions: owner-provided anonymized offline file only; exactly one owner-selected active Tenant represented only by pseudonymous label/hash; evidence only at `C:\dcaosv1-p2-evidence` outside Git with no cloud sync or automatic deletion; fail-closed completeness and new-decision handling; unchanged `ClientUserAccess` count/hash as sole per-Client authority; future P2-B/C localhost-only posture (`127.0.0.1:5434` / `127.0.0.1:5435`) with owner-controlled resume/rollback; and P2-D reconciliation never starting Phase 3.
+- Codex may implement and validate the offline foundation only. It must not create or request a real snapshot, connect to a database, mutate data, backfill, reconcile, switch, clean up, change flags/endpoint authority, or touch remote/staging/production/VPS/Tellanic.
 - Phase 2 pozostaje `NOT_STARTED`.
 
 ### Aktualna Phase 3 — Scoped Authorization and Endpoint Switch
@@ -1007,11 +1009,11 @@ Nie są częścią pierwszego pilota. Przed aktywacją wymagają osobnego stagin
 
 1. **P2-01 — population:** DECIDED. Jeden aktywny lokalny Tenant oraz wszystkie jego aktywne Client, TenantMembership i ClientUserAccess, wyłącznie jako przyszły zanonimizowany offline snapshot z deterministycznym manifestem/hash.
 2. **P2-02 — six no-role memberships:** DECIDED. Sześć aktywnych membershipów bez roli pozostaje wykluczonych i nietkniętych, ma klasyfikację `OWNER_REMEDIATION_REQUIRED`, nie otrzymuje roli domyślnej ani dostępu i nie powoduje zmiany danych/runtime. Jest to wyłącznie writeback dokumentacyjny.
-3. **P2-03 — snapshot authority:** PENDING. P2-01 nie autoryzuje jeszcze odczytu lokalnej bazy ani utworzenia snapshotu.
-4. **P2-04 — completeness/anomalies:** PENDING. Należy określić wymagane mapowania, allowed nulls, tolerowane anomalie, hash/count rules oraz osobę akceptującą wyjątki.
-5. **P2-05 — ClientUserAccess:** PENDING formal confirmation. Powinien pozostać niezmieniony i autorytatywny dla client-safe visibility przez całą Phase 2.
-6. **P2-06 — backup/rollback/evidence:** PENDING. Wymaga osobnej zgody przed jakimkolwiek execution gate.
-7. **P2-07 — Phase 3 handoff:** PENDING formal confirmation. Reconciliation nie może aktywować flagi, endpointu ani Workspace authority.
+3. **P2-03 — snapshot authority:** DECIDED. Owner supplies the anonymized offline file, selects exactly one active Tenant represented only by a pseudonymous label/hash, and Codex never creates a snapshot or accesses a database.
+4. **P2-04 — completeness/anomalies:** DECIDED. Deterministic manifest/hash and complete mappings are required; unexpected absence, collision, orphan, cross-tenant link, or unknown role fails closed; new exceptions require a new owner decision.
+5. **P2-05 — ClientUserAccess:** DECIDED. It remains unchanged and sole authority for per-Client visibility; count/hash must match and Workspace membership never widens access.
+6. **P2-06 — backup/rollback/evidence:** DECIDED for future P2-B/C posture. Evidence remains only at `C:\dcaosv1-p2-evidence` without cloud sync or automatic deletion; localhost source/restore only, fresh backup/hash and restore rehearsal before any write, preserve evidence on failure, and owner alone decides resume/rollback.
+7. **P2-07 — Phase 3 handoff:** DECIDED. P2-D reconciliation never starts Phase 3; flags remain OFF, endpoint authority remains `LOCAL_ONLY`, and Tenant/Client/ClientUserAccess remain runtime authority pending separate approval.
 
 ### Pozostały konflikt kanoniczny
 
@@ -1072,9 +1074,9 @@ Nie są częścią pierwszego pilota. Przed aktywacją wymagają osobnego stagin
 - Utworzono 1 Workspace i 7 memberships: 1 ADMIN i 6 CLIENT_USER. Sześć membershipów bez roli pozostało wykluczonych. Client/UserAccess hashes pozostały zgodne.
 - Phase 1 canonical closeout i consistency cleanup zakończono przez `PR #68` i `PR #69`.
 - Phase 2 discovery zakończono przez `PR #70`; canonical P2-01 writeback zakończono przez `PR #72`.
-- Phase 2 pozostaje `NOT_STARTED`; remaining owner decisions są `IN_PROGRESS`; P2-01 jest `APPROVED`, P2-02 jest `DECIDED`.
+- Phase 2 pozostaje `NOT_STARTED`; P2-A implementation-ready jest `AUTHORIZED`; P2-01 i P2-02 oraz siedem decyzji P2-A są `DECIDED`.
 - Endpoint authority i feature flag pozostają `LOCAL_ONLY`.
-- Nie rozpoczęto Phase 2 implementation, snapshot creation, nowego backupu, Phase 2 backfillu/reconciliation, Phase 3 switch ani cleanup.
+- Nie rozpoczęto Phase 2 runtime, snapshot creation, nowego backupu, Phase 2 backfillu/reconciliation, Phase 3 switch ani cleanup; dozwolona jest wyłącznie implementacja offline P2-A bez realnego snapshotu.
 - Nie dotknięto produkcji, VPS, remote staging, remote DB ani Tellanic OS.
 
 ---
@@ -1107,7 +1109,7 @@ Nie są częścią pierwszego pilota. Przed aktywacją wymagają osobnego stagin
 
 ## 26. Stan po P2-02 owner decision writeback
 
-P2-02 jest zakończone na poziomie decyzji i dokumentacji: sześć aktywnych membershipów bez roli pozostaje wykluczonych i nietkniętych, jest sklasyfikowane jako `OWNER_REMEDIATION_REQUIRED`, nie otrzymuje roli domyślnej ani dostępu i nie powoduje zmiany danych/runtime. Nie rozpoczęto P2-A ani Phase 2 runtime. Snapshot creation, database access, backfill, reconciliation, switch, cleanup, produkcja, VPS, remote environments i Tellanic pozostają wyłączone.
+P2-02 jest zakończone na poziomie decyzji i dokumentacji: sześć aktywnych membershipów bez roli pozostaje wykluczonych i nietkniętych, jest sklasyfikowane jako `OWNER_REMEDIATION_REQUIRED`, nie otrzymuje roli domyślnej ani dostępu i nie powoduje zmiany danych/runtime. P2-A jest implementation-ready wyłącznie jako offline validator/consumer na owner-provided anonymized file, z siedmioma decyzjami zapisanymi powyżej. Nie ma realnego snapshotu, snapshot creation ani database access. Phase 2 runtime, backfill, reconciliation, switch, cleanup, produkcja, VPS, remote environments i Tellanic pozostają wyłączone.
 
 ---
 
@@ -1119,7 +1121,7 @@ Skopiuj poniższy tekst i dołącz ten dokument:
 >
 > Repo: `dca-glitch/dcaosv1`. Zweryfikowany baseline przed aktualizacją handoffu: `e4cd592c65601bd947991123df14ed2d8e8f3884`, PR #72 merged, CI i post-merge CI PASS; bieżący `main` należy sprawdzić w repozytorium. Phase 1 jest COMPLETE. Phase 2 jest NOT_STARTED. P2-01 population definition jest APPROVED; P2-02 no-role disposition jest DECIDED: sześć membershipów pozostaje wykluczonych i nietkniętych jako `OWNER_REMEDIATION_REQUIRED`, bez domyślnej roli, dostępu ani zmiany danych/runtime.
 >
-> Najpierw autonomicznie sprawdź GitHub i aktualne dokumenty kanoniczne. P2-02 jest już zdecydowane i zapisane docs-only; nie rozpoczynaj implementacji Phase 2 ani żadnych operacji danych. Ewentualne dalsze prace wymagają osobnej owner authorization.
+> Najpierw autonomicznie sprawdź GitHub i aktualne dokumenty kanoniczne. P2-02 i P2-A implementation-ready są zapisane; dozwolona jest wyłącznie offline implementacja P2-A na synthetic fixtures, bez realnego snapshotu i operacji danych. Ewentualne P2-B/C, Phase 3, backfill, reconciliation, switch i cleanup wymagają osobnej owner authorization.
 >
 > Po każdej decyzji przygotuj docs-only canonical writeback przez Codex CLI: branch, commit, push, PR, exact-diff Terra `APPROVE_READ_ONLY`, zielone CI, merge i post-merge CI. Bez OpenClaw. Produkcja, VPS, remote DB, Tellanic, snapshot creation, database access, backfill, reconciliation, switch i cleanup pozostają wyłączone.
 
@@ -1127,7 +1129,7 @@ Skopiuj poniższy tekst i dołącz ten dokument:
 
 ## 28. Finalny werdykt handoffu
 
-Koncepcja oraz Phase 1 DCA OS v2 są domknięte dla zatwierdzonego lokalnego zakresu. P2-02 jest zdecydowane i zapisane docs-only: sześć membershipów bez roli pozostaje wykluczonych i nietkniętych jako `OWNER_REMEDIATION_REQUIRED`, bez domyślnej roli, dostępu ani zmiany danych/runtime. Phase 2 pozostaje `NOT_STARTED`; żadna część tego handoffu nie autoryzuje snapshot creation, database access, Phase 2 implementation, backfillu, reconciliation, endpoint switch, cleanup, produkcji, VPS ani remote DB.
+Koncepcja oraz Phase 1 DCA OS v2 są domknięte dla zatwierdzonego lokalnego zakresu. P2-02 jest zdecydowane, a P2-A implementation-ready zapisane docs-only: sześć membershipów bez roli pozostaje wykluczonych i nietkniętych jako `OWNER_REMEDIATION_REQUIRED`, bez domyślnej roli, dostępu ani zmiany danych/runtime; dozwolona jest wyłącznie offline implementacja validator/consumer na synthetic fixtures. Phase 2 pozostaje `NOT_STARTED`; żadna część tego handoffu nie autoryzuje snapshot creation, database access, real snapshot consumption, mutation, backfillu, reconciliation, endpoint switch, cleanup, produkcji, VPS ani remote DB.
 
 ---
 
@@ -1268,9 +1270,10 @@ Założenia:
 - PR CI i post-merge main CI: PASS;
 - Phase 1: COMPLETE;
 - Phase 2: NOT_STARTED;
-- owner decisions: IN_PROGRESS;
+- owner decisions: P2-A implementation-ready authorized; remaining execution gates owner-gated;
 - P2-01: APPROVED;
 - P2-02: DECIDED — six no-role memberships remain excluded/untouched as `OWNER_REMEDIATION_REQUIRED`, with no default role, access, or data/runtime change.
+- P2-A: IMPLEMENTATION_READY_AUTHORIZED — offline validator/consumer only; owner-provided anonymized file, external evidence, fail-closed checks, unchanged `ClientUserAccess`, localhost-only future P2-B/C posture, and no Phase 3 start.
 
 ### Codex i model pracy
 
@@ -1307,9 +1310,9 @@ Repo zawiera Graphify-first guidance i wcześniejszą konfigurację Graphify `0.
 
 ### Aktualny następny krok
 
-1. Zachować P2-02 jako decyzję dokumentacyjną i nie wykonywać żadnej operacji danych.
-2. Zweryfikować GitHub `main` i aktualne dokumenty przed każdą przyszłą misją.
-3. Nie rozpoczynać Phase 2 implementation bez osobnej misji i owner authorization.
+1. Zaimplementować i zweryfikować wyłącznie offline P2-A na synthetic fixtures; nie tworzyć ani konsumować realnego snapshotu.
+2. Zachować `ClientUserAccess` jako sole per-Client authority i nie wykonywać żadnej operacji danych.
+3. Zweryfikować GitHub `main` i aktualne dokumenty przed każdą przyszłą misją; nie rozpoczynać P2-B/C, Phase 3, backfill, reconciliation, switch ani cleanup bez osobnej owner authorization.
 
 ### Safety flags
 
@@ -1319,6 +1322,7 @@ PHASE_2=NOT_STARTED
 OWNER_DECISIONS=IN_PROGRESS
 P2_01_POPULATION=APPROVED
 P2_02_NO_ROLE_DISPOSITION=DECIDED
+P2_A_IMPLEMENTATION_READY=AUTHORIZED
 PHASE_2_DATA_MUTATION=NO
 PHASE_2_BACKFILL_EXECUTED=NO
 PHASE_2_RECONCILIATION_EXECUTED=NO
