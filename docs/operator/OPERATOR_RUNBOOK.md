@@ -62,6 +62,14 @@ Run in this exact order and stop on first failure:
 - P2-A implementation-ready is authorized with seven owner decisions: only an owner-prepared anonymized offline file may be accepted in a later authorized run; exactly one active Tenant is owner-selected and represented only by a pseudonymous label/hash; snapshot/evidence remain outside Git at `C:\dcaosv1-p2-evidence` without cloud sync or automatic deletion; completeness, mapping, and exception validation is fail-closed; the six known no-role records are `OWNER_REMEDIATION_REQUIRED` and new exceptions require a new decision; `ClientUserAccess` count/hash remains unchanged and authoritative; and future P2-B/C preparation is localhost-only (`127.0.0.1:5434` / isolated restore `127.0.0.1:5435`) with owner-controlled resume/rollback. Codex must never create a snapshot or connect to a database. This writeback and its tests use synthetic fixtures only and consume no snapshot. Flags remain OFF, Phase 3 cannot start from reconciliation, and no snapshot processing, mutation, backfill, reconciliation, switch, cleanup, or remote/staging/production/VPS action is authorized by this writeback.
 - Implementation contract and operator procedure: [`docs/implementation/P2_A_OFFLINE_FOUNDATION.md`](../implementation/P2_A_OFFLINE_FOUNDATION.md). The tracked fixture and policy are synthetic only; never place a real snapshot inside Git.
 
+### 2.6.1 P2-A owner-run local exporter (build-only)
+
+- The exporter is a separate, disabled-by-default owner-run tool; it must not change the existing database-free P2-A validator or its offline-only boundary.
+- This decision authorizes build, synthetic/mocked tests, documentation, review, CI, and merge only. Do not connect to a database, launch Docker, create a real snapshot, inspect/print a connection string or secret, or run the exporter.
+- A future run needs a new explicit single-use owner authorization. It may use read-only semantics only for the exact source `127.0.0.1:5434`; reject missing targets and every other host, port, URL, remote, staging, production, VPS, or Tellanic target, plus write/apply/mutation modes and access-widening requests.
+- Its only future output is the approved anonymized `DCA_OS_V2_P2_A_SNAPSHOT_V1` schema at `C:\dcaosv1-p2-evidence`; never emit prohibited fields, PII, source IDs, credentials, raw records, or connection material. The output requires deterministic pseudonymous keys, selection/manifest/access hashes, mappings, and exactly six `OWNER_REMEDIATION_REQUIRED` exceptions.
+- This build does not authorize migration, schema change, backfill, reconciliation, runtime/flag/endpoint change, dependency update, production/VPS/staging work, or Phase 3.
+
 ## 3. What validate is expected to prove
 
 - Prisma client generation
