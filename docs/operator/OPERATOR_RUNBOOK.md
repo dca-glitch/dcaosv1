@@ -58,7 +58,7 @@ Run in this exact order and stop on first failure:
 
 - `PHASE_2=NOT_STARTED`; P2-01 approves only the future P2-A population definition: exactly one existing active Tenant from local source `127.0.0.1:5434` and all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records.
 - Any future P2-A package must consume only an anonymized offline snapshot and produce a deterministic population manifest/hash. It must not connect to a database, create a snapshot in this package, mutate data, run backup/backfill/reconciliation, change Workspace authority, alter feature flags or endpoint authority, or touch remote, staging, production, VPS, or Tellanic.
-- P2-02 remains pending: do not assign, archive, revoke, or otherwise dispose of the six no-role memberships without a separate owner decision.
+- P2-02 is decided: keep the six no-role memberships excluded and untouched, classify them as `OWNER_REMEDIATION_REQUIRED`, infer no default role, grant no access, and make no data or runtime change. This is documentation-only; Phase 2 remains `NOT_STARTED`, and no backfill, reconciliation, switch, cleanup, or other data operation is authorized.
 
 ## 3. What validate is expected to prove
 

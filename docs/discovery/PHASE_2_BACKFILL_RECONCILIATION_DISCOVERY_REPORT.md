@@ -1,15 +1,15 @@
 # Phase 2 Backfill and Reconciliation Discovery Report
 
 **Mode:** DISCOVERY_ONLY / READ_ONLY_RUNTIME / DOCUMENTATION_OUTPUT_ONLY
-**Verdict:** `READY_FOR_PHASE_2_OWNER_DECISIONS`
+**Verdict:** `P2-02_OWNER_DECISION_RECORDED; PHASE_2_NOT_STARTED`
 **Baseline examined:** `main` at `db033bfb07f980c206c45c03208ba7b3bf42bb57`
 **Phase 1:** COMPLETE; **Phase 2:** NOT_STARTED; **Phase 3:** NOT_STARTED
 
 ## 1. Executive verdict
 
-Discovery is sufficient to prepare an owner decision package, but not to authorize implementation or execution. The canonical Phase 2 label, **Backfill and reconciliation**, overlaps in words with work completed under the tightly bounded P1.2b–P1.4b local gate. The completed P1 work is a single, fixed local population and explicitly did not start Phase 2. Owner decision P2-01 now approves only the future P2-A population definition; role policy, reconciliation contract, and all execution authority remain unresolved.
+Discovery is sufficient to preserve bounded owner decisions, but not to authorize implementation or execution. The canonical Phase 2 label, **Backfill and reconciliation**, overlaps in words with work completed under the tightly bounded P1.2b–P1.4b local gate. The completed P1 work is a single, fixed local population and explicitly did not start Phase 2. Owner decisions P2-01 and P2-02 are recorded; the P2-02 decision only keeps six no-role memberships excluded and untouched, classifies them as `OWNER_REMEDIATION_REQUIRED`, assigns no default role, grants no access, and makes no data or runtime change. The remaining role-policy, reconciliation, evidence, and execution authority remain unresolved.
 
-`READY_FOR_PHASE_2_OWNER_DECISIONS` means that the owner can choose a bounded definition. It does **not** mean `READY_FOR_EXECUTION`, does not change Phase 2 status, and does not authorize a database, schema, flag, endpoint, remote, staging, production, VPS, Tellanic, or client-facing change.
+`P2-02_OWNER_DECISION_RECORDED` means only that the disposition of the six no-role memberships is documented. It does **not** mean `READY_FOR_EXECUTION`, does not change Phase 2 status, and does not authorize a database, schema, flag, endpoint, remote, staging, production, VPS, Tellanic, or client-facing change.
 
 ## 2. Confirmed baseline and method
 
@@ -17,7 +17,8 @@ Discovery is sufficient to prepare an owner decision package, but not to authori
 - Read sources: the authority chain in `AGENTS.md`, all seven requested Phase 1 canonical documents, the Phase 1 authorization matrix, Workspace schema/migrations, P1 tooling/tests, local endpoint implementation/tests, and Git history for PR #67, #68, and #69.
 - Graphify-first query was used before broad code navigation.
 - No `.env` file, secret, live OAuth, remote environment, production/VPS, staging, database connection, backup/restore, backfill, reconciliation execution, flag change, endpoint switch, or Tellanic content was accessed.
-- **P2-01 writeback (2026-07-19):** the owner approves only a future P2-A population definition: exactly one existing active Tenant from local source `127.0.0.1:5434`, all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records. P2-A must use an anonymized offline snapshot with a deterministic population manifest/hash; it cannot connect to a database or mutate data. P2-02, the disposition of six no-role memberships, remains pending.
+- **P2-01 writeback (2026-07-19):** the owner approves only a future P2-A population definition: exactly one existing active Tenant from local source `127.0.0.1:5434`, all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records. P2-A must use an anonymized offline snapshot with a deterministic population manifest/hash; it cannot connect to a database or mutate data.
+- **P2-02 owner decision writeback:** the six active no-role memberships remain excluded and untouched, are classified `OWNER_REMEDIATION_REQUIRED`, receive no default role or access, and cause no data or runtime change. This is documentation-only; Phase 2 remains `NOT_STARTED`.
 - The only targeted dynamic checks were unit tests that do not connect to a database: P1.2a (8 PASS), P1.3a (4 PASS), P1.4a (4 PASS), and execution/backup argument guards (2 PASS). An attempted Vitest invocation is not evidence against the API logic: these three API files use `node:test` and Vitest reported `No test suite found`; full repository validation remains the final validation gate for this report.
 
 ## 3. What Phase 1 already completed
@@ -42,12 +43,11 @@ This is evidence of a bounded local migration rehearsal and execution, not evide
 
 ### Canonical Phase 2
 
-The execution plan says **Phase 2 — Backfill and reconciliation — NOT_STARTED — 0%**. P2-01 resolves only the future P2-A population boundary; the remaining Phase 2 scope is still limited to these unresolved questions:
+The execution plan says **Phase 2 — Backfill and reconciliation — NOT_STARTED — 0%**. P2-01 resolves the future P2-A population boundary and P2-02 resolves the six no-role disposition. The remaining Phase 2 scope is still limited to these unresolved questions:
 
 1. the P2-01-approved one-active-Tenant local population, represented only in a future offline snapshot;
-2. a policy and treatment for the six excluded no-role memberships;
-3. durable reconciliation of the per-Client relationship while `ClientUserAccess` remains the authority; or
-4. a future owner-approved scope beyond P2-01.
+2. durable reconciliation of the per-Client relationship while `ClientUserAccess` remains the authority; or
+3. a future owner-approved scope beyond P2-01/P2-02.
 
 P2-01 does not imply any execution scope beyond its population definition. Phase 2 still requires a new evidence contract and must not reuse P1's hard-coded identifiers or infer authority from the fact that P1's local execution passed.
 
@@ -88,7 +88,7 @@ The following values are static evidence constraints in the completed P1 runner,
 | Active `ClientUserAccess` population protected by P1 hash | 279; SHA-256 recorded in the P1 runner, not reproduced here |
 | Active legacy tenant memberships | 13 |
 | P1 migrated Workspace memberships | 7: 1 `ADMIN`, 6 `CLIENT_USER` |
-| Excluded active no-role membership exceptions | 6; deliberately not translated |
+| Excluded active no-role membership exceptions | 6; deliberately not translated; classified `OWNER_REMEDIATION_REQUIRED` |
 | Preserved access distribution check | 35 active Client User grants and 244 active owner grants |
 
 No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, connection strings, or raw records appear in this report. A future approved preparation package should derive new counts and salted/approved evidence hashes from a sanitized snapshot, not copy the P1 constants.
@@ -114,7 +114,7 @@ No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, conne
 ## 9. Technical gaps
 
 - P2-01 defines the population boundary, but no canonical machine-readable input contract, tenant-selection rule, snapshot-creation procedure, or deterministic manifest/hash schema exists.
-- No approved role-translation policy exists for the six no-role exceptions or any role other than P1's one owner and six client cases.
+- P2-02 provides an approved disposition for the six no-role exceptions, but no broader role-translation policy exists for any role or case beyond P1's one owner and six client cases.
 - No generic, parameterized execution runner exists; P1 runner is intentionally hard-coded and cannot be widened safely.
 - No Phase 2 reconciliation invariants define completeness across Tenant, Client, `TenantMembership`, `ClientUserAccess`, Workspace, and WorkspaceMembership relationships.
 - No Phase 2 evidence schema specifies input hashes, output hashes, row-level anomaly classification, retention, reviewer identity, or acceptable drift window.
@@ -125,7 +125,7 @@ No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, conne
 ## 10. Business and governance gaps
 
 - P2-01 selects the future P2-A population category but not the tenant identity, execution scope, or authority to read/create the snapshot.
-- The intended disposition of no-role memberships is unapproved: remain excluded, archive/revoke under a separate policy, map to a role, or require remediation.
+- P2-02 resolves the six known no-role memberships as excluded, untouched, and `OWNER_REMEDIATION_REQUIRED`; no default role or access is authorized. Any broader legacy-role translation policy remains unapproved.
 - It is unapproved whether Client Users receive a Workspace membership for every relevant client relationship, and what that membership can ever mean while per-Client scope remains authoritative.
 - The owner has not approved a Phase 2 environment posture; remote/staging is not implied and remains prohibited.
 - The acceptable completeness threshold, anomaly disposition SLA, and rollback decision authority are undefined.
@@ -133,7 +133,7 @@ No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, conne
 ## 11. Owner decisions required before any Phase 2 package
 
 1. P2-01 is decided: future P2-A covers exactly one existing active local-source Tenant and all of its active Clients, TenantMemberships, and ClientUserAccess records, represented only in an anonymized offline snapshot with deterministic manifest/hash.
-2. Decide the six no-role exception policy and any other legacy-role translation matrix; no default role is acceptable.
+2. **P2-02 is decided:** keep the six no-role exceptions excluded and untouched as `OWNER_REMEDIATION_REQUIRED`; infer no default role and grant no access. Any broader legacy-role translation matrix remains open.
 3. Confirm the tenant-selection and snapshot-creation authority for P2-A. Remote/staging/production/VPS remain prohibited and are not included by P2-01.
 4. Define Phase 2 completeness: required mappings, allowed nulls, tolerated anomalies, hash/count rules, and who accepts exceptions.
 5. Confirm that `ClientUserAccess` remains unchanged and authoritative for client-safe visibility throughout Phase 2.
@@ -196,7 +196,7 @@ DISCOVERY_ONLY=YES
 PHASE_2=NOT_STARTED
 OWNER_DECISIONS=IN_PROGRESS
 P2_01_POPULATION=APPROVED
-P2_02_NO_ROLE_DISPOSITION=PENDING
+P2_02_NO_ROLE_DISPOSITION=DECIDED
 DATA_MUTATION=NO
 BACKFILL_EXECUTED=NO
 RECONCILIATION_EXECUTED=NO
