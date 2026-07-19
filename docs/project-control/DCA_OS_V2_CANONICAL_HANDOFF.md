@@ -407,7 +407,7 @@ Przed startem płatnego joba system atomowo rezerwuje szacowany koszt. Po zakoń
 
 We wcześniejszym, później utrwalonym kierunku DCA OS Lite **live integracje Google (GA4/GSC, OAuth/service accounts i live sync) zostały wycofane z bieżącego i planowanego scope**, a ewentualny model ręcznego CSV miał wrócić tylko po jawnym ponownym otwarciu przez właściciela.
 
-W późniejszym Puriva Client Operating Pack discovery właściciel zaakceptował live GA4/GSC wyłącznie dla DCA Admina, z oddzielnymi service accounts per Website; klient ma widzieć tylko miesięczne raporty. Ta późniejsza intencja właścicielska nie została jeszcze spójnie zapisana w bieżących dokumentach kanonicznych repo, które nadal oznaczają live GA4/GSC jako `WITHDRAWN`.
+W późniejszym Puriva Client Operating Pack discovery zapisano propozycję dopuszczenia live GA4/GSC wyłącznie dla DCA Admina, z oddzielnymi service accounts per Website; klient miałby widzieć tylko miesięczne raporty. Ta propozycja nie jest zatwierdzoną decyzją właścicielską ani bieżącą capability: nie została spójnie zapisana w dokumentach kanonicznych repo, które nadal oznaczają live GA4/GSC jako `WITHDRAWN`.
 
 Nie wolno po cichu zmieniać capability statusu. Przed implementacją Google należy wykonać osobny canonical writeback, który jednoznacznie określi, czy późniejsza decyzja właścicielska formalnie ponownie otwiera live GA4/GSC oraz jaki jest jej dokładny security, credential, environment i rollout gate.
 
@@ -525,7 +525,9 @@ E-mail pozostaje głównym kanałem powiadomień. In-system notifications były 
 
 ## 14. Retencja, usuwanie i Google Drive
 
-### Finalna polityka: Minimal + B-Archive Indefinite
+### Status: PENDING — brak zatwierdzonej polityki retencji
+
+Bieżąca authority chain nie zatwierdza konkretnych okresów retencji, archiwizacji do Google Shared Drive, bezterminowego przechowywania ani procesu usuwania. Raport discovery pozostawia wymagania retencji i evidence do osobnej decyzji właściciela. Poniższy opis zachowuje wcześniejszy, niezatwierdzony kontekst propozycji i nie stanowi execution authority.
 
 Retencja aktywnego systemu:
 
@@ -571,9 +573,9 @@ Nie archiwizujemy:
 - eksport i deletion trafiają do append-only audit;
 - credentials są usuwane bez archiwizacji natychmiast po odłączeniu.
 
-### Bezterminowe przechowywanie
+### Historyczny, niezatwierdzony wariant bezterminowego przechowywania
 
-Właściciel wybrał bezterminowe archiwum na Google Drive mimo rekomendacji okresu ograniczonego. Obowiązkowe zabezpieczenia:
+Wcześniejsza propozycja zakładała bezterminowe archiwum na Google Drive mimo rekomendacji okresu ograniczonego. Nie jest to zatwierdzona decyzja; poniższe zabezpieczenia pozostają wyłącznie kontekstem do przyszłej decyzji:
 
 - archiwizacja tylko wyselekcjonowanych finalnych danych;
 - pseudonimizacja zbędnych danych osobowych;
@@ -585,7 +587,7 @@ Właściciel wybrał bezterminowe archiwum na Google Drive mimo rekomendacji okr
 
 ### Istotny warunek operacyjny
 
-Do wdrożenia tej polityki potrzebny będzie firmowy Google Shared Drive oraz jego model uprawnień. Nie należy zakładać, że prywatny My Drive spełnia wymaganie.
+Jeżeli właściciel zatwierdzi taką politykę w przyszłości, do jej wdrożenia potrzebny będzie firmowy Google Shared Drive oraz jego model uprawnień. Nie należy zakładać, że prywatny My Drive spełnia wymaganie.
 
 ### Element wymagający weryfikacji prawnej/księgowej
 
@@ -976,10 +978,10 @@ Nie są częścią pierwszego pilota. Przed aktywacją wymagają osobnego stagin
 
 ---
 
-## 21. Cztery zamknięte polityki
+## 21. Polityki i ich status
 
 1. **AI budgets:** 75/90/100, hard stop, atomowa rezerwacja, Admin override z audytem.
-2. **Retention:** Minimal + obowiązkowa selektywna archiwizacja do firmowego Google Shared Drive + bezterminowe przechowywanie z corocznym review.
+2. **Retention:** PENDING — wcześniejsza propozycja Minimal + selektywna archiwizacja do Google Shared Drive nie jest zatwierdzoną polityką.
 3. **Client approval delegation:** kontrolowana delegacja od Client Manager do Client User, ograniczona zakresem, Workspace i czasem.
 4. **Pilot:** tylko Puriva, minimum 4 tygodnie i pełny cykl raportowy.
 
@@ -1013,7 +1015,7 @@ Nie są częścią pierwszego pilota. Przed aktywacją wymagają osobnego stagin
 
 ### Pozostały konflikt kanoniczny
 
-8. **GA4/GSC:** późniejsza intencja właścicielska dopuszcza live analytics dla DCA Admina, lecz bieżące dokumenty repo nadal oznaczają integrację jako `WITHDRAWN`. Wymagany osobny canonical writeback; do tego czasu brak implementacji OAuth/sync.
+8. **GA4/GSC:** późniejsza, niezatwierdzona propozycja właścicielska sugeruje live analytics dla DCA Admina, lecz bieżące dokumenty repo nadal oznaczają integrację jako `WITHDRAWN`. Wymagany osobny canonical writeback; do tego czasu brak implementacji OAuth/sync.
 9. **Pełna macierz autoryzacji i state machines:** pozostaje wymagana przed szerokim kodowaniem domenowym, lecz nie blokuje owner discovery Phase 2.
 
 ### Architektura i dane
@@ -1060,7 +1062,7 @@ Nie są częścią pierwszego pilota. Przed aktywacją wymagają osobnego stagin
 
 ## 24. Aktualny stan wykonania i czego nie zrobiono
 
-- Kanoniczny `main`: `e4cd592c65601bd947991123df14ed2d8e8f3884` po `PR #72`; PR CI i post-merge CI PASS.
+- Zweryfikowany baseline `main` przed aktualizacją tego handoffu: `e4cd592c65601bd947991123df14ed2d8e8f3884` po `PR #72`; PR CI i post-merge CI PASS. Bieżący `main` należy każdorazowo sprawdzać w repozytorium.
 - Phase 0, 0.5 i 0.6 są `IMPLEMENTED`.
 - Phase 1 jest `COMPLETE`.
 - P1.1 Workspace expand-only foundation: `PR #60`.
@@ -1111,7 +1113,7 @@ Nowy chat nie powinien rozpoczynać implementacji Phase 2. Powinien kontynuować
 
 Zakres read-only:
 
-1. potwierdzić GitHub `main` `e4cd592c65601bd947991123df14ed2d8e8f3884` albo nowszy, jeśli został legalnie scalony;
+1. potwierdzić bieżący GitHub `main`; `e4cd592c65601bd947991123df14ed2d8e8f3884` jest wyłącznie baseline'em opisywanym przed aktualizacją tego handoffu;
 2. przeczytać `docs/discovery/PHASE_2_BACKFILL_RECONCILIATION_DISCOVERY_REPORT.md` oraz P2-01 w Decision Register;
 3. potwierdzić `PHASE_2=NOT_STARTED`, `P2_01_POPULATION=APPROVED` i `P2_02_NO_ROLE_DISPOSITION=PENDING`;
 4. wyjaśnić krótko opcje dla sześciu aktywnych membershipów bez roli;
@@ -1135,7 +1137,7 @@ Skopiuj poniższy tekst i dołącz ten dokument:
 
 > Kontynuujemy DCA OS v2 Phase 2 owner discovery, punkt po punkcie i z krótkimi wyjaśnieniami. DCA OS jest prywatnym Agency Operations System Digital Cube Agency. DCA OS i Tellanic OS są całkowicie odrębne. Przeczytaj w całości załączony canonical handoff oraz repozytoryjny raport `docs/discovery/PHASE_2_BACKFILL_RECONCILIATION_DISCOVERY_REPORT.md`.
 >
-> Repo: `dca-glitch/dcaosv1`. Ostatni potwierdzony `main`: `e4cd592c65601bd947991123df14ed2d8e8f3884`, PR #72 merged, CI i post-merge CI PASS. Phase 1 jest COMPLETE. Phase 2 jest NOT_STARTED. P2-01 population definition jest APPROVED; P2-02 no-role disposition jest PENDING.
+> Repo: `dca-glitch/dcaosv1`. Zweryfikowany baseline przed aktualizacją handoffu: `e4cd592c65601bd947991123df14ed2d8e8f3884`, PR #72 merged, CI i post-merge CI PASS; bieżący `main` należy sprawdzić w repozytorium. Phase 1 jest COMPLETE. Phase 2 jest NOT_STARTED. P2-01 population definition jest APPROVED; P2-02 no-role disposition jest PENDING.
 >
 > Najpierw autonomicznie sprawdź GitHub i aktualne dokumenty kanoniczne. Następnie przejdź tylko do P2-02: wyjaśnij krótko opcje dotyczące sześciu aktywnych TenantMembership bez roli, zarekomenduj najbezpieczniejszą opcję i zadaj jedno pytanie. Nie rozpoczynaj implementacji Phase 2.
 >
@@ -1281,7 +1283,7 @@ Założenia:
 ### Repo i baseline
 
 - repo: `dca-glitch/dcaosv1`;
-- ostatni potwierdzony `main`: `e4cd592c65601bd947991123df14ed2d8e8f3884`;
+- zweryfikowany baseline przed aktualizacją handoffu: `e4cd592c65601bd947991123df14ed2d8e8f3884`; bieżący `main` należy sprawdzać w repozytorium;
 - `PR #72`: merged;
 - PR CI i post-merge main CI: PASS;
 - Phase 1: COMPLETE;
