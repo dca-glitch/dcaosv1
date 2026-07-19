@@ -37,7 +37,7 @@ Apply the rest of this file only after reading that authority chain.
 ## Agent operating rules
 
 - Prefer the smallest safe change that fully resolves the task.
-- Validate with `git diff --check` and `npm run validate` before claiming completion.
+- Validate with `git diff --check` and task-required checks before claiming completion.
 - Never run smoke after a failed `validate`.
 - Do not inspect `.env` files, print secrets, or invent environment values.
 - Do not treat historical audits, release notes, staging proofs, or production proofs as current implementation authority unless canonical docs explicitly adopt them.
@@ -67,7 +67,10 @@ Apply the rest of this file only after reading that authority chain.
 - Every material code or policy diff requires a separate, read-only Terra reviewer-agent review before merge. The reviewer must review the exact unchanged diff, record `APPROVE_READ_ONLY` or `REQUEST_CHANGES` with evidence in the PR/report, and remain distinct from the writer agent.
 - Preserve AUTONOMY-HIGH for routine validated work and eligible merges after green CI and exact-diff review. A native GitHub approval is required only when branch protection technically requires it; never simulate or falsely claim one. When it is not technically required, the recorded independent Terra reviewer decision plus green CI is sufficient for autonomous merge.
 - Preserve all DCA OS/Tellanic OS separation and owner-critical exclusions. Owner involvement remains required for production or VPS actions, secrets, costs, destructive migrations, legal/privacy issues, live integrations, actual backfill/reconciliation/switch/cleanup, and unresolved critical/canonical conflicts.
-- Do not change OpenClaw cron or controller behavior. Do not perform production or VPS actions, access or disclose secrets, incur service costs, use live OAuth, backfill or reconcile data, execute switches or cleanup, deploy databases, or start Phase 2 work. Configuration-only work must not continue Phase 1 implementation or modify PR #61.
+- Phase 1 is complete and must not be reopened. Phase 2 runtime remains `NOT_STARTED`; only the merged offline P2-A foundation and disabled owner-run exporter are implemented. Do not create a real snapshot, access a database, run Docker, execute the exporter, mutate data, backfill, reconcile, switch authority, clean up, or begin Phase 3 without a new explicit owner authorization.
+- Do not change OpenClaw cron or controller behavior. Do not perform production/VPS actions, access or disclose secrets, incur service costs, use live OAuth, remote database/staging actions, or Tellanic work without explicit owner authorization.
+- Terra/Luna and Codex auto-review rules apply to Codex sessions. Cursor WSL follows the same safety gates but is not Terra and acts only within an explicit assigned mission.
+- Detect the operating system: use PowerShell on Windows and Bash in WSL/Linux; do not retry incompatible shell commands unchanged.
 
 ## Current UI authority
 
