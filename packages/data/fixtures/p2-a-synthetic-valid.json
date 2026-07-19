@@ -1,0 +1,52 @@
+{
+  "schemaVersion": "DCA_OS_V2_P2_A_SNAPSHOT_V1",
+  "selection": {
+    "tenantLabel": "synthetic-tenant-alpha",
+    "tenantSelectionHash": "0fcf80963acf3a53d8c9d4b8a86c18bb22550e053105be913beafc6d7146be02"
+  },
+  "records": {
+    "tenants": [
+      { "tenantKey": "tenant-alpha", "status": "ACTIVE" }
+    ],
+    "clients": [
+      { "clientKey": "client-alpha", "tenantKey": "tenant-alpha", "status": "ACTIVE" },
+      { "clientKey": "client-beta", "tenantKey": "tenant-alpha", "status": "ACTIVE" }
+    ],
+    "memberships": [
+      { "membershipKey": "membership-client", "tenantKey": "tenant-alpha", "userKey": "user-client", "status": "ACTIVE", "legacyRoleKeys": ["CLIENT_USER"] },
+      { "membershipKey": "membership-no-role-01", "tenantKey": "tenant-alpha", "userKey": "user-remediation-01", "status": "ACTIVE", "legacyRoleKeys": [] },
+      { "membershipKey": "membership-no-role-02", "tenantKey": "tenant-alpha", "userKey": "user-remediation-02", "status": "ACTIVE", "legacyRoleKeys": [] },
+      { "membershipKey": "membership-no-role-03", "tenantKey": "tenant-alpha", "userKey": "user-remediation-03", "status": "ACTIVE", "legacyRoleKeys": [] },
+      { "membershipKey": "membership-no-role-04", "tenantKey": "tenant-alpha", "userKey": "user-remediation-04", "status": "ACTIVE", "legacyRoleKeys": [] },
+      { "membershipKey": "membership-no-role-05", "tenantKey": "tenant-alpha", "userKey": "user-remediation-05", "status": "ACTIVE", "legacyRoleKeys": [] },
+      { "membershipKey": "membership-no-role-06", "tenantKey": "tenant-alpha", "userKey": "user-remediation-06", "status": "ACTIVE", "legacyRoleKeys": [] },
+      { "membershipKey": "membership-owner", "tenantKey": "tenant-alpha", "userKey": "user-owner", "status": "ACTIVE", "legacyRoleKeys": ["OWNER"] }
+    ],
+    "clientUserAccess": [
+      { "accessKey": "access-alpha-client", "clientKey": "client-alpha", "userKey": "user-client", "status": "ACTIVE" },
+      { "accessKey": "access-beta-client", "clientKey": "client-beta", "userKey": "user-client", "status": "ACTIVE" }
+    ]
+  },
+  "proposedMappings": {
+    "tenantToWorkspace": [
+      { "tenantKey": "tenant-alpha", "workspaceKey": "workspace-alpha" }
+    ],
+    "clientToWorkspace": [
+      { "clientKey": "client-alpha", "tenantKey": "tenant-alpha", "workspaceKey": "workspace-alpha" },
+      { "clientKey": "client-beta", "tenantKey": "tenant-alpha", "workspaceKey": "workspace-alpha" }
+    ],
+    "membershipRoles": [
+      { "membershipKey": "membership-client", "userKey": "user-client", "workspaceKey": "workspace-alpha", "workspaceRoleKeys": ["CLIENT_USER"] },
+      { "membershipKey": "membership-owner", "userKey": "user-owner", "workspaceKey": "workspace-alpha", "workspaceRoleKeys": ["ADMIN"] }
+    ]
+  },
+  "accessInvariant": {
+    "clientUserAccessCount": 2,
+    "clientUserAccessSha256": "4c39b1e847ffbe1f0c2e01ccfef11b8958e9078f690c3e1b194b17a8e19e4bf4"
+  },
+  "manifest": {
+    "algorithm": "SHA-256",
+    "canonicalization": "SORTED_KEYS_AND_DECLARED_RECORD_ORDER_V1",
+    "inputSha256": "6a7ccf8cf56b84b4f03c1af6db66c6633e93a6993aac4b555d2a0a3d47f6127c"
+  }
+}

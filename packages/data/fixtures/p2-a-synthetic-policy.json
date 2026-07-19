@@ -1,0 +1,12 @@
+{
+  "knownNoRoleMembershipKeys": [
+    "membership-no-role-01",
+    "membership-no-role-02",
+    "membership-no-role-03",
+    "membership-no-role-04",
+    "membership-no-role-05",
+    "membership-no-role-06"
+  ],
+  "approvedLegacyRoleKeys": ["OWNER", "CLIENT_USER"],
+  "approvedWorkspaceRoleKeys": ["ADMIN", "WORKSPACE_MANAGER", "TEAM_MEMBER", "CLIENT_MANAGER", "CLIENT_USER"]
+}
