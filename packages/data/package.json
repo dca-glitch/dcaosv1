@@ -21,6 +21,7 @@
     "test:p2-a": "node --test scripts/p2-a-offline-foundation.test.mjs",
     "workspace:p2-a:owner-exporter": "node scripts/p2-a-owner-local-exporter.mjs",
     "test:p2-a:owner-exporter": "node --test scripts/p2-a-owner-local-exporter.test.mjs",
+    "test:p2-a:execution-preparation": "node --test scripts/p2-a-owner-local-exporter.test.mjs",
     "workspace:execution:local": "node scripts/p1-execution-local.mjs",
     "workspace:backup-rehearsal:local": "node scripts/p1-local-backup-rehearsal.mjs",
     "test:p1-execution": "node --test scripts/p1-execution-local.test.mjs scripts/p1-local-backup-rehearsal.test.mjs"
