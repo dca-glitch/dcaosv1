@@ -19,11 +19,15 @@ Apply `AGENTS.md` only after the authority chain above.
 ## Counts for this documentation refresh
 
 - Deleted on this PR: **172**
-- Remaining classified documentation files: **294**
+- Remaining classified documentation files: **303** (inventory `generatedOn` 2026-07-19 after P2-B docs package)
 - Current canonical: **10**
-- Current supporting: **159**
+- Current supporting: **168**
 - Historical evidence retained for proof, security, recovery, deployment, or audit provenance: **125**
 - Superseded plans and UI packs left in the active tree: **0**
+
+### 2026-07-19 P2-B docs-only alignment addendum
+
+Added/retained as current supporting: `docs/implementation/P2_B_OWNER_EXECUTION_GATE.md`, plus inventory coverage for P2-A offline foundation, Phase 2 discovery, Decision Register, execution plan, and canonical handoff. Canonical writeback recorded V2-023–V2-027 (equal Cursor/Codex autonomy, evidence path WSL mapping, `ADMIN_LIVE` analytics direction, P2-B docs-only gate, OpenClaw superseded).
 
 ## Deleted in this correction pass
 

@@ -6,7 +6,7 @@ This package is an offline validator and evidence-packet builder. The current im
 
 ## Owner-provided input contract
 
-In a later, separately authorized run, the owner may place one anonymized JSON snapshot outside Git under `C:\dcaosv1-p2-evidence`. The file must use `DCA_OS_V2_P2_A_SNAPSHOT_V1` and contain only pseudonymous keys:
+In a later, separately authorized run, the owner may place one anonymized JSON snapshot outside Git under the single canonical evidence directory `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`, same physical location). The file must use `DCA_OS_V2_P2_A_SNAPSHOT_V1` and contain only pseudonymous keys:
 
 - `selection.tenantLabel` and `selection.tenantSelectionHash`, where the hash is SHA-256 of the label;
 - exactly one active `records.tenants` entry;
@@ -30,7 +30,7 @@ Source IDs, names, e-mail addresses, PII, credentials, connection strings, raw r
 - the `ClientUserAccess` count or SHA-256 hash changes; or
 - an unsupported mapping group or apply-like argument is supplied.
 
-The six known no-role records are emitted as `OWNER_REMEDIATION_REQUIRED`, with `defaultRole: null` and `accessGranted: false`. Workspace-derived access grants are always zero. The report is a decision/evidence packet for a later `P2_B_GATE_REQUIRED`; it is not an execution authorization.
+The six known no-role records are emitted as `OWNER_REMEDIATION_REQUIRED`, with `defaultRole: null` and `accessGranted: false`. Workspace-derived access grants are always zero. The report is a decision/evidence packet for a later `P2_B_GATE_REQUIRED` under [`P2_B_OWNER_EXECUTION_GATE.md`](./P2_B_OWNER_EXECUTION_GATE.md) (`DOCS_ONLY_AUTHORIZED` / `EXECUTION_NOT_AUTHORIZED`); it is not an execution authorization.
 
 ## Synthetic validation
 
@@ -53,4 +53,4 @@ In a later owner-authorized run, a file may be validated with an explicit policy
 npm run workspace:p2-a:validate -- --snapshot <owner-file-outside-git> --policy <policy-file-outside-git> --format json
 ```
 
-All future P2-B/C preparation remains restricted to `127.0.0.1:5434` and isolated restore `127.0.0.1:5435`, with a fresh backup/hash and successful restore rehearsal before any separately authorized write. Failure requires abort and evidence preservation; only the owner decides resume or rollback. Flags remain OFF, endpoint authority remains `LOCAL_ONLY`, and Tenant/Client/ClientUserAccess remain runtime authority. No backfill, reconciliation execution, switch, cleanup, Phase 3, remote, staging, production, VPS, secrets, or Tellanic operation is included.
+The P2-B gate is docs-only until a future single-use owner approval. All future P2-C write preparation remains restricted to `127.0.0.1:5434` and isolated restore `127.0.0.1:5435`, with a fresh backup/hash and successful restore rehearsal before any separately authorized write. Failure requires abort and evidence preservation; only the owner decides resume or rollback. Flags remain OFF, endpoint authority remains `LOCAL_ONLY`, and Tenant/Client/ClientUserAccess remain runtime authority. No backfill, reconciliation execution, switch, cleanup, Phase 3, remote, staging, production, VPS, secrets, or Tellanic operation is included.

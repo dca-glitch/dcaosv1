@@ -403,20 +403,24 @@ Przed startem płatnego joba system atomowo rezerwuje szacowany koszt. Po zakoń
 - opublikowany raport miesięczny jest zamkniętym snapshotem;
 - korekta raportu tworzy nową wersję, poprzednia pozostaje w audycie.
 
-### Bieżący konflikt kanoniczny — wymaga writebacku przed implementacją Google
+### Canonical resolution — `ADMIN_LIVE` (V2-025)
 
-We wcześniejszym, później utrwalonym kierunku DCA OS Lite **live integracje Google (GA4/GSC, OAuth/service accounts i live sync) zostały wycofane z bieżącego i planowanego scope**, a ewentualny model ręcznego CSV miał wrócić tylko po jawnym ponownym otwarciu przez właściciela.
+Owner decision **V2-025** resolves the prior canonical conflict: approved future direction is `ADMIN_LIVE`, labeled **`APPROVED_DIRECTION_NOT_IMPLEMENTED`**.
 
-W późniejszym Puriva Client Operating Pack discovery zapisano propozycję dopuszczenia live GA4/GSC wyłącznie dla DCA Admina, z oddzielnymi service accounts per Website; klient miałby widzieć tylko miesięczne raporty. Ta propozycja nie jest zatwierdzoną decyzją właścicielską ani bieżącą capability: nie została spójnie zapisana w dokumentach kanonicznych repo, które nadal oznaczają live GA4/GSC jako `WITHDRAWN`.
+- Live GA4/GSC is available only to DCA Admin.
+- Every Website uses a separate service account.
+- Client Manager and Client User receive FINAL monthly reports only.
+- Manual import remains not implemented.
+- Prior permanent `WITHDRAWN` wording for future planned scope is superseded in current canonical docs; historical evidence may retain `WITHDRAWN` for provenance.
 
-Nie wolno po cichu zmieniać capability statusu. Przed implementacją Google należy wykonać osobny canonical writeback, który jednoznacznie określi, czy późniejsza decyzja właścicielska formalnie ponownie otwiera live GA4/GSC oraz jaki jest jej dokładny security, credential, environment i rollout gate.
+This resolution does **not** authorize implementation. Before any Google work, a separate owner-authorized implementation package must define security, credential, environment, and rollout gates.
 
-Do czasu rozstrzygnięcia:
+Until that separate authorization:
 
-- nie implementować OAuth;
-- nie tworzyć service accounts;
-- nie wykonywać live sync;
-- nie traktować braku Google credentials jako blockera Phase 2 ani innych niezależnych pakietów.
+- do not implement OAuth;
+- do not create service accounts;
+- do not perform live sync;
+- do not treat missing Google credentials as a blocker for Phase 2 or other independent packages.
 
 ### Otwarte szczegóły po ewentualnym ponownym otwarciu
 
@@ -1009,16 +1013,18 @@ Nie są częścią pierwszego pilota. Przed aktywacją wymagają osobnego stagin
 
 1. **P2-01 — population:** DECIDED. Jeden aktywny lokalny Tenant oraz wszystkie jego aktywne Client, TenantMembership i ClientUserAccess, wyłącznie jako przyszły zanonimizowany offline snapshot z deterministycznym manifestem/hash.
 2. **P2-02 — six no-role memberships:** DECIDED. Sześć aktywnych membershipów bez roli pozostaje wykluczonych i nietkniętych, ma klasyfikację `OWNER_REMEDIATION_REQUIRED`, nie otrzymuje roli domyślnej ani dostępu i nie powoduje zmiany danych/runtime. Jest to wyłącznie writeback dokumentacyjny.
-3. **P2-03 — snapshot authority:** DECIDED. Owner supplies the anonymized offline file, selects exactly one active Tenant represented only by a pseudonymous label/hash, and Codex never creates a snapshot or accesses a database.
+3. **P2-03 — snapshot authority:** DECIDED. Owner supplies the anonymized offline file, selects exactly one active Tenant represented only by a pseudonymous label/hash, and agents never create a snapshot or access a database.
 4. **P2-04 — completeness/anomalies:** DECIDED. Deterministic manifest/hash and complete mappings are required; unexpected absence, collision, orphan, cross-tenant link, or unknown role fails closed; new exceptions require a new owner decision.
 5. **P2-05 — ClientUserAccess:** DECIDED. It remains unchanged and sole authority for per-Client visibility; count/hash must match and Workspace membership never widens access.
-6. **P2-06 — backup/rollback/evidence:** DECIDED for future P2-B/C posture. Evidence remains only at `C:\dcaosv1-p2-evidence` without cloud sync or automatic deletion; localhost source/restore only, fresh backup/hash and restore rehearsal before any write, preserve evidence on failure, and owner alone decides resume/rollback.
+6. **P2-06 — backup/rollback/evidence:** DECIDED for future write posture after a filled P2-B docs gate. Evidence remains only at `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`, same physical location) without cloud sync or automatic deletion; localhost source/restore only, fresh backup/hash and restore rehearsal before any write, preserve evidence on failure, and owner alone decides resume/rollback.
 7. **P2-07 — Phase 3 handoff:** DECIDED. P2-D reconciliation never starts Phase 3; flags remain OFF, endpoint authority remains `LOCAL_ONLY`, and Tenant/Client/ClientUserAccess remain runtime authority pending separate approval.
+8. **P2-B docs gate (V2-026):** DECIDED as `DOCS_ONLY_AUTHORIZED` / `EXECUTION_NOT_AUTHORIZED`. See `docs/implementation/P2_B_OWNER_EXECUTION_GATE.md`. Does not authorize P2-C/P2-D execution.
+9. **GA4/GSC (V2-025):** DECIDED as `ADMIN_LIVE` / `APPROVED_DIRECTION_NOT_IMPLEMENTED`. Admin-only live analytics; per-Website service accounts; clients receive FINAL monthly reports only. No OAuth/sync implementation authorized.
+10. **Autonomy (V2-023) / OpenClaw (V2-027):** Cursor and Codex have equal ordinary autonomy (one executor per file area). OpenClaw is superseded historical tooling.
 
-### Pozostały konflikt kanoniczny
+### Remaining non-blocking product gaps
 
-8. **GA4/GSC:** późniejsza, niezatwierdzona propozycja właścicielska sugeruje live analytics dla DCA Admina, lecz bieżące dokumenty repo nadal oznaczają integrację jako `WITHDRAWN`. Wymagany osobny canonical writeback; do tego czasu brak implementacji OAuth/sync.
-9. **Pełna macierz autoryzacji i state machines:** pozostaje wymagana przed szerokim kodowaniem domenowym, lecz nie blokuje owner discovery Phase 2.
+11. **Pełna macierz autoryzacji i state machines:** pozostaje wymagana przed szerokim kodowaniem domenowym, lecz nie blokuje owner discovery Phase 2.
 
 ### Architektura i dane
 
@@ -1135,7 +1141,7 @@ Koncepcja oraz Phase 1 DCA OS v2 są domknięte dla zatwierdzonego lokalnego zak
 
 ## 29. Historyczna aktualizacja operacyjna z 17 lipca 2026 — SUPERSEDED
 
-Cała sekcja 29 poniżej jest zachowana wyłącznie jako historia konfiguracji. Nie jest aktualną execution authority. Plan OpenClaw został wycofany; bieżąca praca odbywa się bezpośrednio przez Codex CLI. Dokładny aktualny stan znajduje się w sekcji 30.
+Cała sekcja 29 poniżej jest zachowana wyłącznie jako historia konfiguracji (**V2-027**). Nie jest aktualną execution authority. Plan OpenClaw jest superseded; bieżąca praca odbywa się przez Codex CLI i Cursor z równą autonomią dla zwykłej bounded work (**V2-023**), one executor per file area. Dokładny aktualny stan znajduje się w sekcji 30.
 
 ### Środowisko
 
@@ -1310,19 +1316,22 @@ Repo zawiera Graphify-first guidance i wcześniejszą konfigurację Graphify `0.
 
 ### Aktualny następny krok
 
-1. Zaimplementować i zweryfikować wyłącznie offline P2-A na synthetic fixtures; nie tworzyć ani konsumować realnego snapshotu.
+1. P2-A offline foundation and P2-B docs-only gate are recorded; keep Phase 2 runtime `NOT_STARTED`.
 2. Zachować `ClientUserAccess` jako sole per-Client authority i nie wykonywać żadnej operacji danych.
-3. Zweryfikować GitHub `main` i aktualne dokumenty przed każdą przyszłą misją; nie rozpoczynać P2-B/C, Phase 3, backfill, reconciliation, switch ani cleanup bez osobnej owner authorization.
+3. Zweryfikować GitHub `main` i aktualne dokumenty przed każdą przyszłą misją; nie rozpoczynać filled-gate P2-C, P2-D, Phase 3, backfill, reconciliation, switch ani cleanup bez osobnej owner authorization. Do not execute the P2-A exporter without a new single-use owner authorization.
 
 ### Safety flags
 
 ```text
 PHASE_1=COMPLETE
 PHASE_2=NOT_STARTED
-OWNER_DECISIONS=IN_PROGRESS
+OWNER_DECISIONS=P2-A_IMPLEMENTATION_READY_AUTHORIZED;EXPORTER_BUILD_ONLY;P2-B_DOCS_ONLY
 P2_01_POPULATION=APPROVED
 P2_02_NO_ROLE_DISPOSITION=DECIDED
 P2_A_IMPLEMENTATION_READY=AUTHORIZED
+P2_A_EXPORTER=BUILD_ONLY_AUTHORIZED
+P2_B_GATE=DOCS_ONLY_AUTHORIZED
+ANALYTICS=ADMIN_LIVE_APPROVED_DIRECTION_NOT_IMPLEMENTED
 PHASE_2_DATA_MUTATION=NO
 PHASE_2_BACKFILL_EXECUTED=NO
 PHASE_2_RECONCILIATION_EXECUTED=NO
