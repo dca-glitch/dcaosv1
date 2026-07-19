@@ -31,14 +31,14 @@ This file is no longer a running next-gate ledger. Use it to understand what eac
 | Auth/session/RBAC | IMPLEMENTED_LOCAL_PROVEN | Local runtime boundary and current client/admin session baseline |
 | Client Portal MVP | IMPLEMENTED_LOCAL_PROVEN | Client-safe archive/approvals/FINAL monthly reports |
 | AI Delivery routed workflow pages | IMPLEMENTED_LOCAL_PROVEN | Current responsive page-first workflow baseline |
-| Monthly reports | IMPLEMENTED_LOCAL_PROVEN | FINAL-only client visibility; no live GA4/GSC claim |
+| Monthly reports | IMPLEMENTED_LOCAL_PROVEN | FINAL-only client visibility; no live GA4/GSC claim for clients |
 | AI Operations / Orchestrator Lite | CONFIG_SHAPE_PROVEN | Planning/read-only posture only |
 | Market Intelligence | LOCAL_FOUNDATION | Admin-only MVP |
 | Finance Lite | LOCAL_FOUNDATION | Current module foundation only |
 | R2 private storage | RECORDED_STAGING_PROOF | Retained proof provenance, not blanket live authorization |
 | WordPress prepared draft handoff | IMPLEMENTED_LOCAL_PROVEN | Local prepared-draft/admin handoff only |
 | Direct-to-Draft live HTTP capability | APPROVED_DIRECTION_NOT_IMPLEMENTED | Do not claim as current |
-| Live GA4/GSC integration | WITHDRAWN | Removed from current/planned scope |
+| Live GA4/GSC integration | APPROVED_DIRECTION_NOT_IMPLEMENTED | `ADMIN_LIVE` approved future direction: DCA Admin only; separate service account per Website; Client Manager/Client User receive FINAL monthly reports only; OAuth/sync/manual import not implemented |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 charter/authority package | IMPLEMENTED | Private-agency direction and Phase 1 governing contracts are canonical |
 | Phase 1 P1.1 Workspace foundation | IMPLEMENTED | Additive schema foundation completed in `PR #60` / `14b52f8b`; Tenant/Client remains authoritative at runtime, with no client-visible Workspace authority |
@@ -46,8 +46,9 @@ This file is no longer a running next-gate ledger. Use it to understand what eac
 | Phase 1 P1.3a reconciliation preparation | IMPLEMENTED_LOCAL_PROVEN | Deterministic snapshot-only comparison and isolation preparation; flags remain OFF and rollback is a future plan only |
 | Phase 1 P1.4a staging-like rehearsal and execution-gate packet | IMPLEMENTED_LOCAL_PROVEN | Sanitized rehearsal evidence; the P1.2b–P1.4b approved localhost scope is complete and evidenced |
 | Phase 1 P1.2b–P1.4b local execution package | IMPLEMENTED_LOCAL_PROVEN | Backup/restore, source migration/backfill/reconciliation, idempotent rerun, and endpoint permission/isolation PASS; endpoint authority and feature flag remain `LOCAL_ONLY` |
-| Phase 2 / P2-A owner decisions | P2-A_IMPLEMENTATION_READY_AUTHORIZED | A later authorized run may consume an owner-provided anonymized offline snapshot; the owner selects exactly one active Tenant, keeps snapshot/evidence only at `C:\dcaosv1-p2-evidence` outside Git with no cloud sync or automatic deletion, requires fail-closed completeness and deterministic manifest/hash, preserves `ClientUserAccess` count/hash as sole per-Client authority, classifies the six known no-role memberships as `OWNER_REMEDIATION_REQUIRED`, and limits future P2-B/C posture to localhost `127.0.0.1:5434` plus isolated restore `127.0.0.1:5435`; this writeback uses synthetic fixtures only, Phase 2 runtime remains NOT_STARTED, flags remain OFF, and Phase 3 does not start |
-| P2-A owner-run local exporter | BUILD_ONLY_AUTHORIZED | Separate disabled-by-default tool; build/test/docs/review/CI/merge only with synthetic or mocked fixtures. The validator stays database-free. Future execution needs new explicit single-use owner authorization, must use read-only semantics only at exact `127.0.0.1:5434`, and may write only the approved anonymized snapshot under `C:\dcaosv1-p2-evidence`. Reject every other/missing target and execution mode; no database access, real snapshot, secret handling, migration, backfill, reconciliation, runtime/flag/endpoint change, remote/staging/production/VPS/Tellanic, dependency update, or Phase 3 is authorized now. |
+| Phase 2 / P2-A owner decisions | P2-A_IMPLEMENTATION_READY_AUTHORIZED | A later authorized run may consume an owner-provided anonymized offline snapshot; the owner selects exactly one active Tenant; keeps snapshot/evidence only at `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`, same physical location) outside Git with no cloud sync or automatic deletion; requires fail-closed completeness and deterministic manifest/hash; preserves `ClientUserAccess` count/hash as sole per-Client authority; classifies the six known no-role memberships as `OWNER_REMEDIATION_REQUIRED`; synthetic fixtures only now; Phase 2 runtime remains NOT_STARTED; flags remain OFF; Phase 3 does not start |
+| P2-A owner-run local exporter | BUILD_ONLY_AUTHORIZED | Separate disabled-by-default tool; build/test/docs/review/CI/merge only with synthetic or mocked fixtures. The validator stays database-free. Future execution needs new explicit single-use owner authorization, must use read-only semantics only at exact `127.0.0.1:5434`, and may write only the approved anonymized snapshot under `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`). Reject every other/missing target and execution mode; no database access, real snapshot, secret handling, migration, backfill, reconciliation, runtime/flag/endpoint change, remote/staging/production/VPS/Tellanic, dependency update, or Phase 3 is authorized now. |
+| P2-B owner execution gate | DOCS_ONLY_AUTHORIZED | Fillable single-use gate framework in `docs/implementation/P2_B_OWNER_EXECUTION_GATE.md`. Does not authorize P2-C write, P2-D reconciliation execution, exporter execution, database access, or Phase 3. |
 
 ## 4. Current proof baseline
 
@@ -65,14 +66,14 @@ These are the current UI proof references for the `998c294` baseline.
 - Historical staging/production proofs remain evidence only.
 - Old closeouts, next-gate docs, and lane ledgers are not current operating authority.
 - WordPress must stay platform-neutral and optional; current canonical docs do not authorize live HTTP draft/publish claims.
-- GA4/GSC must stay labeled withdrawn unless a future canonical refresh says otherwise.
+- Live GA4/GSC must stay labeled `APPROVED_DIRECTION_NOT_IMPLEMENTED` under the `ADMIN_LIVE` direction unless a future owner decision changes it. Do not claim current OAuth/sync/manual import capability. Historical evidence may retain `WITHDRAWN` for provenance only.
 
 ## 6. Local engineering-orchestration control state
 
 - `AUTONOMY-HIGH` was owner-approved on 2026-07-17. After the applicable task, validation, independent-review, unchanged-diff, and exact-staging gates pass, routine local commits, task-scoped feature-branch pushes, draft PRs, CI repair, and review loops may be autonomous.
+- Cursor and Codex have equal repository autonomy for ordinary bounded work; one executor owns one file area at a time.
 - This does not authorize production or VPS actions, destructive migrations, secret handling, spending, legal/privacy decisions, or unresolved Critical issues; those remain owner-gated.
-- The verified local tool boundary is Graphify `0.9.17`, Codex/Graphify configuration at local commit `5ad4eeb`, and OpenClaw `2026.7.1` with the official Codex plugin using OpenAI OAuth (no API key required).
-- OpenClaw remains temporary development/deployment orchestration only until the live-VPS launch gate closes. It is not a DCA OS runtime dependency. Gateway is loopback-only with token authentication; `tools.elevated`, heartbeat, Scheduled Tasks, and autonomous recurring monitoring are disabled or unapproved.
+- The verified local tool boundary is Graphify `0.9.17` and Codex/Graphify configuration at local commit `5ad4eeb`. OpenClaw is superseded historical tooling and is not current orchestrator authority. Local orchestration tools are not DCA OS runtime dependencies and must not be installed on the production VPS.
 
 ## 7. Phase 1 local execution closeout
 

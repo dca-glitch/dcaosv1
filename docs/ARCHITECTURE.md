@@ -78,9 +78,9 @@ Current UI baseline after `PR #55`:
 | Client safety | No prompts, provider internals, raw workflow runs, AI cost details, credentials, or `storageKey` in client surfaces |
 | Monthly reports | Client sees FINAL only |
 | WordPress | Current canonical claim is local prepared-draft/admin foundation only |
-| GA4/GSC | Withdrawn from live scope; manual import not implemented |
+| GA4/GSC | Not implemented. Approved future direction `ADMIN_LIVE` (`APPROVED_DIRECTION_NOT_IMPLEMENTED`): DCA Admin only; separate service account per Website; Client Manager/Client User receive FINAL monthly reports only. Manual import not implemented. |
 | Production | Frozen/owner-gated for new actions |
-| Local development orchestration | OpenClaw/Codex/Graphify are external local development tooling only; they are not DCA OS runtime components and must not be installed on the production VPS |
+| Local development orchestration | Codex CLI and Cursor (equal autonomy for ordinary bounded work) plus Graphify are external local development tooling only; they are not DCA OS runtime components and must not be installed on the production VPS. OpenClaw is superseded historical tooling, not current orchestrator authority. |
 
 ## Canonical supporting documents
 

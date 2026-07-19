@@ -46,7 +46,7 @@ Publication rules:
 
 - Agency-client finance remains tenant-scoped operational data.
 - Existing `OWN_DOMAIN` data is legacy compatibility context. It is a candidate for `INTERNAL_BRAND` only after reconciliation; independent licensee direction is superseded.
-- GA4/GSC live integration is **WITHDRAWN**; manual import is not implemented.
+- Live GA4/GSC is **not implemented**. Approved future direction is `ADMIN_LIVE` (`APPROVED_DIRECTION_NOT_IMPLEMENTED`): live analytics for DCA Admin only, with a separate service account per Website; Client Manager and Client User receive FINAL monthly reports only. Manual import is not implemented. OAuth, service accounts, sync, and live integration are not authorized by this model document.
 - Existing GA4/GSC-related fields remain compatibility surface only until a later cleanup.
 
 ## 5. Client Operating Pack rule

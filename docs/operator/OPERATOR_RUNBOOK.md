@@ -25,13 +25,12 @@ Run in this exact order and stop on first failure:
 - For a Windows Prisma `EPERM` on `query_engine-windows.dll.node`, identify the process holding the DLL, inspect its command line and parent, and stop only the confirmed DCA OS process tree. The verified incident was the DCA OS API Node process; after one retry, `npm.cmd run validate` passed and `npm.cmd run smoke:local` passed with API/database ready.
 - Never stop all Node processes. After an equivalent repeated failure, change the hypothesis and escalate for Critical review rather than retrying unchanged.
 - Workspace work uses expand → backfill → reconciliation → switch → cleanup. Package 1 is expand-only: no destructive change, backfill, endpoint switch, or cleanup. See [`../architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md`](../architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md).
-- OpenClaw `2026.7.1` plus the official Codex plugin may orchestrate local development through OpenAI OAuth; no API key is required. Gateway remains loopback-only with token authentication, `tools.elevated` and heartbeat are disabled, and no Scheduled Task or autonomous recurring monitoring is approved.
-- OpenClaw is temporary development/deployment orchestration only, not a DCA OS runtime component. Do not install it in the product runtime or on the production VPS.
+- Codex CLI and Cursor have equal autonomy for ordinary bounded work; one executor owns one file area at a time. OpenClaw is superseded historical tooling and is not current orchestrator authority. Local orchestration tools are not DCA OS runtime components and must not be installed on the production VPS.
 
 ## 2.2 Autonomous repository workflow
 
-- Codex auto-review handles routine workspace-write tool approvals. Routine repository reads, edits, local commands, tests, commits, pushes, PR creation, CI monitoring, and routine CI fixes do not require a human approval pause.
-- Before each eligible merge of a material code or policy diff, obtain a separate read-only Terra reviewer-agent decision against the exact unchanged diff and record `APPROVE_READ_ONLY` or `REQUEST_CHANGES` with evidence in the PR/report.
+- When an assigned mission authorizes them, routine repository reads, edits, local commands, tests, commits, pushes, PR creation, CI monitoring, and routine CI fixes do not require a human approval pause.
+- Before each eligible merge of a material code or policy diff, obtain a separate read-only independent reviewer decision against the exact unchanged diff and record `APPROVE_READ_ONLY` or `REQUEST_CHANGES` with evidence in the PR/report.
 - Green CI plus that recorded independent reviewer decision is sufficient when GitHub branch protection does not technically require a native approval. If it does, obtain a genuinely distinct authorized GitHub approval; never simulate or falsely claim one.
 - Owner involvement remains required for production/VPS, secrets, costs, destructive migrations, legal/privacy issues, live integrations, actual backfill/reconciliation/switch/cleanup, and unresolved critical/canonical conflicts.
 
@@ -59,7 +58,7 @@ Run in this exact order and stop on first failure:
 - `PHASE_2=NOT_STARTED`; P2-01 approves only the future P2-A population definition: exactly one existing active Tenant from local source `127.0.0.1:5434` and all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records.
 - Any future P2-A package must consume only an anonymized offline snapshot and produce a deterministic population manifest/hash. It must not connect to a database, create a snapshot in this package, mutate data, run backup/backfill/reconciliation, change Workspace authority, alter feature flags or endpoint authority, or touch remote, staging, production, VPS, or Tellanic.
 - P2-02 is decided: keep the six no-role memberships excluded and untouched, classify them as `OWNER_REMEDIATION_REQUIRED`, infer no default role, grant no access, and make no data or runtime change. This is documentation-only; Phase 2 remains `NOT_STARTED`, and no backfill, reconciliation, switch, cleanup, or other data operation is authorized.
-- P2-A implementation-ready is authorized with seven owner decisions: only an owner-prepared anonymized offline file may be accepted in a later authorized run; exactly one active Tenant is owner-selected and represented only by a pseudonymous label/hash; snapshot/evidence remain outside Git at `C:\dcaosv1-p2-evidence` without cloud sync or automatic deletion; completeness, mapping, and exception validation is fail-closed; the six known no-role records are `OWNER_REMEDIATION_REQUIRED` and new exceptions require a new decision; `ClientUserAccess` count/hash remains unchanged and authoritative; and future P2-B/C preparation is localhost-only (`127.0.0.1:5434` / isolated restore `127.0.0.1:5435`) with owner-controlled resume/rollback. Codex must never create a snapshot or connect to a database. This writeback and its tests use synthetic fixtures only and consume no snapshot. Flags remain OFF, Phase 3 cannot start from reconciliation, and no snapshot processing, mutation, backfill, reconciliation, switch, cleanup, or remote/staging/production/VPS action is authorized by this writeback.
+- P2-A implementation-ready is authorized with owner decisions V2-013–V2-022: only an owner-prepared anonymized offline file may be accepted in a later authorized run; exactly one active Tenant is owner-selected and represented only by a pseudonymous label/hash; snapshot/evidence remain outside Git at `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`, same physical location) without cloud sync or automatic deletion; completeness, mapping, and exception validation is fail-closed; the six known no-role records are `OWNER_REMEDIATION_REQUIRED` and new exceptions require a new decision; `ClientUserAccess` count/hash remains unchanged and authoritative; and future P2-C write posture after a filled single-use P2-B gate is localhost-only (`127.0.0.1:5434` / isolated restore `127.0.0.1:5435`) with owner-controlled resume/rollback. Agents must never create a snapshot or connect to a database under this boundary. This writeback and its tests use synthetic fixtures only and consume no snapshot. Flags remain OFF, Phase 3 cannot start from reconciliation, and no snapshot processing, mutation, backfill, reconciliation, switch, cleanup, or remote/staging/production/VPS action is authorized by this writeback.
 - Implementation contract and operator procedure: [`docs/implementation/P2_A_OFFLINE_FOUNDATION.md`](../implementation/P2_A_OFFLINE_FOUNDATION.md). The tracked fixture and policy are synthetic only; never place a real snapshot inside Git.
 
 ### 2.6.1 P2-A owner-run local exporter (build-only)
@@ -67,8 +66,15 @@ Run in this exact order and stop on first failure:
 - The exporter is a separate, disabled-by-default owner-run tool; it must not change the existing database-free P2-A validator or its offline-only boundary.
 - This decision authorizes build, synthetic/mocked tests, documentation, review, CI, and merge only. Do not connect to a database, launch Docker, create a real snapshot, inspect/print a connection string or secret, or run the exporter.
 - A future run needs a new explicit single-use owner authorization. It may use read-only semantics only for the exact source `127.0.0.1:5434`; reject missing targets and every other host, port, URL, remote, staging, production, VPS, or Tellanic target, plus write/apply/mutation modes and access-widening requests.
-- Its only future output is the approved anonymized `DCA_OS_V2_P2_A_SNAPSHOT_V1` schema at `C:\dcaosv1-p2-evidence`; never emit prohibited fields, PII, source IDs, credentials, raw records, or connection material. The output requires deterministic pseudonymous keys, selection/manifest/access hashes, mappings, and exactly six `OWNER_REMEDIATION_REQUIRED` exceptions.
+- Its only future output is the approved anonymized `DCA_OS_V2_P2_A_SNAPSHOT_V1` schema at `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`); never emit prohibited fields, PII, source IDs, credentials, raw records, or connection material. The output requires deterministic pseudonymous keys, selection/manifest/access hashes, mappings, and exactly six `OWNER_REMEDIATION_REQUIRED` exceptions.
 - This build does not authorize migration, schema change, backfill, reconciliation, runtime/flag/endpoint change, dependency update, production/VPS/staging work, or Phase 3.
+
+### 2.6.2 P2-B owner execution gate (docs-only)
+
+- Status: `DOCS_ONLY_AUTHORIZED` / `EXECUTION_NOT_AUTHORIZED` / `PHASE_2_RUNTIME_NOT_STARTED`.
+- Framework: [`docs/implementation/P2_B_OWNER_EXECUTION_GATE.md`](../implementation/P2_B_OWNER_EXECUTION_GATE.md).
+- This section does **not** authorize P2-C backfill, P2-D reconciliation execution, exporter execution, database access, backup/restore, mutation, switch, cleanup, or Phase 3.
+- A future filled single-use gate packet is stored only under the canonical evidence directory; do not commit real identifiers or hashes to Git.
 
 ## 3. What validate is expected to prove
 
@@ -109,7 +115,7 @@ Validate does **not** by itself prove runtime behavior, browser flows, or extern
 
 - Current WordPress claim is prepared-draft/local handoff only.
 - Live HTTP WordPress draft/publish remains outside current canonical capability.
-- GA4/GSC live integration is withdrawn; manual import is not implemented.
+- Live GA4/GSC is not implemented. Approved future direction is `ADMIN_LIVE` (`APPROVED_DIRECTION_NOT_IMPLEMENTED`): DCA Admin only; separate service account per Website; Client Manager and Client User receive FINAL monthly reports only. Manual import is not implemented. Do not implement OAuth, service accounts, sync, or live analytics without a separate owner authorization.
 
 ## 8. Phase 1 local execution closeout
 

@@ -1,5 +1,5 @@
 {
-  "generatedOn": "2026-07-17",
+  "generatedOn": "2026-07-19",
   "authorityOrder": [
     "README.md",
     "docs/README.md",
@@ -12,21 +12,21 @@
     "docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md"
   ],
   "summary": {
-    "totalFiles": 295,
+    "totalFiles": 303,
     "CURRENT_CANONICAL": 10,
-    "CURRENT_SUPPORTING": 160,
+    "CURRENT_SUPPORTING": 168,
     "SUPERSEDED_PLAN": 0,
     "HISTORICAL_EVIDENCE": 125,
     "SUPERSEDED_UI_PACK": 0
   },
   "files": {
-    "README.md": {
-      "classification": "CURRENT_CANONICAL",
-      "note": "repository entry point"
-    },
     "AGENTS.md": {
       "classification": "CURRENT_CANONICAL",
       "note": "agent overlay after reading canonical docs"
+    },
+    "README.md": {
+      "classification": "CURRENT_CANONICAL",
+      "note": "repository entry point"
     },
     "docs/AI_MODULES.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -80,25 +80,13 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "current tenant boundary reference"
     },
-    "docs/ai/AI_AGENT_ROLES_AND_TASKS.md": {
+    "docs/ai-delivery-api-contract.md": {
       "classification": "CURRENT_SUPPORTING",
-      "note": "current AI-agent role vocabulary"
+      "note": "active API contract reference"
     },
-    "docs/ai/AI_MATERIAL_CLASSIFICATION.md": {
+    "docs/ai-delivery-projects-mvp-prd.md": {
       "classification": "CURRENT_SUPPORTING",
-      "note": "current AI material classification reference"
-    },
-    "docs/ai/AI_MODEL_POLICY.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "current AI model policy reference"
-    },
-    "docs/ai/AI_ORCHESTRATOR_LITE.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "current orchestrator-lite reference"
-    },
-    "docs/ai/PURIVA_AI_PRELIVE_WORKFLOW_PACK.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "Puriva workflow pack reference"
+      "note": "current product-scope reference for AI Delivery MVP"
     },
     "docs/ai-delivery/GOOGLE_DRIVE_DOCS_DECISION.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -136,14 +124,6 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "current Copilot operating-model guidance"
     },
-    "docs/ai-delivery-api-contract.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "active API contract reference"
-    },
-    "docs/ai-delivery-projects-mvp-prd.md": {
-      "classification": "CURRENT_SUPPORTING",
-      "note": "current product-scope reference for AI Delivery MVP"
-    },
     "docs/ai-market-intelligence/admin-foundation.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current admin-only MI foundation reference"
@@ -151,6 +131,26 @@
     "docs/ai-operations/ADMIN_CONSOLE.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current admin console surface reference"
+    },
+    "docs/ai/AI_AGENT_ROLES_AND_TASKS.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI-agent role vocabulary"
+    },
+    "docs/ai/AI_MATERIAL_CLASSIFICATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI material classification reference"
+    },
+    "docs/ai/AI_MODEL_POLICY.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current AI model policy reference"
+    },
+    "docs/ai/AI_ORCHESTRATOR_LITE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "current orchestrator-lite reference"
+    },
+    "docs/ai/PURIVA_AI_PRELIVE_WORKFLOW_PACK.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "Puriva workflow pack reference"
     },
     "docs/architecture/AI_MODEL_POLICY.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -211,6 +211,10 @@
     "docs/architecture/REVENUE_HUB_AI_RH0_OPERATING_MODEL.md": {
       "classification": "HISTORICAL_EVIDENCE",
       "note": "retained architecture closeout/provenance only"
+    },
+    "docs/architecture/TENANT_CLIENT_TO_WORKSPACE_MIGRATION_CONTRACT.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "compatibility and safe migration contract; in authority chain via docs/README"
     },
     "docs/audit/AUDIT_EVIDENCE_INDEX.md": {
       "classification": "HISTORICAL_EVIDENCE",
@@ -320,6 +324,10 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "retained supporting documentation; defer to the canonical chain on conflicts"
     },
+    "docs/discovery/PHASE_2_BACKFILL_RECONCILIATION_DISCOVERY_REPORT.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "Phase 2 discovery report; planning authority for P2-B/C/D sequencing"
+    },
     "docs/email-notifications-contract.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current notification contract reference"
@@ -376,9 +384,17 @@
       "classification": "CURRENT_SUPPORTING",
       "note": "reusable implementation pattern still compatible with the current architecture"
     },
+    "docs/implementation/P2_A_OFFLINE_FOUNDATION.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "P2-A offline validator foundation; synthetic fixtures only; Phase 2 runtime NOT_STARTED"
+    },
     "docs/implementation/P2_A_OWNER_LOCAL_EXPORTER.md": {
       "classification": "CURRENT_SUPPORTING",
-      "note": "build-only owner-run local exporter boundary"
+      "note": "build-only owner-run local exporter boundary; EXECUTION_NOT_AUTHORIZED"
+    },
+    "docs/implementation/P2_B_OWNER_EXECUTION_GATE.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "P2-B docs-only owner execution-gate framework; EXECUTION_NOT_AUTHORIZED"
     },
     "docs/implementation/PAGINATION_PATTERN.md": {
       "classification": "CURRENT_SUPPORTING",
@@ -547,6 +563,18 @@
     "docs/project-control/CANONICAL_COMPONENT_SYSTEM.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "current component-system decision reference"
+    },
+    "docs/project-control/DCA_OS_V2_CANONICAL_HANDOFF.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "owner handoff; supporting Phase 2 decision and safety-flag record"
+    },
+    "docs/project-control/DCA_OS_V2_DECISION_REGISTER.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "binding owner-approved DCA OS v2 decisions including V2-023\u2013V2-027"
+    },
+    "docs/project-control/DCA_OS_V2_PHASE_0_12_EXECUTION_PLAN.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "binding Phase 0\u201312 execution status and sequencing"
     },
     "docs/releases/DCA_OS_LITE_V1_DARK_NEBULA_DEPLOYMENT.md": {
       "classification": "HISTORICAL_EVIDENCE",
@@ -1127,6 +1155,10 @@
     "docs/security/LEGACY_WORDPRESS_CONFIG_SUNSET.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "retained supporting documentation; defer to the canonical chain on conflicts"
+    },
+    "docs/security/PHASE_1_WORKSPACE_AUTHORIZATION_MATRIX.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "Phase 1 target Workspace authorization matrix"
     },
     "docs/security/PRODUCTION_FREEZE_SWEEP.md": {
       "classification": "CURRENT_SUPPORTING",

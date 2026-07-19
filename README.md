@@ -25,7 +25,7 @@ DCA OS v2 is the private Agency Operations System for Digital Cube Agency.
 ## Capability guardrails
 
 - **WordPress:** local prepared-draft handoff and bounded admin foundations exist; live HTTP draft/publish is **not** current capability and must not be claimed from canonical docs.
-- **GA4/GSC:** live integration is **WITHDRAWN**. Manual import is **not implemented**.
+- **GA4/GSC:** not currently implemented. Approved future direction is `ADMIN_LIVE` (`APPROVED_DIRECTION_NOT_IMPLEMENTED`): live GA4/GSC for DCA Admin only, separate service account per Website; Client Manager and Client User receive FINAL monthly reports only. Manual import is **not implemented**. This package does not implement OAuth, service accounts, sync, or any live integration.
 - **Client safety:** clients must not see prompts, provider internals, raw workflow runs, AI cost details, credentials, `storageKey`, or admin-only notes.
 
 ## Authority order

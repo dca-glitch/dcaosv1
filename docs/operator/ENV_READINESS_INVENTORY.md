@@ -139,17 +139,17 @@ Smokes:
 
 ---
 
-## GA4 / Google Search Console — WITHDRAWN (2026-07-13)
+## GA4 / Google Search Console — APPROVED_DIRECTION_NOT_IMPLEMENTED (`ADMIN_LIVE`)
 
-> **Owner decision:** Live GA4/GSC OAuth/sync is **withdrawn** from current and planned scope. These env vars are **not required**.
+> **Owner decision (V2-025):** Live GA4/GSC is **not implemented**. Approved future direction is `ADMIN_LIVE`: DCA Admin only; separate service account per Website; Client Manager and Client User receive FINAL monthly reports only. These env vars are **not required** now. This section does **not** authorize OAuth, service accounts, sync, or any live integration.
 
 | Variable | Local | Staging (G4) | Notes |
 |----------|-------|--------------|-------|
-| `GA4_GSC_SYNC_ENABLED` | Not required | Not required | **WITHDRAWN** — live GA4/GSC not in scope |
-| `GOOGLE_OAUTH_CLIENT_ID` | Not required | Not required | **WITHDRAWN** for GA4/GSC; Google Drive (separate capability) may need its own OAuth vars |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | Not required | Not required | **WITHDRAWN** for GA4/GSC |
+| `GA4_GSC_SYNC_ENABLED` | Not required | Not required | Not implemented; future `ADMIN_LIVE` only after a separate owner gate |
+| `GOOGLE_OAUTH_CLIENT_ID` | Not required | Not required | Not required for GA4/GSC now; Google Drive (separate capability) may need its own OAuth vars |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Not required | Not required | Not required for GA4/GSC now |
 
-MANUAL/snapshot monthly-report metrics remain the active path. Manual CSV import is **not** implemented and **not** authorized now.
+MANUAL/snapshot monthly-report metrics remain the active path. Manual CSV import is **not** implemented and **not** authorized now. Historical docs may still say `WITHDRAWN` for provenance.
 
 ---
 

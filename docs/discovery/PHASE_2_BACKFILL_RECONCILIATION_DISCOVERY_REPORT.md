@@ -7,7 +7,7 @@
 
 ## 1. Executive verdict
 
-Discovery preserves bounded owner decisions and authorizes the P2-A implementation-ready offline validator/consumer foundation, but not snapshot creation, processing, or execution. The canonical Phase 2 label, **Backfill and reconciliation**, overlaps in words with work completed under the tightly bounded P1.2b–P1.4b local gate. The completed P1 work is a single, fixed local population and explicitly did not start Phase 2. P2-A is constrained to synthetic fixtures in this writeback and a future owner-provided anonymized offline file, exactly one owner-selected active Tenant represented only by pseudonymous label/hash, external evidence at `C:\dcaosv1-p2-evidence`, fail-closed completeness, unchanged `ClientUserAccess`, and the localhost-only future P2-B/C posture. The six known no-role memberships remain `OWNER_REMEDIATION_REQUIRED`; new exceptions require a new owner decision. Phase 2 runtime remains `NOT_STARTED`.
+Discovery preserves bounded owner decisions and authorizes the P2-A implementation-ready offline validator/consumer foundation, but not snapshot creation, processing, or execution. The canonical Phase 2 label, **Backfill and reconciliation**, overlaps in words with work completed under the tightly bounded P1.2b–P1.4b local gate. The completed P1 work is a single, fixed local population and explicitly did not start Phase 2. P2-A is constrained to synthetic fixtures in this writeback and a future owner-provided anonymized offline file, exactly one owner-selected active Tenant represented only by pseudonymous label/hash, external evidence at `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`, same physical location), fail-closed completeness, unchanged `ClientUserAccess`, and the localhost-only future write posture after a filled P2-B docs gate. The six known no-role memberships remain `OWNER_REMEDIATION_REQUIRED`; new exceptions require a new owner decision. Phase 2 runtime remains `NOT_STARTED`.
 
 `P2-A_IMPLEMENTATION_READY_AUTHORIZED` means only that the offline validator/consumer foundation may be implemented and reviewed. It does **not** mean `READY_FOR_EXECUTION`, does not authorize snapshot creation, database access, schema, flags, endpoint, mutation, backfill, reconciliation execution, switch, cleanup, remote, staging, production, VPS, Tellanic, or client-facing change.
 
@@ -19,7 +19,7 @@ Discovery preserves bounded owner decisions and authorizes the P2-A implementati
 - No `.env` file, secret, live OAuth, remote environment, production/VPS, staging, database connection, backup/restore, backfill, reconciliation execution, flag change, endpoint switch, or Tellanic content was accessed.
 - **P2-01 writeback (2026-07-19):** the owner approves only a future P2-A population definition: exactly one existing active Tenant from local source `127.0.0.1:5434`, all of that Tenant's active Clients, active TenantMemberships, and active ClientUserAccess records. P2-A must use an anonymized offline snapshot with a deterministic population manifest/hash; it cannot connect to a database or mutate data.
 - **P2-02 owner decision writeback:** the six active no-role memberships remain excluded and untouched, are classified `OWNER_REMEDIATION_REQUIRED`, receive no default role or access, and cause no data or runtime change. This is documentation-only; Phase 2 remains `NOT_STARTED`.
-- **P2-A owner-decision writeback:** seven decisions authorize only the offline validator/consumer foundation: a future owner-provided anonymized file; one pseudonymous active-Tenant selection label/hash; external evidence at `C:\dcaosv1-p2-evidence`; fail-closed completeness; unchanged `ClientUserAccess`; localhost-only future P2-B/C posture; and no Phase 3 start from reconciliation. No snapshot is requested, created, processed, or consumed by this repository; synthetic fixtures only.
+- **P2-A owner-decision writeback:** seven decisions authorize only the offline validator/consumer foundation: a future owner-provided anonymized file; one pseudonymous active-Tenant selection label/hash; external evidence at `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`, same physical location); fail-closed completeness; unchanged `ClientUserAccess`; P2-B docs-only gate then localhost-only future P2-C write posture; and no Phase 3 start from reconciliation. No snapshot is requested, created, processed, or consumed by this repository; synthetic fixtures only.
 - The only targeted dynamic checks were unit tests that do not connect to a database: P1.2a (8 PASS), P1.3a (4 PASS), P1.4a (4 PASS), and execution/backup argument guards (2 PASS). An attempted Vitest invocation is not evidence against the API logic: these three API files use `node:test` and Vitest reported `No test suite found`; full repository validation remains the final validation gate for this report.
 
 ## 3. What Phase 1 already completed
@@ -135,7 +135,7 @@ No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, conne
 
 1. P2-01 is decided: future P2-A covers exactly one existing active local-source Tenant and all of its active Clients, TenantMemberships, and ClientUserAccess records, represented only in an anonymized offline snapshot with deterministic manifest/hash.
 2. **P2-02 is decided:** keep the six no-role exceptions excluded and untouched as `OWNER_REMEDIATION_REQUIRED`; infer no default role and grant no access. Any broader legacy-role translation matrix remains open.
-3. **P2-A is decided:** owner supplies the anonymized file, selects exactly one active Tenant, stores evidence only at `C:\dcaosv1-p2-evidence`, and does not authorize Codex snapshot creation or database access.
+3. **P2-A is decided:** owner supplies the anonymized file, selects exactly one active Tenant, stores evidence only at `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`), and does not authorize agent snapshot creation or database access.
 4. **P2-A completeness is decided:** deterministic manifest/hash, complete mappings, fail-closed unexpected absence/collision/orphan/cross-tenant/unknown-role handling, and new owner decision for new exceptions.
 5. **P2-A ClientUserAccess is decided:** unchanged count/hash and sole per-Client visibility authority; Workspace membership never widens access.
 6. **P2-B/C posture is decided:** localhost source/restore only, fresh backup/hash and restore rehearsal before any write, preserve evidence on failure, owner-only resume/rollback, and no remote/staging/production/VPS.
@@ -143,12 +143,12 @@ No personal names, e-mail addresses, raw user IDs, client IDs, tenant IDs, conne
 
 ## 12. Proposed smallest safe Phase 2 packages
 
-P2-A is authorized as implementation-ready only. P2-B/C/D execution remains separately gated.
+P2-A is authorized as implementation-ready only. The P2-B gate document is `DOCS_ONLY_AUTHORIZED` / `EXECUTION_NOT_AUTHORIZED`. P2-C/D execution remains separately gated and **NOT_AUTHORIZED**.
 
 1. **P2-A — implementation-ready preparation/dry-run:** build the contract and validator against synthetic fixtures only; a later separately authorized run may validate an owner-provided anonymized offline snapshot. Create the deterministic population manifest/hash, validate parameterized mappings, classify exactly six known no-role records as `OWNER_REMEDIATION_REQUIRED`, preserve `ClientUserAccess` count/hash, produce a decision/evidence packet, and prove no database client or apply mode. No real snapshot is requested, created, processed, or consumed in this repository.
-2. **P2-B — owner execution gate:** submit the exact population, mapping, role exception decisions, expected reconciliation invariant set, immutable diff identity, backup/restore plan, target environment, security review, abort conditions, and rollback owner. The gate must be explicit and single-use.
-3. **P2-C — execution:** only after P2-B approval, run a parameterized but fail-closed backfill against the approved target. It must use a serializable transaction, idempotent upserts, active-writer/drift guards, and zero authority/flag/endpoint changes.
-4. **P2-D — reconciliation evidence:** independently compare source legacy records and created Workspace records; verify completeness, uniqueness, exception disposition, unchanged `ClientUserAccess` hashes, idempotent rerun, and negative cross-workspace evidence. Record a reviewer decision. Do not start Phase 3.
+2. **P2-B — owner execution gate (docs-only framework):** [`../implementation/P2_B_OWNER_EXECUTION_GATE.md`](../implementation/P2_B_OWNER_EXECUTION_GATE.md) defines the fillable single-use gate packet (population, mapping, role exceptions, reconciliation invariants, immutable diff identity, backup/restore plan, target environment, security review, abort conditions, rollback owner). Authoring or updating that document does **not** authorize execution. A future filled gate still requires explicit single-use owner approval before P2-C.
+3. **P2-C — execution:** only after a filled and owner-approved P2-B gate, run a parameterized but fail-closed backfill against the approved target. It must use a serializable transaction, idempotent upserts, active-writer/drift guards, and zero authority/flag/endpoint changes. **NOT_AUTHORIZED** now.
+4. **P2-D — reconciliation evidence:** independently compare source legacy records and created Workspace records; verify completeness, uniqueness, exception disposition, unchanged `ClientUserAccess` hashes, idempotent rerun, and negative cross-workspace evidence. Record a reviewer decision. Do not start Phase 3. **NOT_AUTHORIZED** now.
 
 ## 13. Proposed acceptance criteria
 
@@ -188,17 +188,20 @@ Abort before a write, and preserve evidence without cleanup, when any of the fol
 
 ## 16. Recommended next safe package
 
-**P2-A, owner-approved implementation-ready preparation/dry-run only.** Its deliverable is a sanitized, parameterized Phase 2 population/mapping contract, deterministic exception classification, preserved `ClientUserAccess` count/hash, and decision packet for P2-B. It must not connect to a database, create a snapshot, create a migration, alter schema, write Workspace records, perform reconciliation execution, toggle flags, or alter endpoint authority. This package is not an execution authorization.
+**P2-B docs-only owner execution-gate framework** is the current next safe documentation package (`DOCS_ONLY_AUTHORIZED` / `EXECUTION_NOT_AUTHORIZED`). P2-A offline foundation remains implemented for synthetic fixtures only. Neither package authorizes database access, snapshot creation, exporter execution, backfill, reconciliation execution, switch, cleanup, or Phase 3.
 
 ## 17. Explicit safety flags
 
 ```text
 DISCOVERY_ONLY=NO
 P2_A_IMPLEMENTATION_READY=AUTHORIZED
+P2_A_EXPORTER=BUILD_ONLY_AUTHORIZED
+P2_B_GATE=DOCS_ONLY_AUTHORIZED
 PHASE_2=NOT_STARTED
-OWNER_DECISIONS=IN_PROGRESS
+OWNER_DECISIONS=P2-A_IMPLEMENTATION_READY_AUTHORIZED;EXPORTER_BUILD_ONLY;P2-B_DOCS_ONLY
 P2_01_POPULATION=APPROVED
 P2_02_NO_ROLE_DISPOSITION=DECIDED
+ANALYTICS=ADMIN_LIVE_APPROVED_DIRECTION_NOT_IMPLEMENTED
 DATA_MUTATION=NO
 BACKFILL_EXECUTED=NO
 RECONCILIATION_EXECUTED=NO

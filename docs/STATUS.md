@@ -1,6 +1,6 @@
 # DCA OS v2 — Current Status
 
-**Last updated:** 2026-07-19
+**Last updated:** 2026-07-19 (P2-B docs-only gate + canonical alignment writeback)
 **Canonical baseline:** merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55` — “Complete responsive modal-to-page migration”)
 
 This file replaces the old running gate ledger. Historical deploy logs, staging proofs, and prior gate closeouts remain under retained evidence paths and are no longer duplicated here.
@@ -16,8 +16,8 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Client session restoration | Fixed in the `PR #55` baseline for local rate-limited client sessions |
 | Client Portal MVP | Client-safe visibility, approvals, archive, and FINAL monthly reports only |
 | WordPress | Local prepared-draft/admin foundation only; live HTTP draft/publish is not current canonical capability |
-| GA4/GSC | **WITHDRAWN**; manual import not implemented |
-| Phase 2 owner decisions | **P2-A_IMPLEMENTATION_READY_AUTHORIZED** — seven owner decisions recorded: future owner-provided anonymized offline snapshot only, exactly one owner-selected active Tenant, external evidence at `C:\dcaosv1-p2-evidence`, fail-closed completeness, unchanged `ClientUserAccess`, future localhost-only P2-B/C posture, and no Phase 3 start; this writeback uses synthetic fixtures only and Phase 2 runtime remains **NOT_STARTED** |
+| GA4/GSC | **Not implemented**. Approved future direction `ADMIN_LIVE` (`APPROVED_DIRECTION_NOT_IMPLEMENTED`): DCA Admin only; separate service account per Website; Client Manager/Client User FINAL monthly reports only. Manual import not implemented. No OAuth/sync/live integration in this package. |
+| Phase 2 owner decisions | **P2-A_IMPLEMENTATION_READY_AUTHORIZED**; exporter **BUILD_ONLY_AUTHORIZED** / **EXECUTION_NOT_AUTHORIZED**; P2-B gate **DOCS_ONLY_AUTHORIZED** / **EXECUTION_NOT_AUTHORIZED**. Evidence path: `C:\dcaosv1-p2-evidence` (WSL `/mnt/c/dcaosv1-p2-evidence`, same physical location). Phase 2 runtime remains **NOT_STARTED**. |
 
 ## 2. Current proof baseline (`PR #55` / `998c294`)
 
@@ -44,7 +44,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | R2 private storage | RECORDED_STAGING_PROOF | Historical proof provenance retained; not standing authorization |
 | WordPress prepared draft handoff | IMPLEMENTED_LOCAL_PROVEN | Local payload/admin handoff boundary only |
 | Direct-to-Draft live HTTP | APPROVED_DIRECTION_NOT_IMPLEMENTED | Do not claim from current canonical docs |
-| Live GA4/GSC integration | WITHDRAWN | No live OAuth/sync/manual import claim |
+| Live GA4/GSC integration | APPROVED_DIRECTION_NOT_IMPLEMENTED | `ADMIN_LIVE` approved future direction; Admin-only live analytics; per-Website service accounts; clients receive FINAL monthly reports only; no OAuth/sync/manual import claim now |
 | Production execution | FROZEN | Requires separate current gate and approval |
 | Phase 0 canonical prerequisite package | IMPLEMENTED | Current authority reconciled to the private-agency charter; implementation remains separate |
 | Phase 1 Workspace foundation | COMPLETE (P1.1–P1.4b local scope) | Backup, restore, migration, backfill, reconciliation, idempotency and endpoint isolation evidence PASS; Tenant/Client remains authoritative for per-Client scope. |
@@ -77,11 +77,10 @@ Use retained evidence under `docs/audits/`, `docs/audit/`, `docs/releases/`, sel
 | Repository navigation | Graphify `0.9.17` is operational and Graphify-first access passed; Codex/Graphify configuration is committed locally as `5ad4eeb` |
 | Prisma recovery | A confirmed DCA OS API Node process held `query_engine-windows.dll.node`, causing Windows Prisma `EPERM`; only that confirmed DCA OS process tree was stopped |
 | Local proof | `npm.cmd run validate` passed; `npm.cmd run smoke:local` passed with API/database ready |
-| Local orchestrator | OpenClaw `2026.7.1` and the official Codex plugin are installed locally; OpenAI OAuth is used and no API key is required |
-| Orchestrator security | Gateway is loopback-only with token authentication; `tools.elevated` and heartbeat are disabled; no Scheduled Task or autonomous recurring monitoring is approved |
-| Runtime boundary | OpenClaw is temporary development/deployment orchestration only until live-VPS launch and is not part of the DCA OS runtime |
-| Delegated authority | Durable `AUTONOMY-HIGH`: Codex auto-review permits routine repository reads, edits, local commands, tests, commits, task-branch pushes, PR creation, CI monitoring/repair, and eligible merges |
-| Review gate | Each material code or policy diff requires a distinct read-only Terra reviewer decision on the exact unchanged diff plus green CI; native GitHub approval is needed only when branch protection technically requires it |
+| Local orchestrator | Codex CLI and Cursor have equal autonomy for ordinary bounded work; one executor per file area. OpenClaw is superseded historical tooling, not current orchestrator authority. |
+| Runtime boundary | Local orchestration tools are not part of the DCA OS runtime and must not be installed on the production VPS |
+| Delegated authority | Durable `AUTONOMY-HIGH`: routine repository reads, edits, local commands, tests, commits, task-branch pushes, PR creation, CI monitoring/repair, and eligible merges when an assigned mission authorizes them |
+| Review gate | Each material code or policy diff requires a distinct read-only independent reviewer decision on the exact unchanged diff plus green CI; native GitHub approval is needed only when branch protection technically requires it |
 | Owner gates | Production/VPS, secrets, costs, destructive migrations, legal/privacy issues, live integrations, actual backfill/reconciliation/switch/cleanup, and unresolved critical/canonical conflicts remain owner-gated |
 | Review evidence | Review decisions must be recorded as `APPROVE_READ_ONLY` or `REQUEST_CHANGES` in the PR/report; native GitHub approvals are never simulated |
 
