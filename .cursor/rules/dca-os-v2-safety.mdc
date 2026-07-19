@@ -1,0 +1,14 @@
+---
+description: DCA OS v2 Cursor safety and authority boundary
+alwaysApply: true
+---
+
+# DCA OS v2 safety
+
+- Before material work, read the canonical authority chain in `AGENTS.md` and `docs/README.md`.
+- Phase 1 is complete and must not be reopened. Phase 2 runtime is `NOT_STARTED`; only the offline P2-A foundation and disabled owner-run exporter are implemented.
+- Do not inspect `.env` files or secrets. Do not perform production/VPS, remote database/staging, live integration, cost-incurring, destructive migration, legal/privacy issues, actual snapshot, backfill, reconciliation, switch, cleanup, unresolved critical/canonical conflicts, or Tellanic actions unless explicitly owner-authorized.
+- Do not run Docker, access a database, or execute the exporter without explicit owner authorization.
+- Use one executor per task area. Do not make concurrent Cursor and Codex edits to the same scope.
+- Commits, pushes, PRs, and agents are allowed only when an explicit assigned mission authorizes them.
+- Use PowerShell on Windows and Bash in WSL/Linux.
