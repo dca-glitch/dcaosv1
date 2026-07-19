@@ -17,3 +17,13 @@ Its only permitted output is one `DCA_OS_V2_P2_A_SNAPSHOT_V1` JSON file under `C
 ## Required build proof
 
 All development and tests use synthetic or mocked fixtures only. Negative tests must prove rejection of non-local/missing targets, write/apply modes, missing owner authorization, prohibited output fields, unknown no-role exceptions, and any attempt to widen Client access.
+
+## Current build proof
+
+The separate disabled exporter module is implemented with injected population input only; it does not open a database connection during the build package. Run its synthetic test suite with:
+
+```text
+npm run -w @dca-os-v1/data test:p2-a:owner-exporter
+```
+
+The owner-run command remains disabled and exits before any database operation. A future execution authorization is still required.
