@@ -696,13 +696,13 @@ Poniższe wcześniejsze opisy capability zachowują wartość jako backlog produ
 ### Aktualna Phase 2 — Backfill and Reconciliation
 
 - Discovery zakończono przez `PR #70`; raport: `docs/discovery/PHASE_2_BACKFILL_RECONCILIATION_DISCOVERY_REPORT.md`.
-- Werdykt discovery po P2-02 writeback: `P2-02_OWNER_DECISION_RECORDED; PHASE_2_NOT_STARTED`, nie `READY_FOR_EXECUTION`.
+- Werdykt discovery po P2-A writeback: `P2-A_IMPLEMENTATION_READY_AUTHORIZED; PHASE_2_NOT_STARTED`, nie `READY_FOR_EXECUTION`.
 - P2-01 population definition zatwierdzono i zapisano przez `PR #72`.
 - Przyszła populacja P2-A to jeden istniejący aktywny lokalny Tenant oraz wszystkie jego aktywne Client, TenantMembership i ClientUserAccess.
 - P2-A może przyszłościowo używać wyłącznie zanonimizowanego offline snapshotu z deterministycznym manifestem/hash.
-- P2-01 alone did not authorize snapshot creation, database access, or P2-A implementation; the seven subsequent P2-A owner decisions authorize only the offline validator/consumer foundation, without a real snapshot or execution.
+- P2-01 alone did not authorize snapshot creation, database access, or P2-A implementation; the seven subsequent P2-A owner decisions authorize only the offline validator/consumer foundation, without a real snapshot, processing, or execution in this writeback.
 - P2-02 is decided: the six active no-role memberships remain excluded and untouched, are classified `OWNER_REMEDIATION_REQUIRED`, receive no default role or access, and cause no data or runtime change. This is documentation-only; Phase 2 remains `NOT_STARTED`.
-- P2-A implementation-ready is authorized under seven owner decisions: owner-provided anonymized offline file only; exactly one owner-selected active Tenant represented only by pseudonymous label/hash; evidence only at `C:\dcaosv1-p2-evidence` outside Git with no cloud sync or automatic deletion; fail-closed completeness and new-decision handling; unchanged `ClientUserAccess` count/hash as sole per-Client authority; future P2-B/C localhost-only posture (`127.0.0.1:5434` / `127.0.0.1:5435`) with owner-controlled resume/rollback; and P2-D reconciliation never starting Phase 3.
+- P2-A implementation-ready is authorized under seven owner decisions: a future owner-provided anonymized offline file only; exactly one owner-selected active Tenant represented only by pseudonymous label/hash; evidence only at `C:\dcaosv1-p2-evidence` outside Git with no cloud sync or automatic deletion; fail-closed completeness and new-decision handling; unchanged `ClientUserAccess` count/hash as sole per-Client authority; future P2-B/C localhost-only posture (`127.0.0.1:5434` / `127.0.0.1:5435`) with owner-controlled resume/rollback; and P2-D reconciliation never starting Phase 3. This writeback and its tests use synthetic fixtures only and consume no snapshot.
 - Codex may implement and validate the offline foundation only. It must not create or request a real snapshot, connect to a database, mutate data, backfill, reconcile, switch, clean up, change flags/endpoint authority, or touch remote/staging/production/VPS/Tellanic.
 - Phase 2 pozostaje `NOT_STARTED`.
 
@@ -1107,7 +1107,7 @@ Nie są częścią pierwszego pilota. Przed aktywacją wymagają osobnego stagin
 
 ---
 
-## 26. Stan po P2-02 owner decision writeback
+## 26. Stan po P2-A owner decision writeback
 
 P2-02 jest zakończone na poziomie decyzji i dokumentacji: sześć aktywnych membershipów bez roli pozostaje wykluczonych i nietkniętych, jest sklasyfikowane jako `OWNER_REMEDIATION_REQUIRED`, nie otrzymuje roli domyślnej ani dostępu i nie powoduje zmiany danych/runtime. P2-A jest implementation-ready wyłącznie jako offline validator/consumer na owner-provided anonymized file, z siedmioma decyzjami zapisanymi powyżej. Nie ma realnego snapshotu, snapshot creation ani database access. Phase 2 runtime, backfill, reconciliation, switch, cleanup, produkcja, VPS, remote environments i Tellanic pozostają wyłączone.
 
@@ -1273,7 +1273,7 @@ Założenia:
 - owner decisions: P2-A implementation-ready authorized; remaining execution gates owner-gated;
 - P2-01: APPROVED;
 - P2-02: DECIDED — six no-role memberships remain excluded/untouched as `OWNER_REMEDIATION_REQUIRED`, with no default role, access, or data/runtime change.
-- P2-A: IMPLEMENTATION_READY_AUTHORIZED — offline validator/consumer only; owner-provided anonymized file, external evidence, fail-closed checks, unchanged `ClientUserAccess`, localhost-only future P2-B/C posture, and no Phase 3 start.
+- P2-A: IMPLEMENTATION_READY_AUTHORIZED — offline validator/consumer only; future owner-provided anonymized file, external evidence, fail-closed checks, unchanged `ClientUserAccess`, localhost-only future P2-B/C posture, and no Phase 3 start. This writeback uses synthetic fixtures only and consumes no snapshot.
 
 ### Codex i model pracy
 
