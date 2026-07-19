@@ -12,9 +12,9 @@
     "docs/ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md"
   ],
   "summary": {
-    "totalFiles": 294,
+    "totalFiles": 295,
     "CURRENT_CANONICAL": 10,
-    "CURRENT_SUPPORTING": 159,
+    "CURRENT_SUPPORTING": 160,
     "SUPERSEDED_PLAN": 0,
     "HISTORICAL_EVIDENCE": 125,
     "SUPERSEDED_UI_PACK": 0
@@ -375,6 +375,10 @@
     "docs/implementation/NAVIGATION_PATTERN.md": {
       "classification": "CURRENT_SUPPORTING",
       "note": "reusable implementation pattern still compatible with the current architecture"
+    },
+    "docs/implementation/P2_A_OWNER_LOCAL_EXPORTER.md": {
+      "classification": "CURRENT_SUPPORTING",
+      "note": "build-only owner-run local exporter boundary"
     },
     "docs/implementation/PAGINATION_PATTERN.md": {
       "classification": "CURRENT_SUPPORTING",
