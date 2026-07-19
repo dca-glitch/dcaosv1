@@ -1,6 +1,6 @@
 # DCA OS v2 — Current Status
 
-**Last updated:** 2026-07-18
+**Last updated:** 2026-07-19
 **Canonical baseline:** merge commit `998c294e4c125d3ce9210ab0bd9a3e561584e78b` (`PR #55` — “Complete responsive modal-to-page migration”)
 
 This file replaces the old running gate ledger. Historical deploy logs, staging proofs, and prior gate closeouts remain under retained evidence paths and are no longer duplicated here.
@@ -62,6 +62,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 - Architecture map: [`ARCHITECTURE.md`](./ARCHITECTURE.md)
 - Client/domain model: [`architecture/CLIENT_DOMAIN_OPERATING_MODEL.md`](./architecture/CLIENT_DOMAIN_OPERATING_MODEL.md)
 - Status vocabulary: [`project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md`](./project-control/AUTHORITATIVE_PROJECT_CONTROL_MATRIX.md)
+- Canonical owner handoff: [`project-control/DCA_OS_V2_CANONICAL_HANDOFF.md`](./project-control/DCA_OS_V2_CANONICAL_HANDOFF.md)
 - Operator guardrails: [`operator/OPERATOR_RUNBOOK.md`](./operator/OPERATOR_RUNBOOK.md)
 - UI authority: [`ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md`](./ui/BOTANICAL_LIGHT_PRODUCT_UI_DIRECTION.md)
 
