@@ -17,7 +17,7 @@ This file replaces the old running gate ledger. Historical deploy logs, staging 
 | Client Portal MVP | Client-safe visibility, approvals, archive, and FINAL monthly reports only |
 | WordPress | Local prepared-draft/admin foundation only; live HTTP draft/publish is not current canonical capability |
 | GA4/GSC | **WITHDRAWN**; manual import not implemented |
-| Phase 2 owner decisions | **IN_PROGRESS** — P2-01 approved and P2-02 decided: six no-role memberships remain excluded/untouched as `OWNER_REMEDIATION_REQUIRED`, with no default role or access; remaining Phase 2 decisions are open and Phase 2 remains **NOT_STARTED** |
+| Phase 2 owner decisions | **P2-A_IMPLEMENTATION_READY_AUTHORIZED** — seven owner decisions recorded: future owner-provided anonymized offline snapshot only, exactly one owner-selected active Tenant, external evidence at `C:\dcaosv1-p2-evidence`, fail-closed completeness, unchanged `ClientUserAccess`, future localhost-only P2-B/C posture, and no Phase 3 start; this writeback uses synthetic fixtures only and Phase 2 runtime remains **NOT_STARTED** |
 
 ## 2. Current proof baseline (`PR #55` / `998c294`)
 
